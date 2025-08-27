@@ -1,28 +1,39 @@
-# LifeCraft Bot v2.0 🚀
+# LifeCraft Bot
 
-A sophisticated AI-powered career coaching assistant that helps students discover their professional strengths through storytelling and Socratic questioning.
+An AI-powered career coaching assistant that helps students discover their professional strengths through storytelling and Socratic questioning.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Claude AI](https://img.shields.io/badge/Claude-3.0-FF6B35)](https://www.anthropic.com/)
 
-## ✨ Key Features
+## 🚀 What's New in v2.0
 
-### 🧠 Advanced AI Conversation Engine
+### 🧠 Enhanced AI Conversation Engine
+- **Claude 3 Haiku Integration** (30-50% cost savings) with OpenAI GPT-4 fallback
+- **Advanced Response Validation** - filters out questions, off-topic responses, and deflection
+- **Multi-layer Quality Gates** ensure meaningful conversations only
+
+### 📊 Interactive Zoomable Charts  
+- **Chart.js Integration** with zoom, pan, and reset controls
+- **Real-time Updates** - instant chart synchronization with data modifications
+- **Individual Control** - delete specific strengths with hover UI
+
+### 💡 Improved Conversation Intelligence
+- **Pattern Recognition** - automatically detects questions and inappropriate responses
+- **Smart Redirection** - contextual guidance for better user engagement
+- **Enhanced System Prompts** with comprehensive validation rules
+
+## ✨ Core Features
+
+### 📈 Strength Discovery Process
 - **Multi-stage conversation flow**: Initial → Exploration → Deepening → Analysis → Summary
-- **Intelligent response validation**: Filters out irrelevant responses and questions
-- **Claude 3 Haiku integration** with OpenAI GPT-4 fallback for optimal cost and reliability
-
-### 📊 Interactive Strength Visualization
-- **Zoomable radar charts** with Chart.js integration
-- **Real-time strength deletion** with instant chart updates  
+- **Evidence-based strength extraction** from user stories
 - **Comprehensive strength categorization**: Skills, Attitudes, Values
 
-### 💡 Smart Analysis System
-- **Pattern recognition** across conversation stages
-- **Evidence-based strength extraction** from user stories
-- **Career pathway recommendations** based on discovered strengths
+### 🎯 Interactive Visualization
+- **Radar charts** showing strength profiles
+- **Real-time strength management** with instant updates
+- **Export capabilities** for portfolio use
 
 ## 🏗️ Architecture
 

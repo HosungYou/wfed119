@@ -1,39 +1,136 @@
 # LifeCraft Bot
 
-An AI-powered career coaching assistant that helps students discover their professional strengths through storytelling and Socratic questioning.
+An AI-powered career coaching assistant designed for WFED 119 (Career Planning and Life Design) that helps students discover their professional strengths through guided storytelling conversations using advanced prompt engineering techniques.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat&logo=Prisma&logoColor=white)](https://www.prisma.io/)
 
-## 🚀 What's New in v2.0
+## 📖 Overview
 
-### 🧠 Enhanced AI Conversation Engine
-- **Claude 3 Haiku Integration** (30-50% cost savings) with OpenAI GPT-4 fallback
-- **Advanced Response Validation** - filters out questions, off-topic responses, and deflection
-- **Multi-layer Quality Gates** ensure meaningful conversations only
+LifeCraft Bot is a conversational AI system built on the principles of **Socratic questioning** and **narrative-based strength discovery**. The system guides students through structured conversations to uncover their natural talents, skills, attitudes, and values through meaningful work experiences.
 
-### 📊 Interactive Zoomable Charts  
-- **Chart.js Integration** with zoom, pan, and reset controls
-- **Real-time Updates** - instant chart synchronization with data modifications
-- **Individual Control** - delete specific strengths with hover UI
-
-### 💡 Improved Conversation Intelligence
-- **Pattern Recognition** - automatically detects questions and inappropriate responses
-- **Smart Redirection** - contextual guidance for better user engagement
-- **Enhanced System Prompts** with comprehensive validation rules
+### 🎯 Educational Context
+- **Course**: WFED 119 - Career Planning and Life Design
+- **Methodology**: LifeCraft strength-based career development
+- **Approach**: Evidence-based strength identification through storytelling
 
 ## ✨ Core Features
 
-### 📈 Strength Discovery Process
-- **Multi-stage conversation flow**: Initial → Exploration → Deepening → Analysis → Summary
-- **Evidence-based strength extraction** from user stories
-- **Comprehensive strength categorization**: Skills, Attitudes, Values
+### 🧠 Conversational AI Engine
+- **Multi-stage conversation flow**: 5 distinct phases with intelligent progression
+- **Socratic questioning methodology** for self-discovery
+- **Context-aware responses** that build on previous interactions
+- **Evidence-based analysis** of user narratives
 
-### 🎯 Interactive Visualization
-- **Radar charts** showing strength profiles
-- **Real-time strength management** with instant updates
-- **Export capabilities** for portfolio use
+### 📊 Strength Visualization
+- **Interactive radar charts** displaying strength profiles
+- **Real-time data visualization** with Chart.js integration
+- **Categorized strength mapping**: Skills, Attitudes, Values
+- **Export functionality** for student portfolios
+
+### 🎨 User Experience
+- **Responsive design** optimized for various devices  
+- **Intuitive conversation interface** with clear progression indicators
+- **Session persistence** to resume conversations
+- **Accessibility features** for inclusive design
+
+## 🤖 Prompt Engineering Architecture
+
+### Conversation Flow Design
+LifeCraft Bot employs a sophisticated **5-stage conversation methodology** based on Socratic questioning principles:
+
+#### Stage 1: Initial (Opening Question)
+```
+Objective: Establish rapport and elicit a meaningful work story
+Technique: Open-ended invitation with specific emotional anchor
+Example: "Tell me about a time when you felt really satisfied with work you were doing. What happened?"
+```
+
+#### Stage 2: Exploration (First Follow-up)
+```
+Objective: Dive deeper into the specific experience
+Technique: Reflective acknowledgment + targeted inquiry
+Example: "What specifically about that [referenced work] felt meaningful to you?"
+```
+
+#### Stage 3: Deepening (Deeper Inquiry)
+```
+Objective: Uncover underlying motivations and patterns
+Technique: Emotional exploration + skill identification
+Example: "What did you feel in that moment?" or "Can you tell me about another similar experience?"
+```
+
+#### Stage 4: Analysis (Pattern Recognition)
+```
+Objective: Connect experiences to broader career themes
+Technique: Pattern identification + application exploration
+Example: "How do these skills show up in other areas of your life?"
+```
+
+#### Stage 5: Summary (Comprehensive Report)
+```
+Objective: Synthesize insights into actionable career guidance
+Technique: Structured analysis with Skills/Attitudes/Values framework
+Output: Comprehensive strength report with career connections
+```
+
+### AI System Prompt Structure
+
+The core system prompt (`src/lib/prompts/systemPrompt.ts`) implements:
+
+#### 🎯 Role Definition
+- **Identity**: LifeCraft Career Coach specialized in strength discovery
+- **Mission**: Guide students through structured conversation for strength identification
+- **Approach**: Socratic questioning with evidence-based analysis
+
+#### 📋 Conversation Guidelines
+- **Warmth & Curiosity**: Maintain encouraging, genuinely interested tone
+- **Specificity**: Use student's exact words in reflections
+- **Focus**: One question per response to maintain conversation flow
+- **Progression**: Clear stage-based advancement with quality gates
+
+#### 🔍 Response Validation (v2.0 Enhancement)
+- **Length Validation**: Minimum 30 characters for meaningful responses
+- **Content Filtering**: Detect and redirect questions, off-topic responses
+- **Pattern Recognition**: Identify deflection and avoidance behaviors
+- **Quality Gates**: Ensure response quality before stage progression
+
+### Prompt Engineering Principles
+
+#### 1. **Contextual Awareness**
+```typescript
+// Example: Using student's exact language
+"I heard you mention [student's exact words]. What specifically about that experience..."
+```
+
+#### 2. **Progressive Disclosure**
+```typescript
+// Gradual depth increase across stages
+Stage 1: "What happened?" (broad narrative)
+Stage 2: "What felt meaningful?" (emotional connection)  
+Stage 3: "What did you feel?" (deeper emotional exploration)
+Stage 4: "How does this apply elsewhere?" (pattern recognition)
+```
+
+#### 3. **Evidence-Based Analysis**
+```typescript
+// Strength extraction methodology
+Skills: What they can DO (concrete abilities)
+Attitudes: HOW they work (behavioral patterns)
+Values: WHY they work (motivational drivers)
+```
+
+#### 4. **Adaptive Questioning**
+```typescript
+// Dynamic question generation based on context
+if (skillsIdentified.length < 3) {
+  askSkillExplorationQuestion();
+} else if (valuesNotExplored) {
+  askValueIdentificationQuestion();
+}
+```
 
 ## 🏗️ Architecture
 

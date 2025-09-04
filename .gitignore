@@ -37,3 +37,40 @@ next-env.d.ts
 # prisma
 prisma/dev.db
 prisma/dev.db-journal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.pytest_cache/
+
+# RAG and data processing
+output/
+chunks/
+embeddings/
+backups/
+
+# Docker
+docker-compose.override.yml
+
+# Secrets and keys
+*.key
+*.crt
+*.p12
+secrets.json
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/

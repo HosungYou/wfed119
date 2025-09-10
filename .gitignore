@@ -4,6 +4,15 @@ node_modules/
 .pnp.js
 .yarn/install-state.gz
 
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 # Testing
 coverage/
 .nyc_output

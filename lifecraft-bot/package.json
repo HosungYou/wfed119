@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "build:turbo": "prisma generate && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/setup-prisma.js",
     "generate:pg": "prisma generate --schema=prisma/schema.postgres.prisma",
     "migrate:deploy:pg": "prisma migrate deploy --schema=prisma/schema.postgres.prisma",
     "build:render": "prisma generate --schema=prisma/schema.postgres.prisma && prisma db push --schema=prisma/schema.postgres.prisma && next build",

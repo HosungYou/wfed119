@@ -14,8 +14,9 @@ services:
     runtime: node
     plan: starter # Change to 'standard' for production
     rootDir: lifecraft-bot
-    buildCommand: npm ci && npm run build:render
+    buildCommand: npm ci && npm run build
     startCommand: npm start
+    preDeployCommand: prisma generate --schema=prisma/schema.postgres.prisma && prisma db push --schema=prisma/schema.postgres.prisma
     envVars:
       - key: NODE_ENV
         value: production

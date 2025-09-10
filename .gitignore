@@ -2,10 +2,12 @@
 node_modules/
 .pnp
 .pnp.js
+.yarn/install-state.gz
 
 # Testing
 coverage/
 .nyc_output
+.pytest_cache/
 
 # Next.js
 .next/
@@ -24,6 +26,9 @@ dist/
 *.swp
 *.swo
 *~
+Thumbs.db
+.AppleDouble
+.LSOverride
 
 # Debug
 npm-debug.log*
@@ -40,6 +45,7 @@ yarn-error.log*
 .env.production
 .env.development
 .env.python
+.env*.local
 
 # Vercel
 .vercel
@@ -67,16 +73,11 @@ rag_env/
 ENV/
 env.bak/
 venv.bak/
+.venv/
 
 # Logs
 logs/
 *.log
-
-# OS files
-Thumbs.db
-.DS_Store
-.AppleDouble
-.LSOverride
 
 # IDE
 .idea/
@@ -88,6 +89,9 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+tmp/
+temp/
+.tmp/
 
 # Docker
 .dockerignore
@@ -97,13 +101,18 @@ docker-compose.override.yml
 output/
 chunks/
 exports/
+embeddings/
+backups/
 
 # Backup files
 *.backup
 *.bak
 backup/
 
-# API Keys - Never commit these
+# API Keys and Secrets - Never commit these
 *.key
 *.pem
 *.cert
+*.crt
+*.p12
+secrets.json

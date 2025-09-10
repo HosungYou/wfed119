@@ -1,0 +1,97 @@
+graph TB
+    subgraph "LifeCraft Application"
+        subgraph "Frontend Layer"
+            UI1[Strength Discovery Page<br/>/discover/strengths]
+            UI2[Enneagram Page<br/>/discover/enneagram]
+            UI3[Results Page<br/>/results]
+            UI4[Chat Interface<br/>ChatInterface.tsx]
+        end
+        
+        subgraph "API Layer"
+            API1[Strength API<br/>/api/strength/*]
+            API2[Enneagram API<br/>/api/enneagram/*]
+            API3[Session API<br/>/api/session/*]
+            API4[Chat API<br/>/api/chat/*]
+        end
+        
+        subgraph "Business Logic Layer"
+            BL1[Strength Logic<br/>/lib/strengths/]
+            BL2[Enneagram Logic<br/>/lib/enneagram/]
+            BL3[Shared Utils<br/>/lib/utils/]
+        end
+        
+        subgraph "Data Layer"
+            DB[(PostgreSQL Database)]
+            CACHE[(Redis Cache)]
+            FILES[File Storage]
+        end
+    end
+    
+    subgraph "Module Documentation"
+        DOC1[StrengthDiscovery<br/>Module Docs]
+        DOC2[Enneagram<br/>Module Docs] 
+        DOC3[Shared Docs<br/>& Code Map]
+    end
+    
+    subgraph "Visualization Components"
+        VIZ1[StrengthRadarChart]
+        VIZ2[StrengthHexagon]
+        VIZ3[StrengthMindMap]
+        VIZ4[EnneagramWheel]
+        VIZ5[TypeRelations]
+    end
+    
+    %% Frontend connections
+    UI1 --> API1
+    UI1 --> UI4
+    UI2 --> API2
+    UI3 --> API1
+    UI3 --> API2
+    UI4 --> API4
+    
+    %% API connections
+    API1 --> BL1
+    API2 --> BL2
+    API3 --> BL3
+    API4 --> BL1
+    API4 --> BL2
+    
+    %% Business logic connections
+    BL1 --> DB
+    BL1 --> CACHE
+    BL2 --> DB
+    BL2 --> CACHE
+    BL3 --> DB
+    
+    %% Visualization connections
+    UI1 --> VIZ1
+    UI1 --> VIZ2
+    UI1 --> VIZ3
+    UI2 --> VIZ4
+    UI2 --> VIZ5
+    UI3 --> VIZ1
+    UI3 --> VIZ4
+    
+    %% Documentation connections
+    DOC1 -.-> BL1
+    DOC1 -.-> API1
+    DOC1 -.-> UI1
+    DOC2 -.-> BL2
+    DOC2 -.-> API2
+    DOC2 -.-> UI2
+    DOC3 -.-> BL3
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe
+    classDef api fill:#f3e5f5
+    classDef logic fill:#e8f5e8
+    classDef data fill:#fff3e0
+    classDef docs fill:#fce4ec
+    classDef viz fill:#f1f8e9
+    
+    class UI1,UI2,UI3,UI4 frontend
+    class API1,API2,API3,API4 api
+    class BL1,BL2,BL3 logic
+    class DB,CACHE,FILES data
+    class DOC1,DOC2,DOC3 docs
+    class VIZ1,VIZ2,VIZ3,VIZ4,VIZ5 viz

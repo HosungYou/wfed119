@@ -53,10 +53,18 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### Current Setup (from render.yaml):
 - **Database**: PostgreSQL (starter plan)
 - **Web Service**: Node.js runtime
+- **Root Directory**: `lifecraft-bot`
 - **Build Command**: `npm ci && npm run build:render`
 - **Start Command**: `npm start`
 - **Auto Deploy**: Enabled for main branch
 - **Health Check**: `/api/health`
+
+### Manual Setup (if not using Blueprint):
+If the Blueprint doesn't work, manually configure:
+1. **Root Directory**: Set to `lifecraft-bot` 
+2. **Build Command**: `npm ci && npm run build:render`
+3. **Start Command**: `npm start`
+4. **Node Version**: 18 or higher
 
 ### Important Notes:
 - The app is configured to work with `/lifecraft-bot` as the root directory

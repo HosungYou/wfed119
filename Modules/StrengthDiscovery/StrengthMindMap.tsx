@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
 
 interface StrengthMindMapProps {
@@ -15,63 +15,6 @@ export const StrengthMindMap: React.FC<StrengthMindMapProps> = ({
   className = '' 
 }) => {
   const displayName = userName || 'Your Name';
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(prev * 1.2, 3));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(prev / 1.2, 0.5));
-  };
-
-  const handleReset = () => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 1.1 : 0.9;
-    setScale(prev => Math.min(Math.max(prev * delta, 0.5), 3));
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '=' || e.key === '+') {
-        handleZoomIn();
-      } else if (e.key === '-') {
-        handleZoomOut();
-      } else if (e.key === '0') {
-        handleReset();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
   
   return (
     <div className={`bg-white rounded-lg shadow-lg p-6 ${className}`}>
@@ -81,54 +24,10 @@ export const StrengthMindMap: React.FC<StrengthMindMapProps> = ({
         <p className="text-gray-600">Discover your unique combination of skills, attitudes, and values</p>
       </div>
 
-      {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col space-y-2">
-        <button
-          onClick={handleZoomIn}
-          className="bg-white border border-gray-300 rounded-lg p-2 hover:bg-gray-50 transition-colors shadow-sm"
-          title="Zoom In (+ key)"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-          </svg>
-        </button>
-        <button
-          onClick={handleZoomOut}
-          className="bg-white border border-gray-300 rounded-lg p-2 hover:bg-gray-50 transition-colors shadow-sm"
-          title="Zoom Out (- key)"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-          </svg>
-        </button>
-        <button
-          onClick={handleReset}
-          className="bg-white border border-gray-300 rounded-lg p-2 hover:bg-gray-50 transition-colors shadow-sm"
-          title="Reset View (0 key)"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-          </svg>
-        </button>
-      </div>
-
       {/* Mind Map Container */}
       <div className="relative w-full h-[600px] overflow-hidden">
-        <svg 
-          ref={svgRef}
-          viewBox="0 0 800 600" 
-          className="w-full h-full cursor-move"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
-            cursor: isDragging ? 'grabbing' : 'grab'
-          }}
-        >
+        <svg viewBox="0 0 800 600" className="w-full h-full">
+          {/* Background grid (optional) */}
           <defs>
             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
               <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" strokeWidth="1"/>

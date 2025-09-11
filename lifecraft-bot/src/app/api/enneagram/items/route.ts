@@ -26,25 +26,25 @@ export async function GET(req: NextRequest) {
     // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
     // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
-    if (stage === 'discriminators') {
-      const stage1 = (enne.responses as any)?.stage1 ?? [];
-      const { probabilities } = scoreStage1(stage1, locale);
-      const sorted = Object.entries(probabilities)
-        .map(([k, v]) => ({ type: Number(k), p: v }))
-        .sort((a, b) => b.p - a.p);
-      const top = sorted.slice(0, 3).map((x) => x.type);
-      const pairs = getDiscriminatorPairsForTop(top);
-      const items = getDiscriminatorItems(locale, pairs);
+    // if (stage === 'discriminators') {
+    //   const stage1 = (enne.responses as any)?.stage1 ?? [];
+    //   const { probabilities } = scoreStage1(stage1, locale);
+    //   const sorted = Object.entries(probabilities)
+    //     .map(([k, v]) => ({ type: Number(k), p: v }))
+    //     .sort((a, b) => b.p - a.p);
+    //   const top = sorted.slice(0, 3).map((x) => x.type);
+    //   const pairs = getDiscriminatorPairsForTop(top);
+    //   const items = getDiscriminatorItems(locale, pairs);
 
-      // store plan once for consistency
-      const responses = enne.responses as any;
-      if (!responses.stage2Plan) {
-        responses.stage2Plan = items.map((i) => ({ id: i.id, pair: i.pair }));
-        // await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
-      }
+    //   // store plan once for consistency
+    //   const responses = enne.responses as any;
+    //   if (!responses.stage2Plan) {
+    //     responses.stage2Plan = items.map((i) => ({ id: i.id, pair: i.pair }));
+    //     // await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
+    //   }
 
-      return NextResponse.json({ items });
-    }
+    //   return NextResponse.json({ items });
+    // }
 
     if (stage === 'wings') {
       return NextResponse.json({ items: getInstinctItems(locale) });

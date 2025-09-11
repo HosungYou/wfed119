@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
-import { getScreenerItems } from '../../../lib/enneagram/itemBank';
-// import { itemById as discItemById } from '../../../lib/enneagram/discriminators';
-import { getInstinctItems } from '../../../lib/enneagram/instincts';
+import { prisma } from '../../../../lib/prisma';
+import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
+// import { itemById as discItemById } from '../../../../lib/enneagram/discriminators';
+import { getInstinctItems } from '../../../../lib/enneagram/instincts';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
 

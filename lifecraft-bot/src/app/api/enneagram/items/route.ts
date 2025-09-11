@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+// import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
 import { getDiscriminatorItems, getDiscriminatorPairsForTop } from '../../../../lib/enneagram/discriminators';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       const responses = enne.responses as any;
       if (!responses.stage2Plan) {
         responses.stage2Plan = items.map((i) => ({ id: i.id, pair: i.pair }));
-        await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
+        // await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
       }
 
       return NextResponse.json({ items });

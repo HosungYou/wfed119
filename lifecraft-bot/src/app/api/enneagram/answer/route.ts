@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+// import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
 // import { itemById as discItemById } from '../../../../lib/enneagram/discriminators';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
@@ -65,28 +65,29 @@ export async function POST(req: NextRequest) {
       // input: { answers: [{ itemId, choice: 'A'|'B' }] }
       const answers = Array.isArray(input?.answers) ? input.answers : [];
       let plan: Array<{ itemId: string; choice: string }> = [];
-      if (process.env.NODE_ENV !== 'production') {
-        plan = enne.responses?.stage2Plan ?? [];
-        const current = enne.responses?.stage2 ?? [];
-        const map = new Map<string, { itemId: string; value: string | number }>();
-        for (const r of current) map.set(r.itemId, r);
-        for (const r of answers) {
-          if (!r?.itemId || !['A', 'B'].includes(r?.choice)) continue;
-          map.set(r.itemId, r);
-        }
-        const merged = Array.from(map.values());
-        enne = await prisma.enneagramSession.update({
-          where: { sessionId },
-          data: { responses: { ...(enne.responses as any), stage2: merged } },
-        });
-      }
+      // Skip DB operations completely for now
+      // if (process.env.NODE_ENV !== 'production') {
+      //   plan = enne.responses?.stage2Plan ?? [];
+      //   const current = enne.responses?.stage2 ?? [];
+      //   const map = new Map<string, { itemId: string; value: string | number }>();
+      //   for (const r of current) map.set(r.itemId, r);
+      //   for (const r of answers) {
+      //     if (!r?.itemId || !['A', 'B'].includes(r?.choice)) continue;
+      //     map.set(r.itemId, r);
+      //   }
+      //   const merged = Array.from(map.values());
+      //   enne = await prisma.enneagramSession.update({
+      //     where: { sessionId },
+      //     data: { responses: { ...(enne.responses as any), stage2: merged } },
+      //   });
+      // }
       const total = plan.length || 6;
       const count = (process.env.NODE_ENV !== 'production' ? (enne.responses as any)?.stage2?.length : answers.length) || 0;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'wings';
-      if (process.env.DB_ENABLED === 'true') {
-        await prisma.enneagramSession.update({ where: { sessionId }, data: { stage: nextStage } });
-      }
+      // if (process.env.DB_ENABLED === 'true') {
+      //   await prisma.enneagramSession.update({ where: { sessionId }, data: { stage: nextStage } });
+      // }
     }
 
     if (stage === 'wings') {
@@ -94,35 +95,35 @@ export async function POST(req: NextRequest) {
       const payload = Array.isArray(input?.items) ? input.items : [];
       const validIds = new Set(getInstinctItems(locale).map((i) => i.id));
       const filtered = payload.filter((i: any) => validIds.has(i?.itemId) && [1, 2, 3, 4, 5].includes(Number(i?.value)));
-      if (process.env.DB_ENABLED === 'true') {
-        const current = (enne.responses as any)?.stage3 ?? [];
-        const map = new Map<string, { itemId: string; value: string | number }>();
-        for (const r of current) map.set(r.itemId, r);
-        for (const r of filtered) map.set(r.itemId, r);
-        const merged = Array.from(map.values());
-        enne = await prisma.enneagramSession.update({
-          where: { sessionId },
-          data: { responses: { ...(enne.responses as any), stage3: merged } },
-        });
-      }
+      // if (process.env.DB_ENABLED === 'true') {
+      //   const current = (enne.responses as any)?.stage3 ?? [];
+      //   const map = new Map<string, { itemId: string; value: string | number }>();
+      //   for (const r of current) map.set(r.itemId, r);
+      //   for (const r of filtered) map.set(r.itemId, r);
+      //   const merged = Array.from(map.values());
+      //   enne = await prisma.enneagramSession.update({
+      //     where: { sessionId },
+      //     data: { responses: { ...(enne.responses as any), stage3: merged } },
+      //   });
+      // }
       const total = 12;
       const count = (process.env.DB_ENABLED === 'true' ? (enne.responses as any)?.stage3?.length : filtered.length) || 0;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'narrative';
-      if (process.env.NODE_ENV !== 'production') {
-        await prisma.enneagramSession.update({ where: { sessionId }, data: { stage: nextStage } });
-      }
+      // if (process.env.NODE_ENV !== 'production') {
+      //   await prisma.enneagramSession.update({ where: { sessionId }, data: { stage: nextStage } });
+      // }
     }
 
     if (stage === 'narrative') {
       // input: { texts: [promptA, promptB] }
       const texts = Array.isArray(input?.texts) ? input.texts.slice(0, 2) : [];
-      if (process.env.DB_ENABLED === 'true') {
-        const current = (enne.responses as any)?.texts ?? [];
-        const merged = [...current];
-        texts.forEach((t, idx) => (merged[idx] = String(t)));
-        await prisma.enneagramSession.update({ where: { sessionId }, data: { responses: { ...(enne.responses as any), texts: merged }, stage: 'complete' } });
-      }
+      // if (process.env.DB_ENABLED === 'true') {
+      //   const current = (enne.responses as any)?.texts ?? [];
+      //   const merged = [...current];
+      //   texts.forEach((t, idx) => (merged[idx] = String(t)));
+      //   await prisma.enneagramSession.update({ where: { sessionId }, data: { responses: { ...(enne.responses as any), texts: merged }, stage: 'complete' } });
+      // }
       nextStage = 'complete';
       progress = 1;
     }

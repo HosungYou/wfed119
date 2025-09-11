@@ -19,9 +19,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Skip DB operations for now to enable deployment
-    if (stage !== 'screener') {
-      return NextResponse.json({ items: [] }); // Return empty for non-screener stages
-    }
+    // Return empty for non-screener stages
+    return NextResponse.json({ items: [] });
 
     // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
     // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });

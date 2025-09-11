@@ -18,20 +18,12 @@ export async function GET(
     const attitudes = strengths.filter((s) => s.category === 'attitude').map((s) => s.name);
     const values = strengths.filter((s) => s.category === 'value').map((s) => s.name);
 
-    const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
+    // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
+    const enne = null; // Disabled for deployment
 
     const response = {
       strengths: { skills, attitudes, values },
-      enneagram: enne
-        ? {
-            typeProbabilities: enne.typeScores ?? {},
-            primaryType: enne.primaryType ?? null,
-            wingEstimate: enne.wingEstimate ?? null,
-            instinct: enne.instinct ?? null,
-            confidence: enne.confidence ?? null,
-            aiEvidence: (enne.aiEvidence as any) ?? [],
-          }
-        : null,
+      enneagram: null, // Disabled for deployment
     };
 
     return NextResponse.json(response);

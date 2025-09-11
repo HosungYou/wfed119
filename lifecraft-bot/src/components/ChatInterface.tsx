@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSessionStore, useSessionStats } from '@/lib/store/sessionStore';
-import { StrengthMindMap } from './visualization/StrengthMindMap';
+// import { StrengthMindMap } from './visualization/StrengthMindMap';
 import { ProgressIndicator } from './ui/ProgressIndicator';
 import { ChatMessage } from '@/lib/services/aiServiceClaude';
 import { Save, RefreshCw, Send, Download, Loader2 } from 'lucide-react';
@@ -434,11 +434,11 @@ export const ChatInterface: React.FC = () => {
         {/* Right Sidebar - Visualization */}
         {stage === 'summary' && (
           <div className="w-1/3 min-w-96 max-h-full overflow-y-auto">
-            <StrengthMindMap 
-              data={strengths}
-              userName={userName}
-              className="h-fit"
-            />
+            {/* StrengthMindMap component temporarily disabled for deployment */}
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">Strength Visualization</h3>
+              <p className="text-sm text-gray-600">Visualization temporarily unavailable</p>
+            </div>
           </div>
         )}
       </div>

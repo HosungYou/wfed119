@@ -1,15 +1,20 @@
 # Strength Discovery Module
 
 ## Overview
-The Strength Discovery module helps users identify and develop their personal strengths through assessment tools and personalized insights.
+The Strength Discovery module helps users identify and develop their personal strengths through AI-powered assessments and personalized insights.
 
-## Module Structure
+## 📁 Module Contents
 
-### Components
-- `assessment/` - Strength assessment questionnaires and tools
-- `analysis/` - Strength analysis and insight generation
-- `database/` - Data models and storage patterns
-- `api/` - API endpoints for strength discovery features
+### Core Files
+- `README.md` - This overview document
+- `database-schema.sql` - PostgreSQL schema for strength data
+- `data-retrieval-patterns.md` - Data access patterns and caching strategies
+- `strength_discovery_conversation_flow.md` - AI conversation design
+
+### React Components
+- `StrengthHexagon.tsx` - Hexagonal strength visualization
+- `StrengthRadarChart.tsx` - Radar chart for strength comparison  
+- `StrengthMindMap.tsx` - Mind map visualization of strengths
 
 ## Database Design
 
@@ -18,18 +23,6 @@ The Strength Discovery module helps users identify and develop their personal st
 - `strength_assessments` - Assessment history and results
 - `strength_categories` - Taxonomy of strength types
 - `strength_insights` - Generated insights and recommendations
-
-## Data Storage Patterns
-
-### Assessment Data
-- Store raw assessment responses for historical tracking
-- Cache computed strength profiles for quick retrieval
-- Version assessment tools to maintain backward compatibility
-
-### User Progress
-- Track strength development over time
-- Store milestone achievements
-- Maintain activity logs for personalized recommendations
 
 ## API Endpoints
 
@@ -45,16 +38,36 @@ The Strength Discovery module helps users identify and develop their personal st
 - `GET /api/strength/progress/:userId` - Track development
 - `POST /api/strength/goals` - Set strength development goals
 
-## Integration Points
-
-### With Other Modules
-- **Enneagram**: Correlate strengths with personality types
-- **Life Planning**: Use strengths in goal setting
-- **Career Development**: Match strengths to career paths
-
 ## Development Status
-- [ ] Database schema design
-- [ ] Assessment tool implementation
-- [ ] Analysis engine development
+- [ ] Database schema implementation
+- [ ] Assessment conversation flow
+- [✓] Visualization components (3 complete)
 - [ ] API endpoint creation
-- [ ] Frontend integration
+- [ ] Integration with Enneagram module
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 15+ (or Docker)
+- React 18+ with TypeScript
+
+### Database Setup
+```bash
+# Apply the schema
+psql -U admin -d wfed119 -f database-schema.sql
+```
+
+### Using Components
+```tsx
+import { StrengthRadarChart } from '@/modules/StrengthDiscovery/StrengthRadarChart';
+import { StrengthHexagon } from '@/modules/StrengthDiscovery/StrengthHexagon';
+import { StrengthMindMap } from '@/modules/StrengthDiscovery/StrengthMindMap';
+```
+
+### Development
+See the main project setup in `/lifecraft-bot/README.md`
+
+## Related Modules
+- **Enneagram**: Complementary personality assessment
+- **LifePlan**: Uses strength insights for career planning

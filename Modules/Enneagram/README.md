@@ -3,14 +3,13 @@
 ## Overview
 The Enneagram module provides personality type assessment and insights based on the Enneagram system, helping users understand their core motivations, fears, and growth paths.
 
-## Module Structure
+## 📁 Module Contents
 
-### Components
-- `assessment/` - Enneagram type identification tools
-- `analysis/` - Type analysis and wing determination
-- `database/` - Data models for Enneagram types and user profiles
-- `api/` - API endpoints for Enneagram features
-- `content/` - Type descriptions and growth recommendations
+### Core Files
+- `README.md` - This overview document
+- `Enneagram_Test_Plan.md` - Complete testing strategy
+- `database-schema.sql` - PostgreSQL schema for Enneagram data
+- `data-retrieval-patterns.md` - Data access patterns and caching strategies
 
 ## Database Design
 
@@ -101,8 +100,28 @@ The Enneagram module provides personality type assessment and insights based on 
 
 ## Development Status
 - [ ] Database schema implementation
-- [ ] Assessment tool development
+- [ ] Assessment tool development  
 - [ ] Type analysis engine
 - [ ] API endpoint creation
 - [ ] Content management system
-- [ ] Integration with other modules
+- [ ] Integration with StrengthDiscovery module
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 15+ (or Docker)
+- Basic understanding of Enneagram theory
+
+### Database Setup
+```bash
+# Apply the schema
+psql -U admin -d wfed119 -f database-schema.sql
+```
+
+### Development
+See the main project setup in `/lifecraft-bot/README.md`
+
+## Related Modules
+- **StrengthDiscovery**: Complementary strength assessment
+- **LifePlan**: Uses Enneagram insights for career planning

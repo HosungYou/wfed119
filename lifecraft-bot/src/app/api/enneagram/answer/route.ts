@@ -14,21 +14,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing sessionId or stage' }, { status: 400 });
     }
 
-    // Ensure EnneagramSession exists (skip DB on production to mirror other routes)
+    // Skip DB operations for now to enable deployment
     let enne: any = null;
-    if (process.env.DB_ENABLED === 'true') {
-      enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
-      if (!enne) {
-        enne = await prisma.enneagramSession.create({
-          data: {
-            sessionId,
-            stage: 'screener',
-            responses: { stage1: [], stage2: [], stage3: [], texts: [] },
-            typeScores: {},
-          },
-        });
-      }
-    }
+    // if (process.env.DB_ENABLED === 'true') {
+    //   enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
+    //   if (!enne) {
+    //     enne = await prisma.enneagramSession.create({
+    //       data: {
+    //         sessionId,
+    //         stage: 'screener',
+    //         responses: { stage1: [], stage2: [], stage3: [], texts: [] },
+    //         typeScores: {},
+    //       },
+    //     });
+    //   }
+    // }
 
     let nextStage: Stage = stage as Stage;
     let progress = 0;
@@ -42,18 +42,19 @@ export async function POST(req: NextRequest) {
         .filter((i: { itemId?: string; value?: string | number }) => typeof i?.itemId === 'string' && [1,2,3,4,5].includes(Number(i?.value)))
         .slice(0, totalItems);
 
-      if (process.env.DB_ENABLED === 'true') {
-        // merge unique answers by itemId, last write wins
-        const current = enne.responses?.stage1 ?? [];
-        const map = new Map<string, { itemId: string; value: string | number }>();
-        for (const r of current) map.set(r.itemId, r);
-        for (const r of filtered) map.set(r.itemId, r);
-        const merged = Array.from(map.values());
-        enne = await prisma.enneagramSession.update({
-          where: { sessionId },
-          data: { responses: { ...enne.responses, stage1: merged } },
-        });
-      }
+      // Skip DB operations for now
+      // if (process.env.DB_ENABLED === 'true') {
+      //   // merge unique answers by itemId, last write wins
+      //   const current = enne.responses?.stage1 ?? [];
+      //   const map = new Map<string, { itemId: string; value: string | number }>();
+      //   for (const r of current) map.set(r.itemId, r);
+      //   for (const r of filtered) map.set(r.itemId, r);
+      //   const merged = Array.from(map.values());
+      //   enne = await prisma.enneagramSession.update({
+      //     where: { sessionId },
+      //     data: { responses: { ...enne.responses, stage1: merged } },
+      //   });
+      // }
 
       const count = (process.env.DB_ENABLED === 'true' ? enne.responses?.stage1?.length : filtered.length) || 0;
       progress = Math.min(1, count / totalItems);

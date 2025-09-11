@@ -6,12 +6,13 @@ export async function POST(req: NextRequest) {
     const { sessionId } = await req.json();
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
-    if (process.env.DB_ENABLED !== 'true') {
-      return NextResponse.json({ error: 'Database not enabled (set DB_ENABLED=true)' }, { status: 503 });
-    }
-
-    const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
-    if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    // Skip DB operations for now to enable deployment
+    // Return mock export data
+    return NextResponse.json({
+      message: 'Enneagram export temporarily disabled for deployment',
+      sessionId,
+      mockData: true
+    });
 
     const payload = {
       primaryType: enne.primaryType ?? null,

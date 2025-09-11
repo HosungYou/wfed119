@@ -18,12 +18,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ items: getScreenerItems(locale) });
     }
 
-    if (process.env.DB_ENABLED !== 'true') {
-      return NextResponse.json({ error: 'Database not enabled (set DB_ENABLED=true)' }, { status: 503 });
+    // Skip DB operations for now to enable deployment
+    if (stage !== 'screener') {
+      return NextResponse.json({ items: [] }); // Return empty for non-screener stages
     }
 
-    const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
-    if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
+    // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
     if (stage === 'discriminators') {
       const stage1 = (enne.responses as any)?.stage1 ?? [];

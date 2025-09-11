@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const responses = (enne.responses as any) ?? {};
     const stage1 = responses.stage1 ?? [];
-    const { probabilities: p1, raw: raw1 } = scoreStage1(stage1, 'en');
+    const { probabilities, raw: raw1 } = scoreStage1(stage1, 'en');
 
     // Stage 2: discriminators → per-item count for chosen side
     const stage2 = (responses.stage2 ?? []) as { itemId: string; choice: 'A' | 'B' }[];

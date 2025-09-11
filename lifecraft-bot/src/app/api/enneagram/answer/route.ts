@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getScreenerItems } from '@/lib/enneagram/itemBank';
-import { itemById as discItemById } from '@/lib/enneagram/discriminators';
+// import { itemById as discItemById } from '@/lib/enneagram/discriminators';
 import { getInstinctItems } from '@/lib/enneagram/instincts';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Ensure EnneagramSession exists (skip DB on production to mirror other routes)
-    let enne = null as any;
+    let enne: any = null;
     if (process.env.DB_ENABLED === 'true') {
       enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
       if (!enne) {
@@ -39,13 +39,13 @@ export async function POST(req: NextRequest) {
 
       const payload = Array.isArray(input?.items) ? input.items : [];
       const filtered = payload
-        .filter((i: any) => typeof i?.itemId === 'string' && [1,2,3,4,5].includes(Number(i?.value)))
+        .filter((i: { itemId?: string; value?: string | number }) => typeof i?.itemId === 'string' && [1,2,3,4,5].includes(Number(i?.value)))
         .slice(0, totalItems);
 
       if (process.env.DB_ENABLED === 'true') {
         // merge unique answers by itemId, last write wins
         const current = enne.responses?.stage1 ?? [];
-        const map = new Map<string, any>();
+        const map = new Map<string, { itemId: string; value: string | number }>();
         for (const r of current) map.set(r.itemId, r);
         for (const r of filtered) map.set(r.itemId, r);
         const merged = Array.from(map.values());
@@ -63,11 +63,11 @@ export async function POST(req: NextRequest) {
     if (stage === 'discriminators') {
       // input: { answers: [{ itemId, choice: 'A'|'B' }] }
       const answers = Array.isArray(input?.answers) ? input.answers : [];
-      let plan: any[] = [];
+      let plan: Array<{ itemId: string; choice: string }> = [];
       if (process.env.NODE_ENV !== 'production') {
-        plan = (enne.responses as any)?.stage2Plan ?? [];
-        const current = (enne.responses as any)?.stage2 ?? [];
-        const map = new Map<string, any>();
+        plan = enne.responses?.stage2Plan ?? [];
+        const current = enne.responses?.stage2 ?? [];
+        const map = new Map<string, { itemId: string; value: string | number }>();
         for (const r of current) map.set(r.itemId, r);
         for (const r of answers) {
           if (!r?.itemId || !['A', 'B'].includes(r?.choice)) continue;
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       const filtered = payload.filter((i: any) => validIds.has(i?.itemId) && [1, 2, 3, 4, 5].includes(Number(i?.value)));
       if (process.env.DB_ENABLED === 'true') {
         const current = (enne.responses as any)?.stage3 ?? [];
-        const map = new Map<string, any>();
+        const map = new Map<string, { itemId: string; value: string | number }>();
         for (const r of current) map.set(r.itemId, r);
         for (const r of filtered) map.set(r.itemId, r);
         const merged = Array.from(map.values());

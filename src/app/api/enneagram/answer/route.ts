@@ -14,8 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing sessionId or stage' }, { status: 400 });
     }
 
-    // Skip DB operations for now to enable deployment
-    let enne: any = null;
+    // Skip DB operations for now - create temporary session object
+    let enne: any = {
+      sessionId,
+      responses: { stage1: [], stage2: [], stage3: [], texts: [] },
+      typeScores: {},
+      stage: 'screener'
+    };
     // if (process.env.DB_ENABLED === 'true') {
     //   enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
     //   if (!enne) {
@@ -56,7 +61,7 @@ export async function POST(req: NextRequest) {
       //   });
       // }
 
-      const count = (process.env.DB_ENABLED === 'true' ? enne.responses?.stage1?.length : filtered.length) || 0;
+      const count = filtered.length;
       progress = Math.min(1, count / totalItems);
       if (progress >= 1) nextStage = 'discriminators';
     }
@@ -82,7 +87,7 @@ export async function POST(req: NextRequest) {
       //   });
       // }
       const total = plan.length || 6;
-      const count = (process.env.NODE_ENV !== 'production' ? (enne.responses as any)?.stage2?.length : answers.length) || 0;
+      const count = answers.length;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'wings';
       // if (process.env.DB_ENABLED === 'true') {
@@ -107,7 +112,7 @@ export async function POST(req: NextRequest) {
       //   });
       // }
       const total = 12;
-      const count = (process.env.DB_ENABLED === 'true' ? (enne.responses as any)?.stage3?.length : filtered.length) || 0;
+      const count = filtered.length;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'narrative';
       // if (process.env.NODE_ENV !== 'production') {

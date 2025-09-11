@@ -178,24 +178,6 @@ CREATE TABLE users (
 
 ---
 
-## 🎯 Current Priorities
-
-### Week of Sept 11-17, 2025
-
-**StrengthDiscovery:**
-- [ ] Implement database schema (Jonathan)
-- [ ] Create sample data for testing
-- [ ] Integrate visualization components
-- [ ] Build assessment conversation flow
-
-**Enneagram:**
-- [ ] Review and finalize test plan
-- [ ] Implement database schema (Jonathan)
-- [ ] Design assessment questionnaire
-- [ ] Create type description content
-
----
-
 ## 📚 Resources
 
 ### Module Documentation

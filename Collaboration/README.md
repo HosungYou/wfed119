@@ -1,105 +1,187 @@
-# WFED119 Collaboration Materials
+# 📚 WFED119 Collaboration Hub
 
-This folder contains all materials needed for student intern collaboration and onboarding.
-
-## 📁 Folder Structure
-
-```
-Collaboration/
-├── README.md                                          # This file
-├── WFED119_Collaborator_Job_Descriptions_Onboarding_v1_1.pdf  # Official job descriptions
-├── WFED119_Action_Procedures_Lead_and_Interns.md     # Detailed action procedures  
-├── PROJECT_STATUS.md                                 # Current project status
-├── onboarding-materials/
-│   └── INTERN_SETUP.md                               # Technical setup guide
-└── starter-tickets/
-    ├── DB-tickets.md                                 # Database workstream tasks
-    ├── RAG-tickets.md                               # RAG workstream tasks  
-    └── issues/                                      # Detailed task specifications
-        ├── DB-01-Local-Postgres-Docker.md
-        └── RAG-01-Ingestion-v0.md
-```
-
-## 🚀 Quick Start for Project Lead
-
-### 1. Review Materials
-- [ ] **Job Descriptions PDF** - Official roles and responsibilities
-- [ ] **Action Procedures** - Your tasks vs intern tasks
-- [ ] **Project Status** - Current state and next steps
-
-### 2. Prepare for Intern Onboarding
-- [ ] Add interns as GitHub collaborators
-- [ ] Provision API keys (Claude/OpenAI dev tier)
-- [ ] Set up communication channels (Slack/Discord)
-- [ ] Schedule first onboarding meeting
-
-### 3. Share Materials with Interns
-- [ ] **INTERN_SETUP.md** - Technical setup instructions
-- [ ] **Starter tickets** - First week tasks (DB-01, RAG-01)
-- [ ] **Action Procedures** - Workflow and expectations
-
-## 👨‍💻 Quick Start for Interns
-
-### Prerequisites
-- Node.js 18+, Python 3.11+, Docker Desktop
-- Git with SSH keys configured
-- VS Code (recommended)
-
-### Setup Steps
-1. **Clone repository**: `git clone https://github.com/HosungYou/wfed119.git`
-2. **Follow setup guide**: `onboarding-materials/INTERN_SETUP.md`
-3. **Choose first task**: 
-   - **Jonathan** (Database Lead): `starter-tickets/issues/DB-01-Local-Postgres-Docker.md`
-   - **Trivikram** (RAG Lead): `starter-tickets/issues/RAG-01-Ingestion-v0.md`
-
-## 📋 Workstream Assignments
-
-### Database Workstream
-- **Lead**: Jonathan Alavez
-- **Associate**: Trivikram Sunil
-- **Focus**: PostgreSQL, Prisma, migrations, data modeling
-
-### RAG Workstream  
-- **Lead**: Trivikram Sunil
-- **Associate**: Jonathan Alavez
-- **Focus**: Document ingestion, embeddings, vector search, Qdrant
-
-## 📞 Communication
-
-### Channels
-- **GitHub**: Issues, PRs, code review
-- **Slack/Discord**: Daily communication, blockers
-- **Meetings**: Weekly standup (Wednesday 10 AM ET)
-
-### Points of Contact
-- **Project Lead**: Hosung You (@HosungYou)
-- **Academic Supervisor**: Dr. Yoon
-- **Database Lead**: Jonathan Alavez (@jonathan)  
-- **RAG Lead**: Trivikram Sunil (@trivikram)
-
-## 🎯 Success Metrics
-
-### Week 1
-- [ ] Development environment working
-- [ ] First tasks completed (DB-01, RAG-01)
-- [ ] First PRs merged
-- [ ] Team communication established
-
-### Week 2
-- [ ] Database schema v1 deployed
-- [ ] RAG ingestion pipeline functional
-- [ ] Cross-team integration working
-- [ ] Documentation updated
-
-## 📚 Additional Resources
-
-- **GitHub Repository**: https://github.com/HosungYou/wfed119
-- **LifeCraft Bot Demo**: http://localhost:3000 (after setup)
-- **Technical Architecture**: See repository `/docs` folder
-- **Course Materials**: Repository `/resources/materials`
+**Last Updated:** September 11, 2025  
+**Purpose:** Central hub for all team collaboration, documentation, and project management
 
 ---
 
-**Last Updated**: January 27, 2025  
-**Version**: 1.0  
-**Project Phase**: Pre-Onboarding Setup Complete ✅
+## 🗂️ Folder Structure
+
+```
+Collaboration/
+├── 📁 01-Getting-Started/         ← Start here for onboarding
+│   ├── QUICKSTART_GUIDE.md       ← Complete setup & orientation guide
+│   └── LIFECRAFT_METHODOLOGY_OVERVIEW.md  ← Business context & vision
+│
+├── 📁 02-Technical-Docs/          ← Architecture & technical specs
+│   ├── TECHNICAL_ARCHITECTURE.md ← System design & tech stack
+│   ├── CODE_MAP.md              ← Complete codebase structure
+│   └── module-architecture.mermaid ← Visual system diagram
+│
+├── 📁 03-Tasks/                   ← Work assignments & tickets
+│   ├── DB-tickets.md             ← Database workstream overview
+│   ├── RAG-tickets.md            ← RAG workstream overview
+│   └── issues/                   ← Detailed task specifications
+│       ├── DB-01-Local-Postgres-Docker.md
+│       └── RAG-01-Ingestion-v0.md
+│
+├── 📁 04-Meetings/                ← Meeting documentation
+│   └── 2025-09-10-Kickoff-Meeting.md  ← Kickoff notes & action items
+│
+└── README.md                      ← This file
+```
+
+---
+
+## 🚀 Quick Links
+
+### For New Team Members
+1. **Start Here:** [`01-Getting-Started/QUICKSTART_GUIDE.md`](01-Getting-Started/QUICKSTART_GUIDE.md)
+2. **Your Tasks:** [`03-Tasks/`](03-Tasks/)
+3. **Technical Docs:** [`02-Technical-Docs/`](02-Technical-Docs/)
+
+### Key Resources
+- **GitHub Repository:** https://github.com/HosungYou/wfed119
+- **Main Application:** `/lifecraft-bot/`
+- **Feature Modules:** `/Modules/`
+- **LifeCraft PDFs:** `/resources/materials/split_LifeCraft_4parts/`
+
+---
+
+## 👥 Team & Responsibilities
+
+### Hosung You (Project Lead)
+- Overall project coordination
+- Environment variable security (GitHub Secrets)
+- Technical architecture decisions
+- Team support and unblocking
+
+### Jonathan Alavez (Database Lead)
+- PostgreSQL setup and optimization
+- Database schema design
+- Strength Discovery data patterns
+- Prisma ORM integration
+
+### Trivikram Sunil (RAG Lead)
+- Document ingestion pipeline
+- PDF translation research (Korean → English)
+- Vector embeddings and search
+- LangChain integration
+
+---
+
+## 📅 Current Sprint (Sept 10-17, 2025)
+
+### Deliverables Due: September 17
+
+**Jonathan:**
+- [ ] Database technology recommendation memo
+- [ ] PostgreSQL Docker setup (DB-01)
+- [ ] Strength Discovery storage patterns v1
+
+**Trivikram:**
+- [ ] PDF translation approach document
+- [ ] RAG ingestion pipeline (RAG-01)
+- [ ] Sample LifeCraft PDF processing
+
+**Hosung:**
+- [ ] GitHub Secrets implementation
+- [ ] Environment variable security guide
+- [ ] CI/CD pipeline configuration
+
+---
+
+## 📝 How to Use This Hub
+
+### Daily Workflow
+1. **Morning:** Check your tasks in `03-Tasks/`
+2. **During work:** Reference technical docs in `02-Technical-Docs/`
+3. **When stuck:** Consult `01-Getting-Started/QUICKSTART_GUIDE.md`
+4. **End of day:** Update progress in team channel
+
+### Contributing
+1. **Documentation:** Keep docs updated as you work
+2. **Meeting Notes:** Add to `04-Meetings/` after each meeting
+3. **New Tasks:** Create in `03-Tasks/issues/`
+4. **Technical Specs:** Update in `02-Technical-Docs/`
+
+### Getting Help
+- **Can't find something?** Check the QUICKSTART_GUIDE
+- **Technical questions?** Post in Slack with context
+- **Blocked on task?** Tag project lead immediately
+
+---
+
+## 🎯 Project Goals
+
+### Short Term (Week 1-2)
+- Complete environment setup for all team members
+- Establish database and RAG foundations
+- Submit first PRs with core functionality
+
+### Medium Term (Month 1)
+- Integrate Strength Discovery module
+- Complete RAG pipeline for LifeCraft content
+- Deploy to staging environment
+
+### Long Term (Q4 2025)
+- Full LifeCraft platform MVP
+- Patent application preparation
+- Commercial deployment readiness
+
+---
+
+## 📞 Communication Channels
+
+- **Slack/Discord:** Daily updates and quick questions
+- **GitHub Issues:** Technical discussions and PR reviews
+- **Weekly Standup:** Wednesdays 12pm ET
+- **Email:** For formal communications only
+
+---
+
+## 🔗 Related Documentation
+
+### In This Repository
+- **Modules Documentation:** `/Modules/StrengthDiscovery/`, `/Modules/Enneagram/`
+- **Project Root Docs:** `/README.md`, `/PROJECT_STATUS.md`
+- **Deployment Guide:** `/RENDER_DEPLOYMENT_INSTRUCTIONS.md`
+
+### External Resources
+- **LifeCraft Methodology:** Internal documents (request access)
+- **Patent Research:** Shared drive (link TBD)
+- **Market Analysis:** Business plan documents
+
+---
+
+## ✅ Onboarding Checklist
+
+### New Team Members
+- [ ] Read QUICKSTART_GUIDE
+- [ ] Set up development environment
+- [ ] Clone repository and run application
+- [ ] Review assigned tasks
+- [ ] Join communication channels
+- [ ] Schedule 1:1 with project lead
+
+### Project Lead
+- [ ] Add to GitHub repository
+- [ ] Provide API keys
+- [ ] Share documentation access
+- [ ] Assign initial tasks
+- [ ] Schedule onboarding meeting
+
+---
+
+## 📌 Important Notes
+
+1. **Security:** Never commit API keys or secrets. Use environment variables.
+2. **Documentation:** Update docs as you code. Future you will thank present you.
+3. **Communication:** Over-communicate rather than under-communicate.
+4. **Quality:** This is a commercial product - code quality matters.
+5. **Innovation:** We're building for patent potential - document novel approaches.
+
+---
+
+**Questions?** Start with the QUICKSTART_GUIDE, then ask in Slack.  
+**Ready to contribute?** Your first task awaits in `03-Tasks/`! 🚀

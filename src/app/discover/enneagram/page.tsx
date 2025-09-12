@@ -93,8 +93,15 @@ function EnneagramWizardContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`Failed to submit (${res.status})`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Failed to submit (${res.status})`);
+      }
       const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setStage(data.nextStage as Stage);
     } catch (e: any) {
       setError(e?.message || 'Failed to submit');
@@ -181,14 +188,32 @@ function EnneagramWizardContent() {
                 </div>
               ))}
             </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={submitStage}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                {locale === 'kr' ? '다음' : 'Next'}
-              </button>
+            <div className="mt-6">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  {locale === 'kr' 
+                    ? `답변 완료: ${Object.keys(screenerResponses).length} / ${screenerItems.length}`
+                    : `Answered: ${Object.keys(screenerResponses).length} / ${screenerItems.length}`
+                  }
+                </div>
+                <button
+                  onClick={() => {
+                    if (Object.keys(screenerResponses).length < screenerItems.length) {
+                      setError(
+                        locale === 'kr' 
+                          ? `모든 ${screenerItems.length}개 문항에 답변해주세요. 현재 ${Object.keys(screenerResponses).length}개 답변 완료.`
+                          : `Please answer all ${screenerItems.length} questions. You have answered ${Object.keys(screenerResponses).length} so far.`
+                      );
+                      return;
+                    }
+                    submitStage();
+                  }}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {locale === 'kr' ? '다음' : 'Next'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -332,7 +357,7 @@ function EnneagramWizardContent() {
 
 export default function EnneagramWizard() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 py-10 flex items-center justify-center">Loading...</div>}>
       <EnneagramWizardContent />
     </Suspense>
   );

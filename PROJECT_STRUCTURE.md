@@ -1,5 +1,20 @@
 # WFED119 Project Structure
 
+## ⚠️ IMPORTANT: Project Structure Clarification (2025-09-12)
+
+### Actual Current Structure
+This project has a dual directory structure that needs clarification:
+
+1. **Root Directory** (`/Volumes/External SSD/Projects/wfed119/`)
+   - This is the MAIN deployment directory
+   - Contains the actual Next.js app that gets deployed to Render
+   - All production code should be here
+
+2. **Subdirectory** (`/Volumes/External SSD/Projects/wfed119/lifecraft-bot/`)
+   - Contains duplicate/old project files
+   - Should be considered DEPRECATED
+   - Do NOT edit files here for production changes
+
 ## 📁 Organized Repository Structure
 
 ```

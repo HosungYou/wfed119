@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
-import { getDiscriminatorItems, getDiscriminatorPairsForTop } from '../../../../lib/enneagram/discriminators';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
-import { scoreStage1 } from '../../../../lib/enneagram/scoring';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,32 +15,122 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ items: getScreenerItems(locale) });
     }
 
-    // Skip DB operations for now to enable deployment
-    // Return empty for non-screener stages
-    return NextResponse.json({ items: [] });
-
-    // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
-    // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-
-    // if (stage === 'discriminators') {
-    //   const stage1 = (enne.responses as any)?.stage1 ?? [];
-    //   const { probabilities } = scoreStage1(stage1, locale);
-    //   const sorted = Object.entries(probabilities)
-    //     .map(([k, v]) => ({ type: Number(k), p: v }))
-    //     .sort((a, b) => b.p - a.p);
-    //   const top = sorted.slice(0, 3).map((x) => x.type);
-    //   const pairs = getDiscriminatorPairsForTop(top);
-    //   const items = getDiscriminatorItems(locale, pairs);
-
-    //   // store plan once for consistency
-    //   const responses = enne.responses as any;
-    //   if (!responses.stage2Plan) {
-    //     responses.stage2Plan = items.map((i) => ({ id: i.id, pair: i.pair }));
-    //     // await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
-    //   }
-
-    //   return NextResponse.json({ items });
-    // }
+    if (stage === 'discriminators') {
+      // Return sample discriminator items for testing
+      const items = locale === 'kr' ? [
+        {
+          id: 'd_1vs6_01',
+          pair: '1vs6',
+          leftType: 1,
+          rightType: 6,
+          prompt: '규칙과 새로운 위험이 충돌할 때, 저는 먼저…',
+          optionA: '원칙을 적용합니다',
+          optionB: '가정을 스트레스 테스트합니다',
+        },
+        {
+          id: 'd_1vs6_02',
+          pair: '1vs6',
+          leftType: 1,
+          rightType: 6,
+          prompt: '불확실한 상황에서, 저는 다음에 더 이끌립니다…',
+          optionA: '무엇이 옳은지',
+          optionB: '무엇이 잘못될 수 있는지',
+        },
+        {
+          id: 'd_3vs7_01',
+          pair: '3vs7',
+          leftType: 3,
+          rightType: 7,
+          prompt: '저는 다음을 통해 몰입을 유지합니다…',
+          optionA: '측정 가능한 진전',
+          optionB: '새로운 선택지',
+        },
+        {
+          id: 'd_3vs7_02',
+          pair: '3vs7',
+          leftType: 3,
+          rightType: 7,
+          prompt: '계획이 실패할 때, 저는…',
+          optionA: '실행을 최적화합니다',
+          optionB: '새로운 기회로 전환합니다',
+        },
+        {
+          id: 'd_4vs9_01',
+          pair: '4vs9',
+          leftType: 4,
+          rightType: 9,
+          prompt: '긴장 상황에서 저는…',
+          optionA: '내면의 진실을 탐색합니다',
+          optionB: '분위기를 누그러뜨리고 안정시킵니다',
+        },
+        {
+          id: 'd_4vs9_02',
+          pair: '4vs9',
+          leftType: 4,
+          rightType: 9,
+          prompt: '저는 추구합니다…',
+          optionA: '진정한 자기표현',
+          optionB: '공유된 편안함과 안락함',
+        },
+      ] : [
+        {
+          id: 'd_1vs6_01',
+          pair: '1vs6',
+          leftType: 1,
+          rightType: 6,
+          prompt: 'When rules conflict with new risks, I first…',
+          optionA: 'apply principles',
+          optionB: 'stress-test assumptions',
+        },
+        {
+          id: 'd_1vs6_02',
+          pair: '1vs6',
+          leftType: 1,
+          rightType: 6,
+          prompt: 'Under uncertainty, I am more driven by…',
+          optionA: 'what is right',
+          optionB: 'what could go wrong',
+        },
+        {
+          id: 'd_3vs7_01',
+          pair: '3vs7',
+          leftType: 3,
+          rightType: 7,
+          prompt: 'I stay engaged by…',
+          optionA: 'measurable progress',
+          optionB: 'fresh options',
+        },
+        {
+          id: 'd_3vs7_02',
+          pair: '3vs7',
+          leftType: 3,
+          rightType: 7,
+          prompt: 'When plans fail, I…',
+          optionA: 'optimize execution',
+          optionB: 'pivot to new opportunities',
+        },
+        {
+          id: 'd_4vs9_01',
+          pair: '4vs9',
+          leftType: 4,
+          rightType: 9,
+          prompt: 'In tension, I…',
+          optionA: 'explore inner truth',
+          optionB: 'diffuse and steady',
+        },
+        {
+          id: 'd_4vs9_02',
+          pair: '4vs9',
+          leftType: 4,
+          rightType: 9,
+          prompt: 'I pursue…',
+          optionA: 'authentic self-expression',
+          optionB: 'shared ease and comfort',
+        },
+      ];
+      
+      return NextResponse.json({ items });
+    }
 
     if (stage === 'wings') {
       return NextResponse.json({ items: getInstinctItems(locale) });

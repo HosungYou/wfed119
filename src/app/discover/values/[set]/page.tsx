@@ -167,6 +167,8 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
     // Add to dest
     if (destId === 'palette') {
       setPalette(prev => { const arr = [...prev]; arr.splice(destination.index, 0, draggableId); return arr; });
+      // Ensure layout reflects removal from the source bucket
+      setLayout(nextLayout);
     } else {
       const arr = [...(nextLayout[destId as keyof Layout] as string[])];
       arr.splice(destination.index, 0, draggableId);
@@ -197,10 +199,10 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
 
   async function saveToServer() {
     const userId = (session as any)?.user?.id || session?.user?.email;
-    if (!userId) { alert('로그인 후 저장할 수 있습니다.'); return; }
+    if (!userId) { alert('Please sign in to save.'); return; }
     const payload = { user_id: userId, set: routeSet, layout, top3 };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) alert('저장 실패'); else alert('저장 완료');
+    if (!res.ok) alert('Save failed'); else alert('Saved successfully');
   }
 
   return (
@@ -213,9 +215,9 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
           </Link>
           <div className="flex items-center gap-2">
             {status !== 'authenticated' ? (
-              <button onClick={() => signIn('google')} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogIn className="w-4 h-4"/>Google 로그인</button>
+              <button onClick={() => signIn('google')} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogIn className="w-4 h-4"/>Sign in with Google</button>
             ) : (
-              <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>로그아웃</button>
+              <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>Sign out</button>
             )}
             <button onClick={saveToServer} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg"><Save className="w-4 h-4"/>Save</button>
             <button onClick={exportChartPNG} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><Download className="w-4 h-4"/>Chart PNG</button>
@@ -227,7 +229,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
       <main className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-4 capitalize">{routeSet} Values — Categorize</h1>
 
-        <div className="mb-4 text-xs text-gray-600 flex items-center gap-2"><ShieldCheck className="w-4 h-4"/> 저장 시, 향후 모듈 분석을 위해 당신의 값 분류 결과(세트, 배치, Top3)가 데이터베이스에 저장됩니다.</div>
+        <div className="mb-4 text-xs text-gray-600 flex items-center gap-2"><ShieldCheck className="w-4 h-4"/> When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.</div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">

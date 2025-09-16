@@ -10,7 +10,9 @@
     "lint": "eslint",
     "postinstall": "node scripts/setup-prisma.js",
     "gp": "bash scripts/git-push.sh",
-    "push": "bash scripts/git-push.sh"
+    "push": "bash scripts/git-push.sh",
+    "watch:push": "bash scripts/auto-commit-push.sh",
+    "hooks:setup": "git config core.hooksPath .githooks && chmod +x .githooks/post-commit scripts/*.sh || true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

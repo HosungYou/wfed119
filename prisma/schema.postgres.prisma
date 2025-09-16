@@ -41,3 +41,26 @@ model Strength {
   confidence Float    // 0-1 신뢰도
   createdAt  DateTime @default(now())
 }
+
+/// Stores a user's categorized values for a given set (terminal/instrumental/work)
+model ValueResult {
+  id         String   @id @default(uuid())
+  userId     String
+  valueSet   String   // 'terminal' | 'instrumental' | 'work'
+  layout     Json     // { very_important: string[], important: string[], somewhat_important: string[], not_important: string[] }
+  top3       String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, valueSet])
+}
+
+/// Authenticated user (Google OAuth)
+model User {
+  id        String   @id @default(uuid())
+  googleId  String   @unique
+  email     String?  @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+}

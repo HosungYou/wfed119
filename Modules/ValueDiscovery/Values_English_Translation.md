@@ -86,9 +86,6 @@
 23) 창의성 → Creativity: Exercising free, original ideas.
 24) 팀워크 → Teamwork: Collaborating with colleagues to achieve shared goals.
 25) 혁신 → Innovation: Introducing new methods/technologies to create practical change.
-26) 책임 → Responsibility: Carrying out roles to completion and owning outcomes.
-27) 친절 → Kindness: Acting warmly and considerately toward others.
-28) 협력 → Cooperation: Working harmoniously with others toward shared goals.
 
 ## Notes
 

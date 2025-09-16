@@ -22,55 +22,83 @@ interface ValueCategory {
 
 const initialValues: Value[] = [
   // Terminal Values
-  { id: 'tv1', name: 'Family Safety', description: 'Family members being protected from danger and living safely and stably', category: 'terminal' },
+  { id: 'tv1', name: 'Family Security', description: 'Ensuring the safety, well-being, and financial security of one\'s family', category: 'terminal' },
   { id: 'tv2', name: 'Personal Growth', description: 'Focusing on self-improvement, learning, and developing one\'s potential', category: 'terminal' },
-  { id: 'tv3', name: 'Health and Wellness', description: 'Maintaining a balanced state physically, mentally, and emotionally', category: 'terminal' },
-  { id: 'tv4', name: 'Freedom', description: 'Being able to choose and make decisions to live life without external constraints', category: 'terminal' },
-  { id: 'tv5', name: 'Financial Freedom', description: 'Having the ability to choose and act on what one wants without worrying about money', category: 'terminal' },
-  { id: 'tv6', name: 'Inner Peace', description: 'Obtaining life satisfaction through mental tranquility and emotional balance', category: 'terminal' },
-  { id: 'tv7', name: 'Social Justice', description: 'Desiring a fair, equitable, and just society', category: 'terminal' },
-  { id: 'tv8', name: 'Authenticity', description: 'Living honestly according to one\'s values and beliefs rather than others\' opinions', category: 'terminal' },
-  { id: 'tv9', name: 'Happiness', description: 'Living a life feeling joy and satisfaction daily and living meaningfully', category: 'terminal' },
-  { id: 'tv10', name: 'Achievement', description: 'Achieving goals and feeling satisfaction and fulfillment from one\'s efforts', category: 'terminal' },
-  { id: 'tv11', name: 'Beautiful World', description: 'Discovering and cherishing aesthetic value in nature, art, and life experiences', category: 'terminal' },
-  { id: 'tv12', name: 'Spirituality', description: 'Pursuing connection and belief in transcendent beings or meaning beyond the material world', category: 'terminal' },
-  { id: 'tv13', name: 'Wisdom', description: 'Developing sound judgment and insight through experience and learning', category: 'terminal' },
-  { id: 'tv14', name: 'True Friendship', description: 'Forming and maintaining deep relationships based on mutual trust and respect', category: 'terminal' },
-  { id: 'tv15', name: 'Comfortable Life', description: 'Maintaining a lifestyle with low stress and anxiety, comfort and leisure', category: 'terminal' },
+  { id: 'tv3', name: 'Health and Wellness', description: 'Prioritizing physical, mental, and emotional well-being', category: 'terminal' },
+  { id: 'tv4', name: 'National Security', description: 'Prioritizing the safety and stability of one\'s nation', category: 'terminal' },
+  { id: 'tv5', name: 'Global Citizenship', description: 'Embracing a sense of belonging and responsibility to the global community', category: 'terminal' },
+  { id: 'tv6', name: 'Inner Peace', description: 'Achieving inner tranquility, contentment, and balance', category: 'terminal' },
+  { id: 'tv7', name: 'Social Justice', description: 'Aspiring for a fair, equitable, and just society', category: 'terminal' },
+  { id: 'tv8', name: 'Mature Love', description: 'Experiencing a deep, committed relationship characterized by intimacy, passion, and commitment', category: 'terminal' },
+  { id: 'tv9', name: 'A Sense of Accomplishment', description: 'Achieving goals and feeling successful in one\'s endeavors', category: 'terminal' },
+  { id: 'tv10', name: 'A World of Beauty', description: 'Valuing and seeking beauty in nature, art, and life experiences', category: 'terminal' },
+  { id: 'tv11', name: 'Spirituality', description: 'Pursuing a deeper understanding or connection beyond the material world', category: 'terminal' },
+  { id: 'tv12', name: 'Recognition', description: 'Seeking acknowledgment, respect, and esteem from others', category: 'terminal' },
+  { id: 'tv13', name: 'Freedom', description: 'Valuing autonomy, self-determination, and the right to make choices', category: 'terminal' },
+  { id: 'tv14', name: 'Financial Freedom', description: 'Achieving economic independence; freedom from financial constraints', category: 'terminal' },
+  { id: 'tv15', name: 'Pleasure', description: 'Seeking enjoyable, pleasurable, and satisfying experiences', category: 'terminal' },
+  { id: 'tv16', name: 'Sustainable Planet', description: 'Advocating for an eco-friendly, sustainable world', category: 'terminal' },
+  { id: 'tv17', name: 'Wisdom', description: 'Seeking knowledge, insight, and understanding to make sound judgments', category: 'terminal' },
+  { id: 'tv18', name: 'Authenticity', description: 'Being true to oneself with sincerity and genuineness', category: 'terminal' },
+  { id: 'tv19', name: 'True Friendship', description: 'Valuing deep, meaningful, and loyal friendships', category: 'terminal' },
+  { id: 'tv20', name: 'Comfortable Life', description: 'Prioritizing contentment, ease, and security', category: 'terminal' },
+  { id: 'tv21', name: 'A World at Peace', description: 'Aspiring for a world characterized by peace, cooperation, and mutual understanding', category: 'terminal' },
+  { id: 'tv22', name: 'Happiness', description: 'Pursuing a state of contentedness and fulfillment, with joy and purpose', category: 'terminal' },
+  { id: 'tv23', name: 'Innovation', description: 'Valuing creativity, progress, and new ideas that drive improvement', category: 'terminal' },
+  { id: 'tv24', name: 'An Exciting Life', description: 'Seeking adventure, stimulation, and a life filled with excitement', category: 'terminal' },
 
   // Instrumental Values
-  { id: 'iv1', name: 'Integrity', description: 'Speaking truth without lies or pretense, being consistent inside and out', category: 'instrumental' },
-  { id: 'iv2', name: 'Empathy', description: 'Resonating with others\' emotions and situations and responding appropriately', category: 'instrumental' },
-  { id: 'iv3', name: 'Courage', description: 'Choosing right actions even in the face of fear or difficulties', category: 'instrumental' },
-  { id: 'iv4', name: 'Responsibility', description: 'Carrying out assigned roles to completion and accepting and managing results', category: 'instrumental' },
-  { id: 'iv5', name: 'Open-mindedness', description: 'Accepting new ideas and diverse perspectives, being able to modify one\'s views based on evidence', category: 'instrumental' },
-  { id: 'iv6', name: 'Creativity', description: 'Creating fresh ideas and solutions different from existing ones', category: 'instrumental' },
-  { id: 'iv7', name: 'Resilience', description: 'Quickly recovering from failure or setbacks and challenging again', category: 'instrumental' },
-  { id: 'iv8', name: 'Kindness', description: 'Treating others with warm and considerate hearts', category: 'instrumental' },
-  { id: 'iv9', name: 'Discipline', description: 'Maintaining consistent behavior according to certain principles and rules', category: 'instrumental' },
-  { id: 'iv10', name: 'Adaptability', description: 'Flexibly adjusting oneself to changing environments', category: 'instrumental' },
-  { id: 'iv11', name: 'Humility', description: 'Being humble and having an attitude of learning from others', category: 'instrumental' },
-  { id: 'iv12', name: 'Tolerance', description: 'Understanding and accepting different views or behaviors even when uncomfortable', category: 'instrumental' },
-  { id: 'iv13', name: 'Ambition', description: 'Having big dreams and making efforts to achieve them', category: 'instrumental' },
-  { id: 'iv14', name: 'Cooperation', description: 'Working harmoniously with others to achieve common goals', category: 'instrumental' },
-  { id: 'iv15', name: 'Initiative', description: 'Taking the lead and creating opportunities', category: 'instrumental' },
+  { id: 'iv1', name: 'Open-mindedness', description: 'Willingness to consider new ideas and revise views based on evidence', category: 'instrumental' },
+  { id: 'iv2', name: 'Humility', description: 'Staying grounded and ready to learn from others', category: 'instrumental' },
+  { id: 'iv3', name: 'Empathy', description: 'Resonating with others\' feelings and responding appropriately', category: 'instrumental' },
+  { id: 'iv4', name: 'Tolerance', description: 'Broadly accepting and understanding differences even when uncomfortable', category: 'instrumental' },
+  { id: 'iv5', name: 'Discipline', description: 'Acting consistently according to principles and rules', category: 'instrumental' },
+  { id: 'iv6', name: 'Logical Thinking', description: 'Reaching conclusions through systematic, rational reasoning', category: 'instrumental' },
+  { id: 'iv7', name: 'Helpfulness', description: 'Recognizing others\' needs and offering support', category: 'instrumental' },
+  { id: 'iv8', name: 'Responsiveness', description: 'Responding quickly and sensitively to situations and needs', category: 'instrumental' },
+  { id: 'iv9', name: 'Imagination', description: 'Envisioning possibilities beyond current reality', category: 'instrumental' },
+  { id: 'iv10', name: 'Reliability', description: 'Keeping promises and acting consistently so others can depend on you', category: 'instrumental' },
+  { id: 'iv11', name: 'Ambition', description: 'Holding big dreams and striving to realize them', category: 'instrumental' },
+  { id: 'iv12', name: 'Courage', description: 'Choosing the right action despite fear or difficulty', category: 'instrumental' },
+  { id: 'iv13', name: 'Competence', description: 'Possessing the ability and quality to perform tasks effectively', category: 'instrumental' },
+  { id: 'iv14', name: 'Perseverance', description: 'Enduring hardship and not giving up', category: 'instrumental' },
+  { id: 'iv15', name: 'Assertiveness', description: 'Expressing opinions and rights clearly and confidently', category: 'instrumental' },
+  { id: 'iv16', name: 'Self-control', description: 'Regulating impulses and emotions for balanced behavior', category: 'instrumental' },
+  { id: 'iv17', name: 'Adaptability', description: 'Adjusting oneself flexibly to changing environments', category: 'instrumental' },
+  { id: 'iv18', name: 'Respect', description: 'Valuing others\' dignity and rights; being considerate', category: 'instrumental' },
+  { id: 'iv19', name: 'Initiative', description: 'Taking the lead proactively and creating opportunities', category: 'instrumental' },
+  { id: 'iv20', name: 'Intellectual Activity', description: 'Expanding knowledge and understanding through learning and thinking', category: 'instrumental' },
+  { id: 'iv21', name: 'Integrity', description: 'Speaking facts without deceit; alignment between inner and outer self', category: 'instrumental' },
+  { id: 'iv22', name: 'Creativity', description: 'Generating original ideas and solutions', category: 'instrumental' },
+  { id: 'iv23', name: 'Cleanliness and Orderliness', description: 'Keeping spaces hygienic and organized for safety and efficiency', category: 'instrumental' },
+  { id: 'iv24', name: 'Loyalty', description: 'Maintaining unwavering commitment and allegiance', category: 'instrumental' },
 
   // Work Values
-  { id: 'wv1', name: 'Work-Life Balance', description: 'Being able to maintain harmony between work and personal life', category: 'work' },
-  { id: 'wv2', name: 'Autonomy', description: 'Being guaranteed to perform work on one\'s own without excessive interference', category: 'work' },
-  { id: 'wv3', name: 'Recognition', description: 'Being able to receive appropriate evaluation and appreciation for one\'s efforts and achievements', category: 'work' },
-  { id: 'wv4', name: 'Contribution', description: 'Exerting meaningful influence and adding value through one\'s work', category: 'work' },
-  { id: 'wv5', name: 'Challenge', description: 'Being able to test and develop one\'s abilities through difficult tasks', category: 'work' },
-  { id: 'wv6', name: 'Professional Development', description: 'Getting learning opportunities to grow as an expert in a specific field', category: 'work' },
-  { id: 'wv7', name: 'Teamwork', description: 'Being able to cooperate with colleagues to achieve common goals', category: 'work' },
-  { id: 'wv8', name: 'Innovation', description: 'Being able to introduce new methods or technologies to create substantial change', category: 'work' },
-  { id: 'wv9', name: 'Job Security', description: 'Being guaranteed a non-dangerous and stable work environment and employment', category: 'work' },
-  { id: 'wv10', name: 'Creativity at Work', description: 'Being able to demonstrate free thinking and original ideas', category: 'work' },
-  { id: 'wv11', name: 'Fair Compensation', description: 'Receiving appropriate financial rewards for work performed', category: 'work' },
-  { id: 'wv12', name: 'Leadership Opportunity', description: 'Having chances to lead and guide others in achieving organizational goals', category: 'work' },
-  { id: 'wv13', name: 'Flexibility', description: 'Being able to choose work schedules and locations that fit personal needs', category: 'work' },
-  { id: 'wv14', name: 'Ethics', description: 'Working in an environment where moral principles are upheld and ethical behavior is valued', category: 'work' },
-  { id: 'wv15', name: 'Variety', description: 'Having diverse tasks and responsibilities to maintain interest and engagement', category: 'work' },
+  { id: 'wv1', name: 'Supervisory Opportunity', description: 'Gaining leadership experience by guiding and managing team members', category: 'work' },
+  { id: 'wv2', name: 'Fairness', description: 'Working where members are treated equitably and justly', category: 'work' },
+  { id: 'wv3', name: 'Relationships', description: 'Building positive relationships with colleagues and supervisors', category: 'work' },
+  { id: 'wv4', name: 'Work–Life Balance', description: 'Maintaining harmony between work and personal life', category: 'work' },
+  { id: 'wv5', name: 'Compensation', description: 'Receiving sufficient financial rewards', category: 'work' },
+  { id: 'wv6', name: 'Contribution', description: 'Making meaningful impact and adding value through one\'s work', category: 'work' },
+  { id: 'wv7', name: 'Task Variety', description: 'Experiencing diverse tasks and responsibilities', category: 'work' },
+  { id: 'wv8', name: 'Challenge', description: 'Testing and developing abilities through difficult assignments', category: 'work' },
+  { id: 'wv9', name: 'Autonomy/Independence', description: 'Being assured of performing tasks with minimal interference', category: 'work' },
+  { id: 'wv10', name: 'Prestige', description: 'Earning respect through a reputable title or organization', category: 'work' },
+  { id: 'wv11', name: 'Achievement', description: 'Feeling accomplishment and satisfaction by achieving goals', category: 'work' },
+  { id: 'wv12', name: 'Advancement', description: 'Having opportunities to take on higher roles and responsibilities', category: 'work' },
+  { id: 'wv13', name: 'Security/Stability', description: 'Ensured safe working conditions and stable employment', category: 'work' },
+  { id: 'wv14', name: 'Travel', description: 'Visiting various locations through work', category: 'work' },
+  { id: 'wv15', name: 'Geographic Location', description: 'Working in a location convenient for commuting and life', category: 'work' },
+  { id: 'wv16', name: 'Flexibility', description: 'Flexible choices in working time or location', category: 'work' },
+  { id: 'wv17', name: 'Ethics', description: 'Working in an environment with strong ethical standards', category: 'work' },
+  { id: 'wv18', name: 'Recognition', description: 'Receiving appropriate evaluation and appreciation for efforts and results', category: 'work' },
+  { id: 'wv19', name: 'Person–Job Fit', description: 'Having tasks that match one\'s abilities and disposition', category: 'work' },
+  { id: 'wv20', name: 'Working Conditions', description: 'Having a pleasant and efficient physical work environment', category: 'work' },
+  { id: 'wv21', name: 'Professional Development', description: 'Opportunities to learn and grow into a subject-matter expert', category: 'work' },
+  { id: 'wv22', name: 'Supportive Supervision', description: 'Working under a supervisor who encourages and offers constructive guidance', category: 'work' },
+  { id: 'wv23', name: 'Creativity', description: 'Exercising free, original ideas', category: 'work' },
+  { id: 'wv24', name: 'Teamwork', description: 'Collaborating with colleagues to achieve shared goals', category: 'work' },
+  { id: 'wv25', name: 'Innovation', description: 'Introducing new methods/technologies to create practical change', category: 'work' },
 ];
 
 const ValuesDiscoveryPage: React.FC = () => {
@@ -241,7 +269,7 @@ const ValuesDiscoveryPage: React.FC = () => {
                     }`}
                   >
                     <Heart className="w-3 h-3" />
-                    <span>Life Goals</span>
+                    <span>Terminal Values</span>
                   </button>
                   <button
                     onClick={() => setCurrentTab('instrumental')}
@@ -250,7 +278,7 @@ const ValuesDiscoveryPage: React.FC = () => {
                     }`}
                   >
                     <Target className="w-3 h-3" />
-                    <span>Behaviors</span>
+                    <span>Instrumental Values</span>
                   </button>
                   <button
                     onClick={() => setCurrentTab('work')}
@@ -259,7 +287,7 @@ const ValuesDiscoveryPage: React.FC = () => {
                     }`}
                   >
                     <Briefcase className="w-3 h-3" />
-                    <span>Work</span>
+                    <span>Work Values</span>
                   </button>
                 </div>
 

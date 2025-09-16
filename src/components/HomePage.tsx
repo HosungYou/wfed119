@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   return (
@@ -87,7 +87,44 @@ export const HomePage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Value Discovery Module */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Heart className="w-8 h-8 text-white" />
+                </div>
+                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Interactive</span>
+              </div>
+
+              <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-purple-600 transition-colors">
+                Value Discovery
+              </h4>
+
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Identify your core values through an interactive sorting activity. Understand what truly matters
+                to you in life, relationships, and career decisions.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Drag & Drop</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Self-Reflection</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Values-Based</span>
+              </div>
+
+              <Link
+                href="/discover/values"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-4 px-6 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <span>Discover Your Values</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+
+              <div className="mt-4 text-center">
+                <span className="text-sm text-gray-500">⏱️ 10-15 minutes</span>
+              </div>
+            </div>
+
             {/* Strength Discovery Module */}
             <div className="group bg-white rounded-3xl p-8 shadow-lg border-2 border-transparent hover:border-blue-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
               <div className="flex items-start justify-between mb-6">

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Value Discovery — Prioritize Your Values</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Value Discovery — Sticky Note Categorization</h1>
+      <p>Drag each value into one of the four categories to set your personal priorities.</p>
+      <div class="controls">
+        <label for="set-select">Value set:</label>
+        <select id="set-select">
+          <option value="terminal">Terminal</option>
+          <option value="instrumental">Instrumental</option>
+          <option value="work" selected>Work</option>
+        </select>
+        <button id="reset">Reset</button>
+        <button id="export">Export JSON</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="palette">
+        <h2>Values</h2>
+        <div id="palette" class="notes"></div>
+      </section>
+
+      <section class="boards">
+        <div class="board" data-bucket="very_important">
+          <h3>Very Important</h3>
+          <div class="notes droppable" id="very_important"></div>
+        </div>
+        <div class="board" data-bucket="important">
+          <h3>Important</h3>
+          <div class="notes droppable" id="important"></div>
+        </div>
+        <div class="board" data-bucket="somewhat_important">
+          <h3>Somewhat Important</h3>
+          <div class="notes droppable" id="somewhat_important"></div>
+        </div>
+        <div class="board" data-bucket="not_important">
+          <h3>Not Important</h3>
+          <div class="notes droppable" id="not_important"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>
+        Tip: You can reorder notes within a column. Your layout is saved locally per set.
+      </small>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
+

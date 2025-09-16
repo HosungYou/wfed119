@@ -48,7 +48,7 @@ model ValueResult {
   userId     String
   valueSet   String   // 'terminal' | 'instrumental' | 'work'
   layout     Json     // { very_important: string[], important: string[], somewhat_important: string[], not_important: string[] }
-  top3       String[]
+  top3       Json
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

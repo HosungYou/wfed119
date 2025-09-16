@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  currentStage  String   @default("initial")
+  conversations Conversation[]
+  strengths     Strength[]
+  completed     Boolean  @default(false)
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [sessionId])
+  role      String   // "user" or "assistant"
+  content   String
+  timestamp DateTime @default(now())
+  metadata  String?  // JSON string for additional analysis data
+}
+
+model Strength {
+  id         String   @id @default(uuid())
+  sessionId  String
+  session    Session  @relation(fields: [sessionId], references: [sessionId])
+  category   String   // "skill", "attitude", "value"
+  name       String
+  evidence   String
+  confidence Float    // 0-1 신뢰도
+  createdAt  DateTime @default(now())
+}
+
+/// Consent + locale for persistence control (session-first by default)
+model Consent {
+  id         String   @id @default(uuid())
+  sessionId  String   @unique
+  persist    Boolean  @default(false)
+  locale     String   @default("en") // "en" | "kr"
+  createdAt  DateTime @default(now())
+}
+
+/// Enneagram staged assessment session
+model EnneagramSession {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique
+  stage         String   // screener|discriminators|wings|narrative|complete
+  responses     Json     // {stage1:[], stage2:[], stage3:[], texts:[]}
+  typeScores    Json     // {"1":0.11, ..., "9":0.06}
+  primaryType   String?
+  wingEstimate  String?
+  instinct      String?
+  confidence    String?  // high|medium|low
+  aiEvidence    Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// Saved export artifacts for inter-module contracts or portfolio
+model ExportArtifact {
+  id         String   @id @default(uuid())
+  sessionId  String
+  kind       String   // values-contract | mission-contract | goals-contract | portfolio | enneagram-profile
+  content    Json
+  format     String   // json | md | pdf
+  createdAt  DateTime @default(now())
+}

@@ -56,8 +56,18 @@ export async function POST(req: NextRequest) {
       //   });
       // }
 
-      const count = (process.env.DB_ENABLED === 'true' ? enne.responses?.stage1?.length : filtered.length) || 0;
+      const count = (process.env.DB_ENABLED === 'true' && enne ? enne.responses?.stage1?.length : filtered.length) || 0;
       progress = Math.min(1, count / totalItems);
+      
+      // Validate all items are answered before proceeding
+      if (filtered.length < totalItems) {
+        return NextResponse.json({ 
+          error: `Please answer all ${totalItems} questions before proceeding. You have answered ${filtered.length} so far.`,
+          progress,
+          nextStage: stage 
+        }, { status: 400 });
+      }
+      
       if (progress >= 1) nextStage = 'discriminators';
     }
 
@@ -82,7 +92,7 @@ export async function POST(req: NextRequest) {
       //   });
       // }
       const total = plan.length || 6;
-      const count = (process.env.NODE_ENV !== 'production' ? (enne.responses as any)?.stage2?.length : answers.length) || 0;
+      const count = (process.env.NODE_ENV !== 'production' && enne ? (enne.responses as any)?.stage2?.length : answers.length) || 0;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'wings';
       // if (process.env.DB_ENABLED === 'true') {
@@ -107,7 +117,7 @@ export async function POST(req: NextRequest) {
       //   });
       // }
       const total = 12;
-      const count = (process.env.DB_ENABLED === 'true' ? (enne.responses as any)?.stage3?.length : filtered.length) || 0;
+      const count = (process.env.DB_ENABLED === 'true' && enne ? (enne.responses as any)?.stage3?.length : filtered.length) || 0;
       progress = Math.max(0, Math.min(1, count / total));
       if (progress >= 1) nextStage = 'narrative';
       // if (process.env.NODE_ENV !== 'production') {
@@ -122,15 +132,4 @@ export async function POST(req: NextRequest) {
       //   const current = (enne.responses as any)?.texts ?? [];
       //   const merged = [...current];
       //   texts.forEach((t, idx) => (merged[idx] = String(t)));
-      //   await prisma.enneagramSession.update({ where: { sessionId }, data: { responses: { ...(enne.responses as any), texts: merged }, stage: 'complete' } });
-      // }
-      nextStage = 'complete';
-      progress = 1;
-    }
-
-    return NextResponse.json({ nextStage, progress });
-  } catch (e) {
-    console.error('enneagram/answer error', e);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
-  }
-}
+      //   await prisma.enneagramSession.update({ where: { sessionId 

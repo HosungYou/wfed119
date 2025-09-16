@@ -13,7 +13,7 @@ services:
     name: lifecraft-bot
     runtime: node
     plan: starter # Change to 'standard' for production
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && npm run build:render
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -28,8 +28,7 @@ services:
         sync: false # Set in Render dashboard
       - key: OPENAI_API_KEY
         sync: false # Set in Render dashboard
-      - key: PORT
-        value: 3000
+      # Do not set PORT; Render provides it automatically
     healthCheckPath: /api/health
     autoDeploy: true # Automatically deploy on push to main branch
 

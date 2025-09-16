@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
-    "build:render": "prisma generate && next build",
+    "build:render": "prisma generate --schema=prisma/schema.postgres.prisma && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "node scripts/setup-prisma.js"
+    "postinstall": "node scripts/setup-prisma.js",
+    "gp": "bash scripts/git-push.sh",
+    "push": "bash scripts/git-push.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

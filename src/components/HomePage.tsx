@@ -121,7 +121,7 @@ export const HomePage: React.FC = () => {
               </Link>
 
               <div className="mt-4 text-center">
-                <span className="text-sm text-gray-500">⏱️ 10-15 minutes</span>
+                <span className="text-sm text-gray-700">⏱️ 10-15 minutes</span>
               </div>
             </div>
 
@@ -158,7 +158,7 @@ export const HomePage: React.FC = () => {
               </Link>
               
               <div className="mt-4 text-center">
-                <span className="text-sm text-gray-500">⏱️ 15-20 minutes</span>
+                <span className="text-sm text-gray-700">⏱️ 15-20 minutes</span>
               </div>
             </div>
 
@@ -195,7 +195,7 @@ export const HomePage: React.FC = () => {
               </Link>
               
               <div className="mt-4 text-center">
-                <span className="text-sm text-gray-500">⏱️ 25-30 minutes</span>
+                <span className="text-sm text-gray-700">⏱️ 25-30 minutes</span>
               </div>
             </div>
           </div>
@@ -256,7 +256,7 @@ export const HomePage: React.FC = () => {
           <p className="text-gray-700 mb-4">
             Empowering personal growth through intelligent assessments
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-700">
             © 2025 LifeCraft. All rights reserved.
           </p>
         </div>

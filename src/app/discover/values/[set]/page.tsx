@@ -232,16 +232,62 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
         <div className="mb-4 text-xs text-gray-800 flex items-center gap-2"><ShieldCheck className="w-4 h-4"/> When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.</div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div ref={boardRef} className="space-y-6">
+          <div ref={boardRef} className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            {(['very_important','important','somewhat_important','not_important'] as const).map((bucket) => (
+              <Droppable key={bucket} droppableId={bucket}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="order-2 bg-white p-4 rounded-xl border min-h-[240px] flex flex-col lg:order-1"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="font-semibold text-gray-900">{bucket.replace('_',' ').replace('_',' ').replace(/^./, (c) => c.toUpperCase())}</h2>
+                      <span className="text-xs font-medium text-gray-700">{(layout[bucket] as string[]).length}</span>
+                    </div>
+                    <div className="flex-1">
+                      {(layout[bucket] as string[]).map((id, index) => (
+                        <Draggable key={id} draggableId={id} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="border rounded-lg p-3 mb-2 bg-white shadow-sm"
+                            >
+                              <div className="font-medium text-gray-900">{byId[id].name}</div>
+                              <div className="text-sm text-gray-700">{byId[id].description}</div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  </div>
+                )}
+              </Droppable>
+            ))}
+
             <Droppable droppableId="palette">
               {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps} className="bg-white p-4 rounded-xl border min-h-[320px]">
-                  <h2 className="font-semibold mb-2 text-gray-900">Values</h2>
-                  <p className="mb-4 text-sm text-gray-700">Drag each card into the importance buckets below. You can rearrange them anytime.</p>
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="order-1 bg-white p-4 rounded-xl border min-h-[320px] lg:order-2 lg:col-span-4"
+                >
+                  <h2 className="font-semibold mb-2 text-gray-900">Values Library</h2>
+                  <p className="mb-4 text-sm text-gray-700">
+                    Drag any value into the importance buckets above. Rearrange cards whenever you change your mind.
+                  </p>
                   {palette.map((id, index) => (
                     <Draggable key={id} draggableId={id} index={index}>
                       {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="border rounded-lg p-3 mb-2 bg-white shadow-sm">
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="border rounded-lg p-3 mb-2 bg-white shadow-sm"
+                        >
                           <div className="font-medium text-gray-900">{byId[id].name}</div>
                           <div className="text-sm text-gray-700">{byId[id].description}</div>
                         </div>
@@ -252,34 +298,6 @@ export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey
                 </div>
               )}
             </Droppable>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-              {(['very_important','important','somewhat_important','not_important'] as const).map((bucket) => (
-                <Droppable key={bucket} droppableId={bucket}>
-                  {(provided) => (
-                    <div ref={provided.innerRef} {...provided.droppableProps} className="bg-white p-4 rounded-xl border min-h-[280px] flex flex-col">
-                      <div className="flex items-center justify-between mb-2">
-                        <h2 className="font-semibold text-gray-900">{bucket.replace('_',' ').replace('_',' ').replace(/^./, c=>c.toUpperCase())}</h2>
-                        <span className="text-xs font-medium text-gray-600">{(layout[bucket] as string[]).length}</span>
-                      </div>
-                      <div className="flex-1">
-                        {(layout[bucket] as string[]).map((id, index) => (
-                          <Draggable key={id} draggableId={id} index={index}>
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="border rounded-lg p-3 mb-2 bg-white shadow-sm">
-                                <div className="font-medium text-gray-900">{byId[id].name}</div>
-                                <div className="text-sm text-gray-700">{byId[id].description}</div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    </div>
-                  )}
-                </Droppable>
-              ))}
-            </div>
           </div>
         </DragDropContext>
 

@@ -108,9 +108,17 @@ type Layout = {
 };
 const emptyLayout: Layout = { very_important: [], important: [], somewhat_important: [], not_important: [] };
 
-export default function ValueSetPage({ params }: { params: Promise<{ set: SetKey }> }) {
-  const [routeSet, setRouteSet] = useState<SetKey>('work');
-  useEffect(() => { (async () => { const p = await params; setRouteSet(p.set); })(); }, [params]);
+export default function ValueSetPage({ params }: { params: { set?: string } }) {
+  const normalizedSet = useMemo<SetKey>(() => {
+    const candidate = params?.set;
+    if (candidate === 'terminal' || candidate === 'instrumental' || candidate === 'work') {
+      return candidate;
+    }
+    return 'work';
+  }, [params?.set]);
+
+  const [routeSet, setRouteSet] = useState<SetKey>(normalizedSet);
+  useEffect(() => { setRouteSet(normalizedSet); }, [normalizedSet]);
 
   const VALUES = useMemo(() => {
     switch (routeSet) {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ChatMessage, StrengthAnalysis } from '../services/aiServiceClaude';
 
 export type SessionStage = 'initial' | 'exploration' | 'deepening' | 'analysis' | 'summary';
@@ -220,6 +220,16 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'lifecraft-session',
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => undefined,
+            removeItem: () => undefined,
+          };
+        }
+        return window.localStorage;
+      }),
       partialize: (state) => ({
         sessionId: state.sessionId,
         stage: state.stage,

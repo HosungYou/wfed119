@@ -19,8 +19,8 @@ export const HomePage: React.FC = () => {
             </h1>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
-            <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-            <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
+            <a href="#features" className="text-gray-700 hover:text-gray-900 transition-colors">Features</a>
+            <a href="#about" className="text-gray-700 hover:text-gray-900 transition-colors">About</a>
           </nav>
         </div>
       </header>
@@ -32,7 +32,7 @@ export const HomePage: React.FC = () => {
             Discover Your
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Authentic Self</span>
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
             Unlock your potential through personalized assessments that reveal your unique strengths, 
             personality patterns, and growth opportunities.
           </p>
@@ -60,21 +60,21 @@ export const HomePage: React.FC = () => {
               <Users className="w-8 h-8 text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">10K+</h3>
-            <p className="text-gray-600">Users Discovered</p>
+            <p className="text-gray-700">Users Discovered</p>
           </div>
           <div className="text-center p-6 rounded-2xl bg-white shadow-sm border hover:shadow-md transition-shadow">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Target className="w-8 h-8 text-purple-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">95%</h3>
-            <p className="text-gray-600">Accuracy Rate</p>
+            <p className="text-gray-700">Accuracy Rate</p>
           </div>
           <div className="text-center p-6 rounded-2xl bg-white shadow-sm border hover:shadow-md transition-shadow">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="w-8 h-8 text-green-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">85%</h3>
-            <p className="text-gray-600">Growth Reported</p>
+            <p className="text-gray-700">Growth Reported</p>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export const HomePage: React.FC = () => {
         <section id="modules" className="mb-20">
           <div className="text-center mb-12">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Discovery Path</h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-700 max-w-2xl mx-auto">
               Each assessment offers unique insights into different aspects of your personality and capabilities.
             </p>
           </div>
@@ -101,7 +101,7 @@ export const HomePage: React.FC = () => {
                 Value Discovery
               </h4>
 
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 Identify your core values through an interactive sorting activity. Understand what truly matters
                 to you in life, relationships, and career decisions.
               </p>
@@ -138,7 +138,7 @@ export const HomePage: React.FC = () => {
                 Strength Discovery
               </h4>
               
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 Uncover your core strengths through AI-powered conversations and interactive visualizations. 
                 Discover what energizes you and where you excel naturally.
               </p>
@@ -175,7 +175,7 @@ export const HomePage: React.FC = () => {
                 Enneagram Assessment
               </h4>
               
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 Deep personality analysis using the proven Enneagram system. Understand your core motivations, 
                 fears, and patterns of behavior across different life situations.
               </p>
@@ -205,7 +205,7 @@ export const HomePage: React.FC = () => {
         <section id="features" className="mb-20">
           <div className="text-center mb-12">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Why Choose LifeCraft?</h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-700 max-w-2xl mx-auto">
               Our assessments combine scientific rigor with cutting-edge AI to provide personalized insights.
             </p>
           </div>
@@ -216,7 +216,7 @@ export const HomePage: React.FC = () => {
                 <Sparkles className="w-10 h-10 text-white" />
               </div>
               <h4 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Insights</h4>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed">
                 Advanced algorithms analyze your responses to provide nuanced, personalized feedback.
               </p>
             </div>
@@ -226,7 +226,7 @@ export const HomePage: React.FC = () => {
                 <Target className="w-10 h-10 text-white" />
               </div>
               <h4 className="text-xl font-semibold text-gray-900 mb-3">Actionable Results</h4>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed">
                 Get specific recommendations for personal and professional growth.
               </p>
             </div>
@@ -236,7 +236,7 @@ export const HomePage: React.FC = () => {
                 <Brain className="w-10 h-10 text-white" />
               </div>
               <h4 className="text-xl font-semibold text-gray-900 mb-3">Science-Based</h4>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed">
                 Built on validated psychological frameworks and continuous research.
               </p>
             </div>
@@ -253,7 +253,7 @@ export const HomePage: React.FC = () => {
             </div>
             <span className="text-xl font-bold text-gray-900">LifeCraft</span>
           </div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-700 mb-4">
             Empowering personal growth through intelligent assessments
           </p>
           <p className="text-sm text-gray-500">

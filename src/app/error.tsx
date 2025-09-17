@@ -13,7 +13,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       <div className="max-w-lg w-full bg-white border rounded-xl shadow-sm p-6 text-center">
         <div className="text-5xl mb-3">😵‍💫</div>
         <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
-        <p className="text-gray-600 mb-6">A client-side error occurred while loading the page.</p>
+        <p className="text-gray-800 mb-6">A client-side error occurred while loading the page.</p>
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => reset()}
@@ -29,7 +29,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           </button>
         </div>
         {error?.message && (
-          <details className="text-left text-xs text-gray-500 mt-4 whitespace-pre-wrap">
+          <details className="text-left text-xs text-gray-700 mt-4 whitespace-pre-wrap">
             <summary>Details</summary>
             {error.message}
           </details>

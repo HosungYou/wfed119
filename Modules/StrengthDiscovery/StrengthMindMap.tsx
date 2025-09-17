@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
+import type { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
 
 interface StrengthMindMapProps {
   data: StrengthAnalysis;

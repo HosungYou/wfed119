@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ChatMessage, StrengthAnalysis } from '../services/aiServiceClaude';
+import type { ChatMessage, StrengthAnalysis } from '../services/aiServiceClaude';
 
 export type SessionStage = 'initial' | 'exploration' | 'deepening' | 'analysis' | 'summary';
 

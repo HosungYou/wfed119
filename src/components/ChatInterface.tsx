@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSessionStore, useSessionStats } from '@/lib/store/sessionStore';
 import { StrengthMindMap } from './visualization/StrengthMindMap';
 import { ProgressIndicator } from './ui/ProgressIndicator';
-import { ChatMessage } from '@/lib/services/aiServiceClaude';
+import type { ChatMessage } from '@/lib/services/aiServiceClaude';
 import { Save, RefreshCw, Send, Download, Loader2 } from 'lucide-react';
 
 export const ChatInterface: React.FC = () => {

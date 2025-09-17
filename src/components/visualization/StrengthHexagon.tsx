@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
-import { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
+import type { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
 
 interface StrengthHexagonProps {
   data: StrengthAnalysis;

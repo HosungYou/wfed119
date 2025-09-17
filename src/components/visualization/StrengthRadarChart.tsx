@@ -14,7 +14,7 @@ import {
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
+import type { StrengthAnalysis } from '@/lib/services/aiServiceClaude';
 import { X, ZoomIn, ZoomOut, RotateCcw, Trash2 } from 'lucide-react';
 
 // Register Chart.js components

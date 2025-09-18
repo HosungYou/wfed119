@@ -9,15 +9,60 @@ release-notes/
 ├── README.md                    # This overview file
 ├── v1.0/                       # Version 1.0 Documentation
 │   └── README.md               # Initial release details
-└── v2.0/                       # Version 2.0 Documentation
-    ├── README.md               # Major feature release details
-    └── UPGRADE_NOTES.md        # Technical upgrade guide
+├── v2.0/                       # Version 2.0 Documentation
+│   ├── README.md               # Major feature release details
+│   └── UPGRADE_NOTES.md        # Technical upgrade guide
+├── v2.1.0.md                   # Performance & stability improvements
+├── v2.5.0.md                   # Value Discovery module release
+├── v2.5.1.md                   # Stability & localization fixes
+└── v2.5.2.md                   # Enhanced Values Discovery UI/UX
 ```
 
 ## 🚀 Version Overview
 
-### [v2.0.0](v2.0/README.md) - Current Release
-**Release Date**: August 27, 2025  
+### [v2.5.2](v2.5.2.md) - Current Release
+**Release Date**: September 18, 2025
+**Type**: Enhancement Release
+
+**Key Highlights:**
+- 🎨 **Complete UI/UX Overhaul** for Values Discovery module
+- 📱 **Responsive Grid Layout** with 4-column value cards
+- 🌈 **Color-Coded Categories** with gradient themes
+- ✨ **Enhanced Animations** with smooth drag feedback
+
+**Breaking Changes**: No
+**Migration Required**: No - drop-in enhancement
+
+### [v2.5.1](v2.5.1.md)
+**Release Date**: September 17, 2025
+**Type**: Patch Release
+
+**Key Highlights:**
+- 🔧 **Client Runtime Stability** fixes
+- 🌍 **Localization Updates** (Korean → English)
+- 📐 **Responsive Layout** improvements
+
+### [v2.5.0](v2.5.0.md)
+**Release Date**: September 16, 2025
+**Type**: Feature Release
+
+**Key Highlights:**
+- 🌟 **Value Discovery Module** with drag-and-drop interface
+- 📊 **45 Comprehensive Values** across three domains
+- 🎯 **Four-Category Sorting** system
+- 🎨 **Enhanced Homepage** with three-module grid
+
+### [v2.1.0](v2.1.0.md)
+**Release Date**: September 1, 2025
+**Type**: Minor Release
+
+**Key Highlights:**
+- ⚡ **Performance Optimizations**
+- 🐛 **Bug Fixes** and stability improvements
+- 📱 **Mobile Experience** enhancements
+
+### [v2.0.0](v2.0/README.md)
+**Release Date**: August 27, 2025
 **Type**: Major Feature Release
 
 **Key Highlights:**
@@ -64,15 +109,16 @@ release-notes/
 
 ## 📊 Release Metrics Comparison
 
-| Metric | v1.0.0 | v2.0.0 | Improvement |
-|--------|--------|--------|-------------|
-| AI Response Time | 2.3s | 1.95s | 15% faster |
-| Chart Render Time | 250ms | 150ms | 40% faster |
-| Bundle Size | 2.1MB | 1.9MB | 8% smaller |
-| Memory Usage | 45MB | 38MB | 16% less |
-| API Cost (1M tokens) | $1.00 | $0.67 | 33% savings |
-| Error Rate | 0.5% | <0.1% | 80% reduction |
-| Uptime | 99.5% | 99.9% | 0.4% improvement |
+| Metric | v1.0.0 | v2.0.0 | v2.5.2 | Latest Improvement |
+|--------|--------|--------|--------|--------------------|
+| AI Response Time | 2.3s | 1.95s | 1.95s | Maintained |
+| Chart Render Time | 250ms | 150ms | 150ms | Maintained |
+| Bundle Size | 2.1MB | 1.9MB | 1.85MB | 3% smaller |
+| Memory Usage | 45MB | 38MB | 36MB | 5% less |
+| API Cost (1M tokens) | $1.00 | $0.67 | $0.67 | Maintained |
+| Error Rate | 0.5% | <0.1% | <0.1% | Maintained |
+| Uptime | 99.5% | 99.9% | 99.9% | Maintained |
+| Values Visible | N/A | 6-8 | 12-16 | 100% increase |
 
 ## 🛠️ Technical Evolution
 
@@ -143,7 +189,33 @@ release-notes/
 ## 📅 Release History
 
 ```
-v2.0.0 (2025-08-27) ← Current Release
+v2.5.2 (2025-09-18) ← Current Release
+└── UI/UX Enhancement
+    ├── Complete Values Discovery redesign
+    ├── Gradient & glassmorphism effects
+    ├── Responsive grid layout
+    └── Enhanced animations
+
+v2.5.1 (2025-09-17)
+└── Patch release
+    ├── Client stability fixes
+    ├── Localization updates
+    └── Layout improvements
+
+v2.5.0 (2025-09-16)
+└── Feature release
+    ├── Value Discovery module
+    ├── Drag-and-drop interface
+    ├── 45 comprehensive values
+    └── Homepage redesign
+
+v2.1.0 (2025-09-01)
+└── Minor release
+    ├── Performance optimizations
+    ├── Bug fixes
+    └── Mobile improvements
+
+v2.0.0 (2025-08-27)
 └── Major feature release
     ├── Claude AI integration
     ├── Interactive charts
@@ -151,7 +223,7 @@ v2.0.0 (2025-08-27) ← Current Release
     └── Performance optimization
 
 v1.0.0 (2025-01-15)
-└── Initial public release  
+└── Initial public release
     ├── OpenAI integration
     ├── Basic visualization
     ├── Session persistence
@@ -160,11 +232,16 @@ v1.0.0 (2025-01-15)
 
 ## 🎯 Future Roadmap Preview
 
-### v2.1.0 (Planned: Q4 2025)
-- Enhanced mobile experience
-- Additional chart types and customization
+### v2.5.3 (Planned: Q4 2025)
+- Export functionality for value sorting results
+- Comparison view for multiple sessions
+- Integration with AI insights
+
+### v2.6.0 (Planned: Q4 2025)
+- Results dashboard with detailed analytics
+- Value-based career recommendations
+- Cross-module insights integration
 - Bulk session analysis for educators
-- Advanced analytics dashboard
 
 ### v3.0.0 (Vision: Q2 2026)
 - Multi-language support
@@ -176,6 +253,6 @@ v1.0.0 (2025-01-15)
 
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
-**🔄 Last Updated**: August 27, 2025  
-**📊 Current Version**: v2.0.0  
+**🔄 Last Updated**: September 18, 2025
+**📊 Current Version**: v2.5.2
 **👥 Maintained By**: WFED 119 Development Team

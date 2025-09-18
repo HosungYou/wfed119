@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart } from 'lucide-react';
+import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   return (
@@ -87,26 +87,135 @@ export const HomePage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Value Discovery Module */}
-            <div className="group bg-white rounded-3xl p-8 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Heart className="w-8 h-8 text-white" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {/* Enneagram Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Brain className="w-7 h-7 text-white" />
                 </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Interactive</span>
+                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">Structured</span>
               </div>
 
-              <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-purple-600 transition-colors">
-                Value Discovery
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
+                Enneagram Assessment
               </h4>
 
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
+                Deep personality analysis using the proven Enneagram system. Understand your core motivations,
+                fears, and patterns of behavior across different life situations.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">9 Personality Types</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Scientific</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Growth-Focused</span>
+              </div>
+
+              <Link
+                href="/discover/enneagram"
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <span>Take Enneagram Test</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <div className="mt-3 text-center">
+                <span className="text-sm text-gray-700">⏱️ 25-30 minutes</span>
+              </div>
+            </div>
+
+            {/* Life Themes Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-yellow-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Lightbulb className="w-7 h-7 text-white" />
+                </div>
+                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">Coming Soon</span>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-yellow-600 transition-colors">
+                Life Themes
+              </h4>
+
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
+                Discover the recurring patterns and themes that shape your life journey. Understand your unique narrative and purpose.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Life Patterns</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Purpose-Driven</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Narrative-Based</span>
+              </div>
+
+              <button
+                disabled
+                className="w-full bg-gray-300 text-gray-500 py-3 px-4 rounded-2xl font-semibold cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                <span>Coming Soon</span>
+              </button>
+
+              <div className="mt-3 text-center">
+                <span className="text-sm text-gray-700">⏱️ 20-25 minutes</span>
+              </div>
+            </div>
+
+            {/* Strengths Discovery Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-blue-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Target className="w-7 h-7 text-white" />
+                </div>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">Interactive</span>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                Strengths Discovery
+              </h4>
+
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
+                Uncover your core strengths through AI-powered conversations and interactive visualizations.
+                Discover what energizes you and where you excel naturally.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Conversational AI</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Story-Based</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Visualizations</span>
+              </div>
+
+              <Link
+                href="/discover/strengths"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <span>Discover Your Strengths</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <div className="mt-3 text-center">
+                <span className="text-sm text-gray-700">⏱️ 15-20 minutes</span>
+              </div>
+            </div>
+
+            {/* Values Discovery Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-pink-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Heart className="w-7 h-7 text-white" />
+                </div>
+                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">Interactive</span>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
+                Values Discovery
+              </h4>
+
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
                 Identify your core values through an interactive sorting activity. Understand what truly matters
                 to you in life, relationships, and career decisions.
               </p>
 
-              <div className="flex flex-wrap gap-2 mb-8">
+              <div className="flex flex-wrap gap-2 mb-6">
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Drag & Drop</span>
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Self-Reflection</span>
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Values-Based</span>
@@ -114,88 +223,14 @@ export const HomePage: React.FC = () => {
 
               <Link
                 href="/discover/values"
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-4 px-6 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 px-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
               >
                 <span>Discover Your Values</span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </Link>
 
-              <div className="mt-4 text-center">
+              <div className="mt-3 text-center">
                 <span className="text-sm text-gray-700">⏱️ 10-15 minutes</span>
-              </div>
-            </div>
-
-            {/* Strength Discovery Module */}
-            <div className="group bg-white rounded-3xl p-8 shadow-lg border-2 border-transparent hover:border-blue-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Target className="w-8 h-8 text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Interactive</span>
-              </div>
-              
-              <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
-                Strength Discovery
-              </h4>
-              
-              <p className="text-gray-700 mb-6 leading-relaxed">
-                Uncover your core strengths through AI-powered conversations and interactive visualizations. 
-                Discover what energizes you and where you excel naturally.
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Conversational AI</span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Story-Based</span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Visualizations</span>
-              </div>
-              
-              <Link 
-                href="/discover/strengths"
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 px-6 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <span>Discover Your Strengths</span>
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              
-              <div className="mt-4 text-center">
-                <span className="text-sm text-gray-700">⏱️ 15-20 minutes</span>
-              </div>
-            </div>
-
-            {/* Enneagram Module */}
-            <div className="group bg-white rounded-3xl p-8 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Brain className="w-8 h-8 text-white" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Structured</span>
-              </div>
-              
-              <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-purple-600 transition-colors">
-                Enneagram Assessment
-              </h4>
-              
-              <p className="text-gray-700 mb-6 leading-relaxed">
-                Deep personality analysis using the proven Enneagram system. Understand your core motivations, 
-                fears, and patterns of behavior across different life situations.
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-8">
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">9 Personality Types</span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Scientific</span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Growth-Focused</span>
-              </div>
-              
-              <Link 
-                href="/discover/enneagram"
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-4 px-6 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <span>Take Enneagram Test</span>
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              
-              <div className="mt-4 text-center">
-                <span className="text-sm text-gray-700">⏱️ 25-30 minutes</span>
               </div>
             </div>
           </div>

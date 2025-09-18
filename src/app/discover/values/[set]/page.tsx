@@ -268,13 +268,23 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                 'bg-green-600 text-white',
                 'bg-gray-600 text-white'
               ];
+              const dragOverColors = [
+                'ring-purple-400 border-purple-400 bg-purple-50',
+                'ring-blue-400 border-blue-400 bg-blue-50',
+                'ring-green-400 border-green-400 bg-green-50',
+                'ring-gray-400 border-gray-400 bg-gray-50'
+              ];
               return (
               <Droppable key={bucket} droppableId={bucket}>
-                {(provided) => (
+                {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`order-2 ${bucketStyles[bucketIndex]} p-4 rounded-xl border-2 min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg`}
+                    className={`order-2 ${bucketStyles[bucketIndex]} p-4 rounded-xl border-2 min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg ${
+                      snapshot.isDraggingOver
+                        ? `ring-4 ring-opacity-50 ${dragOverColors[bucketIndex]} scale-105 shadow-2xl`
+                        : ''
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <h2 className={`font-bold ${headerColors[bucketIndex]}`}>
@@ -308,11 +318,15 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
             );})}
 
             <Droppable droppableId="palette">
-              {(provided) => (
+              {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="order-1 bg-white/90 backdrop-blur-sm p-4 rounded-xl border-2 border-gray-300 min-h-[320px] lg:order-2 lg:col-span-4 shadow-lg"
+                  className={`order-1 bg-white/90 backdrop-blur-sm p-4 rounded-xl border-2 min-h-[320px] lg:order-2 lg:col-span-4 shadow-lg transition-all duration-200 ${
+                    snapshot.isDraggingOver
+                      ? 'border-blue-400 bg-blue-50/90 ring-4 ring-blue-300 ring-opacity-50 scale-105 shadow-2xl'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <div className="mb-4">
                     <h2 className="font-bold text-lg text-gray-900 mb-2">Values Library</h2>

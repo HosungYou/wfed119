@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2025-09-18
+
+### Fixed
+- Save API writes now persist in production (removed prod DB bypass; DB writes enabled unless `DB_ENABLED=false`).
+- Marked Node runtime for Prisma-backed API routes to avoid Edge runtime issues (`session/save`, `session/[sessionId]`, `results/[sessionId]`).
+- Relaxed results endpoint DB gate (assume enabled unless explicitly disabled) to reduce false 503s.
+
 ## [2.0.0] - 2025-08-27
 
 ### 🚀 Major Features Added

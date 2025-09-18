@@ -178,7 +178,14 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
       // Ensure layout reflects removal from the source bucket
       setLayout(nextLayout);
     } else {
-      const arr = [...(nextLayout[destId as keyof Layout] as string[])];
+      // Check if destination bucket has room (max 7 items)
+      const destArray = nextLayout[destId as keyof Layout] as string[];
+      if (destArray.length >= 7) {
+        // Bucket is full, don't allow the drop
+        return;
+      }
+
+      const arr = [...destArray];
       arr.splice(destination.index, 0, draggableId);
       (nextLayout[destId as keyof Layout] as string[]) = arr;
       setLayout(nextLayout);
@@ -282,7 +289,9 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                     {...provided.droppableProps}
                     className={`order-2 ${bucketStyles[bucketIndex]} p-4 rounded-xl border-2 min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg ${
                       snapshot.isDraggingOver
-                        ? `ring-4 ring-opacity-50 ${dragOverColors[bucketIndex]} scale-105 shadow-2xl`
+                        ? (layout[bucket] as string[]).length >= 7
+                          ? 'ring-4 ring-red-400 border-red-400 bg-red-50 scale-105 shadow-2xl'
+                          : `ring-4 ring-opacity-50 ${dragOverColors[bucketIndex]} scale-105 shadow-2xl`
                         : ''
                     }`}
                   >
@@ -290,8 +299,10 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                       <h2 className={`font-bold ${headerColors[bucketIndex]}`}>
                         {bucket.replace('_',' ').replace('_',' ').replace(/^./, (c) => c.toUpperCase())}
                       </h2>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${countColors[bucketIndex]}`}>
-                        {(layout[bucket] as string[]).length}
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${countColors[bucketIndex]} ${
+                        (layout[bucket] as string[]).length >= 7 ? 'ring-2 ring-red-400' : ''
+                      }`}>
+                        {(layout[bucket] as string[]).length}/7
                       </span>
                     </div>
                     <div className="flex-1">

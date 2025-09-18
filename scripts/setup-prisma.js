@@ -6,7 +6,11 @@ console.log('🔧 Setting up Prisma client...');
 
 // Check if DATABASE_URL exists and determine schema
 const databaseUrl = process.env.DATABASE_URL;
-const isPostgres = databaseUrl && (databaseUrl.includes('postgresql://') || databaseUrl.includes('postgres://'));
+const isPostgres = databaseUrl && (
+  databaseUrl.includes('postgresql://') ||
+  databaseUrl.includes('postgres://') ||
+  databaseUrl.includes('render.com')  // Explicitly check for Render database
+);
 
 try {
   if (isPostgres) {

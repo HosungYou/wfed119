@@ -195,6 +195,135 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
   const counts = [layout.very_important.length, layout.important.length, layout.somewhat_important.length, layout.not_important.length];
   const top3 = layout.very_important.slice(0, 3).map(id => byId[id]?.name || id);
   const chartData = { labels: ['Very Important', 'Important', 'Somewhat Important', 'Not Important'], datasets: [{ label: 'Count', data: counts, backgroundColor: ['#7c3aed', '#2563eb', '#10b981', '#9ca3af'] }] };
+
+  // Value Analysis Functions
+  function analyzeValuePatterns() {
+    const veryImportantValues = layout.very_important.map(id => byId[id]);
+    const notImportantValues = layout.not_important.map(id => byId[id]);
+
+    if (veryImportantValues.length === 0) return null;
+
+    // Security themes
+    const securityKeywords = ['security', 'safety', 'stable', 'protection'];
+    const securityCount = veryImportantValues.filter(v =>
+      securityKeywords.some(keyword => v.name.toLowerCase().includes(keyword) || v.description.toLowerCase().includes(keyword))
+    ).length;
+
+    // Social impact themes
+    const socialKeywords = ['social', 'global', 'community', 'recognition', 'justice', 'contribution'];
+    const socialCount = veryImportantValues.filter(v =>
+      socialKeywords.some(keyword => v.name.toLowerCase().includes(keyword) || v.description.toLowerCase().includes(keyword))
+    ).length;
+
+    // Growth/autonomy themes
+    const growthKeywords = ['growth', 'freedom', 'wisdom', 'learning', 'autonomy', 'independence'];
+    const growthCount = veryImportantValues.filter(v =>
+      growthKeywords.some(keyword => v.name.toLowerCase().includes(keyword) || v.description.toLowerCase().includes(keyword))
+    ).length;
+
+    // Achievement themes
+    const achievementKeywords = ['accomplishment', 'success', 'achievement', 'recognition', 'excellence'];
+    const achievementCount = veryImportantValues.filter(v =>
+      achievementKeywords.some(keyword => v.name.toLowerCase().includes(keyword) || v.description.toLowerCase().includes(keyword))
+    ).length;
+
+    return { securityCount, socialCount, growthCount, achievementCount, veryImportantValues };
+  }
+
+  function getPersonalityInsights(patterns: any) {
+    if (!patterns) return null;
+
+    const { securityCount, socialCount, growthCount, achievementCount } = patterns;
+    const total = securityCount + socialCount + growthCount + achievementCount;
+
+    if (total === 0) return null;
+
+    let mbtiType = '';
+    let enneagramType = '';
+    let coreTheme = '';
+
+    // MBTI inference
+    if (socialCount >= 2 && securityCount >= 1) {
+      mbtiType = securityCount > growthCount ? 'ESFJ' : 'ENFJ';
+    } else if (growthCount >= 2 && socialCount >= 1) {
+      mbtiType = socialCount > securityCount ? 'ENFP' : 'ENTP';
+    } else if (securityCount >= 2) {
+      mbtiType = socialCount > 0 ? 'ISFJ' : 'ISTJ';
+    } else if (achievementCount >= 2) {
+      mbtiType = socialCount > 0 ? 'ENTJ' : 'ESTJ';
+    } else {
+      mbtiType = 'INFP';
+    }
+
+    // Enneagram inference
+    if (securityCount >= 2) {
+      enneagramType = 'Type 6 (Loyalist)';
+    } else if (achievementCount >= 2) {
+      enneagramType = 'Type 3 (Achiever)';
+    } else if (socialCount >= 2) {
+      enneagramType = 'Type 2 (Helper)';
+    } else if (growthCount >= 2) {
+      enneagramType = 'Type 4 (Individualist)';
+    } else {
+      enneagramType = 'Type 9 (Peacemaker)';
+    }
+
+    // Core theme
+    if (securityCount > 0 && socialCount > 0) {
+      coreTheme = 'Responsible Guardian';
+    } else if (socialCount > 0 && growthCount > 0) {
+      coreTheme = 'Inspiring Mentor';
+    } else if (achievementCount > 0 && socialCount > 0) {
+      coreTheme = 'Influential Leader';
+    } else if (growthCount > 0 && securityCount > 0) {
+      coreTheme = 'Thoughtful Strategist';
+    } else if (securityCount >= 2) {
+      coreTheme = 'Reliable Protector';
+    } else if (socialCount >= 2) {
+      coreTheme = 'Community Builder';
+    } else if (growthCount >= 2) {
+      coreTheme = 'Independent Learner';
+    } else {
+      coreTheme = 'Balanced Individual';
+    }
+
+    return { mbtiType, enneagramType, coreTheme };
+  }
+
+  function getCareerInsights(patterns: any, personality: any) {
+    if (!patterns || !personality) return null;
+
+    const { securityCount, socialCount, growthCount, achievementCount } = patterns;
+    const { coreTheme } = personality;
+
+    let careers: string[] = [];
+    let workEnvironment = '';
+    let leadershipStyle = '';
+
+    if (coreTheme === 'Responsible Guardian') {
+      careers = ['Government Administrator', 'Healthcare Manager', 'Non-profit Director', 'Education Coordinator'];
+      workEnvironment = 'Stable organization with clear mission and social impact';
+      leadershipStyle = 'Supportive and protective, ensuring team safety and growth';
+    } else if (coreTheme === 'Inspiring Mentor') {
+      careers = ['Executive Coach', 'University Professor', 'Organizational Development', 'Training Director'];
+      workEnvironment = 'Learning-focused environment with opportunities for innovation';
+      leadershipStyle = 'Transformational leader who empowers others to reach their potential';
+    } else if (coreTheme === 'Influential Leader') {
+      careers = ['Corporate Executive', 'Management Consultant', 'Policy Advisor', 'Entrepreneur'];
+      workEnvironment = 'Fast-paced, results-oriented organization with public recognition';
+      leadershipStyle = 'Visionary leader focused on achieving ambitious goals';
+    } else {
+      careers = ['Project Manager', 'Business Analyst', 'Consultant', 'Team Lead'];
+      workEnvironment = 'Collaborative environment with room for professional growth';
+      leadershipStyle = 'Collaborative and adaptive leadership approach';
+    }
+
+    return { careers, workEnvironment, leadershipStyle };
+  }
+
+  const valuePatterns = analyzeValuePatterns();
+  const personalityInsights = getPersonalityInsights(valuePatterns);
+  const careerInsights = getCareerInsights(valuePatterns, personalityInsights);
   const chartRef = useRef<any>(null);
 
   function exportChartPNG() {
@@ -374,35 +503,161 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
         </DragDropContext>
 
         <section className="mt-8 bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-200 p-6 shadow-lg">
-          <h3 className="text-lg font-bold mb-4 text-gray-900">Summary</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <Bar ref={chartRef as any} data={chartData} options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: false },
-                  title: {
-                    display: true,
-                    text: 'Distribution of Values by Importance',
-                    font: { size: 14 }
-                  }
-                }
-              }} />
+          <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+            <span className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+              📊
+            </span>
+            Values Profile Analysis
+          </h3>
+
+          {layout.very_important.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-lg mb-2">Start categorizing your values to see your personalized analysis!</p>
+              <p className="text-sm">Drag values from the library into the importance categories above.</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
-              <h3 className="font-bold mb-3 text-purple-900">Your Top 3 Most Important Values</h3>
-              <ol className="space-y-2">
-                {top3.map((n, i)=> (
-                  <li key={n} className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-8 h-8 bg-purple-600 text-white rounded-full font-bold text-sm">
-                      {i + 1}
-                    </span>
-                    <span className="text-sm font-medium text-gray-800">{n}</span>
-                  </li>
-                ))}
-              </ol>
+          ) : (
+            <div className="space-y-6">
+              {/* Core Theme */}
+              {personalityInsights && (
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
+                  <h4 className="text-lg font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    🎯 Your Core Value Theme
+                  </h4>
+                  <div className="text-2xl font-bold text-purple-800 mb-2">"{personalityInsights.coreTheme}"</div>
+                  <p className="text-gray-700 text-sm">
+                    Based on your value priorities, you embody the characteristics of a {personalityInsights.coreTheme.toLowerCase()}.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Top Values & Chart */}
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <Bar ref={chartRef as any} data={chartData} options={{
+                      responsive: true,
+                      plugins: {
+                        legend: { display: false },
+                        title: {
+                          display: true,
+                          text: 'Values Distribution',
+                          font: { size: 14 }
+                        }
+                      }
+                    }} />
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                    <h4 className="font-bold mb-3 text-purple-900 flex items-center gap-2">
+                      🏆 Your Top Values
+                    </h4>
+                    <ol className="space-y-2">
+                      {top3.map((n, i)=> (
+                        <li key={n} className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-7 h-7 bg-purple-600 text-white rounded-full font-bold text-xs">
+                            {i + 1}
+                          </span>
+                          <span className="text-sm font-medium text-gray-800">{n}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+
+                {/* Personality Insights */}
+                <div className="space-y-4">
+                  {personalityInsights && (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                      <h4 className="font-bold mb-3 text-blue-900 flex items-center gap-2">
+                        🧠 Personality Insights
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-blue-800">MBTI Tendency:</span>
+                          <span className="ml-2 px-2 py-1 bg-blue-100 rounded text-blue-900 font-medium">
+                            {personalityInsights.mbtiType}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-blue-800">Enneagram:</span>
+                          <span className="ml-2 px-2 py-1 bg-blue-100 rounded text-blue-900 font-medium">
+                            {personalityInsights.enneagramType}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {careerInsights && (
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                      <h4 className="font-bold mb-3 text-green-900 flex items-center gap-2">
+                        💼 Career Alignment
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-green-800 block mb-1">Recommended Fields:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {careerInsights.careers.slice(0, 3).map((career, index) => (
+                              <span key={index} className="px-2 py-1 bg-green-100 rounded text-green-900 text-xs">
+                                {career}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-green-800 block mb-1">Leadership Style:</span>
+                          <p className="text-green-700">{careerInsights.leadershipStyle}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Growth Recommendations */}
+              {valuePatterns && (
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200">
+                  <h4 className="font-bold mb-4 text-orange-900 flex items-center gap-2">
+                    🌱 Growth Opportunities
+                  </h4>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <h5 className="font-semibold text-orange-800 mb-2">Leverage Your Strengths:</h5>
+                      <ul className="space-y-1 text-orange-700">
+                        {valuePatterns.securityCount > 0 && (
+                          <li>• Build on your natural sense of responsibility and reliability</li>
+                        )}
+                        {valuePatterns.socialCount > 0 && (
+                          <li>• Expand your network and social impact initiatives</li>
+                        )}
+                        {valuePatterns.growthCount > 0 && (
+                          <li>• Pursue continuous learning and skill development</li>
+                        )}
+                        {valuePatterns.achievementCount > 0 && (
+                          <li>• Set ambitious goals and track your progress</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-orange-800 mb-2">Areas to Develop:</h5>
+                      <ul className="space-y-1 text-orange-700">
+                        {valuePatterns.securityCount === 0 && (
+                          <li>• Consider building more stability in your approach</li>
+                        )}
+                        {valuePatterns.socialCount === 0 && (
+                          <li>• Explore opportunities for community engagement</li>
+                        )}
+                        {valuePatterns.growthCount === 0 && (
+                          <li>• Invest time in personal and professional development</li>
+                        )}
+                        <li>• Balance competing priorities with your core values</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </section>
       </main>
     </div>

@@ -62,11 +62,8 @@ export async function POST(req: NextRequest) {
 
     const saved = await prisma.valueResult.upsert({
       where: {
-        // Composite unique is not defined; emulate via findFirst + create/update
-        id: (await (async () => {
-          const existing = await prisma.valueResult.findFirst({ where: { userId: uid, valueSet: set } });
-          return existing?.id || '';
-        })()),
+        // Use composite unique constraint to uniquely identify a record per user+set
+        userId_valueSet: { userId: uid, valueSet: set },
       },
       update: {
         layout,

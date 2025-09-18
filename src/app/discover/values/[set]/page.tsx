@@ -321,9 +321,151 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
     return { careers, workEnvironment, leadershipStyle };
   }
 
+  // Enhanced Theme Analysis Functions
+  function analyzeValueThemes() {
+    const allBuckets = ['very_important', 'important', 'somewhat_important', 'not_important'] as const;
+
+    const themes = {
+      'Security & Stability': {
+        keywords: ['security', 'safety', 'stable', 'protection', 'family'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Personal Growth & Development': {
+        keywords: ['growth', 'wisdom', 'learning', 'development', 'improvement', 'authentic'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Social Impact & Recognition': {
+        keywords: ['social', 'global', 'community', 'recognition', 'justice', 'contribution'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Achievement & Success': {
+        keywords: ['accomplishment', 'success', 'achievement', 'excellence', 'innovation'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Relationships & Love': {
+        keywords: ['love', 'friendship', 'relationship', 'connection', 'intimacy'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Freedom & Autonomy': {
+        keywords: ['freedom', 'autonomy', 'independence', 'choice', 'liberation'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Pleasure & Comfort': {
+        keywords: ['pleasure', 'comfort', 'enjoyment', 'satisfying', 'ease'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Adventure & Excitement': {
+        keywords: ['exciting', 'adventure', 'stimulation', 'challenge', 'variety'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Peace & Harmony': {
+        keywords: ['peace', 'harmony', 'tranquility', 'balance', 'contentment'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      },
+      'Spirituality & Meaning': {
+        keywords: ['spirituality', 'meaning', 'purpose', 'transcendent', 'beauty'],
+        values: [] as { id: string; name: string; bucket: string; priority: number }[]
+      }
+    };
+
+    // Priority mapping (higher number = more important)
+    const priorityMap = { very_important: 4, important: 3, somewhat_important: 2, not_important: 1 };
+
+    // Analyze each bucket
+    allBuckets.forEach(bucket => {
+      const bucketValues = layout[bucket].map(id => byId[id]);
+
+      bucketValues.forEach(value => {
+        // Find matching themes for this value
+        Object.entries(themes).forEach(([themeName, theme]) => {
+          const matches = theme.keywords.some(keyword =>
+            value.name.toLowerCase().includes(keyword) ||
+            value.description.toLowerCase().includes(keyword)
+          );
+
+          if (matches) {
+            theme.values.push({
+              id: value.id,
+              name: value.name,
+              bucket,
+              priority: priorityMap[bucket]
+            });
+          }
+        });
+      });
+    });
+
+    // Calculate theme scores and rankings
+    const themeScores = Object.entries(themes).map(([themeName, theme]) => ({
+      name: themeName,
+      values: theme.values,
+      count: theme.values.length,
+      totalScore: theme.values.reduce((sum, v) => sum + v.priority, 0),
+      averageScore: theme.values.length > 0 ? theme.values.reduce((sum, v) => sum + v.priority, 0) / theme.values.length : 0,
+      highPriorityCount: theme.values.filter(v => v.priority >= 3).length
+    })).filter(theme => theme.count > 0); // Only include themes with values
+
+    // Sort by total score (most important first)
+    const mostImportantThemes = themeScores
+      .filter(theme => theme.averageScore >= 2.5)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 5);
+
+    const leastImportantThemes = themeScores
+      .filter(theme => theme.averageScore < 2.5)
+      .sort((a, b) => a.totalScore - b.totalScore)
+      .slice(0, 5);
+
+    return { mostImportantThemes, leastImportantThemes, allThemes: themeScores };
+  }
+
+  function getThemeInsights(themeAnalysis: any) {
+    if (!themeAnalysis || themeAnalysis.mostImportantThemes.length === 0) return null;
+
+    const { mostImportantThemes, leastImportantThemes } = themeAnalysis;
+
+    // Generate insights based on theme combinations
+    let profileInsight = '';
+    let balanceInsight = '';
+
+    const topThemeNames = mostImportantThemes.slice(0, 3).map(t => t.name);
+
+    if (topThemeNames.includes('Security & Stability') && topThemeNames.includes('Personal Growth & Development')) {
+      profileInsight = 'You seek growth within a stable foundation - a "Progressive Traditionalist" who values both security and development.';
+    } else if (topThemeNames.includes('Social Impact & Recognition') && topThemeNames.includes('Achievement & Success')) {
+      profileInsight = 'You aim to make a meaningful impact while achieving personal success - an "Impactful Achiever" driven by both contribution and accomplishment.';
+    } else if (topThemeNames.includes('Freedom & Autonomy') && topThemeNames.includes('Personal Growth & Development')) {
+      profileInsight = 'You prioritize independent growth and self-direction - a "Free Spirit" who values autonomy and continuous learning.';
+    } else if (topThemeNames.includes('Security & Stability')) {
+      profileInsight = 'You value stability and protection above all - a "Guardian" who prioritizes safety and reliability.';
+    } else if (topThemeNames.includes('Social Impact & Recognition')) {
+      profileInsight = 'You focus on making a difference in the world - a "Change Agent" driven by social contribution and recognition.';
+    } else {
+      profileInsight = `You have a unique blend of ${topThemeNames[0]} and ${topThemeNames[1] || 'other values'} - creating your distinctive value profile.`;
+    }
+
+    // Balance insights
+    const hasComfort = leastImportantThemes.some(t => t.name === 'Pleasure & Comfort');
+    const hasAdventure = leastImportantThemes.some(t => t.name === 'Adventure & Excitement');
+
+    if (hasComfort && hasAdventure) {
+      balanceInsight = 'You prioritize meaningful pursuits over comfort and excitement, showing focus on deeper values.';
+    } else if (hasComfort) {
+      balanceInsight = 'You choose purpose over comfort, indicating a willingness to sacrifice ease for meaningful goals.';
+    } else if (hasAdventure) {
+      balanceInsight = 'You prefer stability over thrill-seeking, showing a preference for predictable growth.';
+    } else {
+      balanceInsight = 'Your value system shows a balanced approach to different life priorities.';
+    }
+
+    return { profileInsight, balanceInsight };
+  }
+
   const valuePatterns = analyzeValuePatterns();
   const personalityInsights = getPersonalityInsights(valuePatterns);
   const careerInsights = getCareerInsights(valuePatterns, personalityInsights);
+  const themeAnalysis = analyzeValueThemes();
+  const themeInsights = getThemeInsights(themeAnalysis);
   const chartRef = useRef<any>(null);
 
   function exportChartPNG() {
@@ -530,40 +672,105 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                 </div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Top Values & Chart */}
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <Bar ref={chartRef as any} data={chartData} options={{
-                      responsive: true,
-                      plugins: {
-                        legend: { display: false },
-                        title: {
-                          display: true,
-                          text: 'Values Distribution',
-                          font: { size: 14 }
-                        }
-                      }
-                    }} />
+              {/* Theme Analysis Section */}
+              {themeAnalysis && themeAnalysis.mostImportantThemes.length > 0 && (
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  {/* Most Important Themes */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
+                    <h4 className="font-bold mb-4 text-emerald-900 flex items-center gap-2">
+                      📈 Most Important Value Themes
+                    </h4>
+                    <div className="space-y-3">
+                      {themeAnalysis.mostImportantThemes.slice(0, 4).map((theme, index) => (
+                        <div key={theme.name} className="flex items-start gap-3">
+                          <span className="flex items-center justify-center w-8 h-8 bg-emerald-600 text-white rounded-full font-bold text-sm shrink-0">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1">
+                            <div className="font-semibold text-emerald-900 text-sm mb-1">{theme.name}</div>
+                            <div className="text-xs text-emerald-700 mb-2">
+                              {theme.count} value{theme.count > 1 ? 's' : ''} • Score: {theme.totalScore}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {theme.values.slice(0, 3).map((value) => (
+                                <span key={value.id} className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded text-xs">
+                                  {value.name}
+                                </span>
+                              ))}
+                              {theme.values.length > 3 && (
+                                <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded text-xs">
+                                  +{theme.values.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
-                    <h4 className="font-bold mb-3 text-purple-900 flex items-center gap-2">
-                      🏆 Your Top Values
+                  {/* Least Important Themes */}
+                  <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-6 border border-slate-200">
+                    <h4 className="font-bold mb-4 text-slate-900 flex items-center gap-2">
+                      📉 Least Important Value Themes
                     </h4>
-                    <ol className="space-y-2">
-                      {top3.map((n, i)=> (
-                        <li key={n} className="flex items-center gap-2">
-                          <span className="flex items-center justify-center w-7 h-7 bg-purple-600 text-white rounded-full font-bold text-xs">
-                            {i + 1}
-                          </span>
-                          <span className="text-sm font-medium text-gray-800">{n}</span>
-                        </li>
-                      ))}
-                    </ol>
+                    {themeAnalysis.leastImportantThemes.length > 0 ? (
+                      <div className="space-y-3">
+                        {themeAnalysis.leastImportantThemes.slice(0, 4).map((theme, index) => (
+                          <div key={theme.name} className="flex items-start gap-3">
+                            <span className="flex items-center justify-center w-8 h-8 bg-slate-500 text-white rounded-full font-bold text-sm shrink-0">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <div className="font-semibold text-slate-900 text-sm mb-1">{theme.name}</div>
+                              <div className="text-xs text-slate-600 mb-2">
+                                {theme.count} value{theme.count > 1 ? 's' : ''} • Score: {theme.totalScore}
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {theme.values.slice(0, 3).map((value) => (
+                                  <span key={value.id} className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs">
+                                    {value.name}
+                                  </span>
+                                ))}
+                                {theme.values.length > 3 && (
+                                  <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs">
+                                    +{theme.values.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-slate-600 text-sm italic">
+                        All your themes are rated as important - you have a broad value appreciation.
+                      </p>
+                    )}
                   </div>
                 </div>
+              )}
 
+              {/* Theme Insights */}
+              {themeInsights && (
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200 mb-6">
+                  <h4 className="font-bold mb-4 text-indigo-900 flex items-center gap-2">
+                    🔍 Value Profile Insights
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="font-semibold text-indigo-800 mb-2">Your Unique Profile:</h5>
+                      <p className="text-indigo-700 text-sm leading-relaxed">{themeInsights.profileInsight}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-indigo-800 mb-2">Balance & Priorities:</h5>
+                      <p className="text-indigo-700 text-sm leading-relaxed">{themeInsights.balanceInsight}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6">
                 {/* Personality Insights */}
                 <div className="space-y-4">
                   {personalityInsights && (

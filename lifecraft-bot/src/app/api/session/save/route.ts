@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Ensure Prisma runs on Node runtime (not Edge)
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, stage, messages, strengths } = await req.json();
@@ -12,8 +15,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Skip database operations in production
-    if (process.env.NODE_ENV !== 'production') {
+    // Perform database operations unless explicitly disabled
+    if (process.env.DB_ENABLED !== 'false') {
       // Upsert session record
       await prisma.session.upsert({
         where: { sessionId },
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Save new strengths
-        const strengthPromises = [];
+        const strengthPromises: Promise<unknown>[] = [];
         
         for (const [category, items] of Object.entries(strengths)) {
           for (const item of items as string[]) {

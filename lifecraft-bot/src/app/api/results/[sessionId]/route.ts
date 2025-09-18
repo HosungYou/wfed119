@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   req: NextRequest,
   context: { params: { sessionId: string } }
@@ -9,8 +11,8 @@ export async function GET(
     const sessionId = context.params.sessionId;
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
-    if (process.env.DB_ENABLED !== 'true') {
-      return NextResponse.json({ error: 'Database not enabled (set DB_ENABLED=true)' }, { status: 503 });
+    if (process.env.DB_ENABLED === 'false') {
+      return NextResponse.json({ error: 'Database disabled by config (DB_ENABLED=false)' }, { status: 503 });
     }
 
     const strengths = await prisma.strength.findMany({ where: { sessionId } });

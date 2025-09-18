@@ -214,8 +214,8 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/discover/values" className="flex items-center space-x-2 text-gray-800 hover:text-gray-900 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -235,23 +235,54 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-4 capitalize">{routeSet} Values — Categorize</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2 capitalize bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            {routeSet} Values — Categorize
+          </h1>
+          <p className="text-gray-600">Drag and drop values to organize them by importance</p>
+        </div>
 
-        <div className="mb-4 text-xs text-gray-800 flex items-center gap-2"><ShieldCheck className="w-4 h-4"/> When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.</div>
+        <div className="mb-4 text-xs text-gray-700 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <ShieldCheck className="w-4 h-4 text-blue-600"/>
+          When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.
+        </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            {(['very_important','important','somewhat_important','not_important'] as const).map((bucket) => (
+            {(['very_important','important','somewhat_important','not_important'] as const).map((bucket, bucketIndex) => {
+              const bucketStyles = [
+                'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300',
+                'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300',
+                'bg-gradient-to-br from-green-50 to-green-100 border-green-300',
+                'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300'
+              ];
+              const headerColors = [
+                'text-purple-900',
+                'text-blue-900',
+                'text-green-900',
+                'text-gray-900'
+              ];
+              const countColors = [
+                'bg-purple-600 text-white',
+                'bg-blue-600 text-white',
+                'bg-green-600 text-white',
+                'bg-gray-600 text-white'
+              ];
+              return (
               <Droppable key={bucket} droppableId={bucket}>
                 {(provided) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="order-2 bg-white p-4 rounded-xl border min-h-[240px] flex flex-col lg:order-1"
+                    className={`order-2 ${bucketStyles[bucketIndex]} p-4 rounded-xl border-2 min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="font-semibold text-gray-900">{bucket.replace('_',' ').replace('_',' ').replace(/^./, (c) => c.toUpperCase())}</h2>
-                      <span className="text-xs font-medium text-gray-700">{(layout[bucket] as string[]).length}</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className={`font-bold ${headerColors[bucketIndex]}`}>
+                        {bucket.replace('_',' ').replace('_',' ').replace(/^./, (c) => c.toUpperCase())}
+                      </h2>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${countColors[bucketIndex]}`}>
+                        {(layout[bucket] as string[]).length}
+                      </span>
                     </div>
                     <div className="flex-1">
                       {(layout[bucket] as string[]).map((id, index) => (
@@ -261,10 +292,10 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="border rounded-lg p-3 mb-2 bg-white shadow-sm"
+                              className="border border-gray-200 rounded-lg p-2.5 mb-2 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-move"
                             >
-                              <div className="font-medium text-gray-900">{byId[id].name}</div>
-                              <div className="text-sm text-gray-700">{byId[id].description}</div>
+                              <div className="font-semibold text-sm text-gray-900 mb-1">{byId[id].name}</div>
+                              <div className="text-xs text-gray-600 leading-relaxed">{byId[id].description}</div>
                             </div>
                           )}
                         </Draggable>
@@ -274,34 +305,42 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
                   </div>
                 )}
               </Droppable>
-            ))}
+            );})}
 
             <Droppable droppableId="palette">
               {(provided) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="order-1 bg-white p-4 rounded-xl border min-h-[320px] lg:order-2 lg:col-span-4"
+                  className="order-1 bg-white/90 backdrop-blur-sm p-4 rounded-xl border-2 border-gray-300 min-h-[320px] lg:order-2 lg:col-span-4 shadow-lg"
                 >
-                  <h2 className="font-semibold mb-2 text-gray-900">Values Library</h2>
-                  <p className="mb-4 text-sm text-gray-700">
-                    Drag any value into the importance buckets above. Rearrange cards whenever you change your mind.
-                  </p>
-                  {palette.map((id, index) => (
-                    <Draggable key={id} draggableId={id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="border rounded-lg p-3 mb-2 bg-white shadow-sm"
-                        >
-                          <div className="font-medium text-gray-900">{byId[id].name}</div>
-                          <div className="text-sm text-gray-700">{byId[id].description}</div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                  <div className="mb-4">
+                    <h2 className="font-bold text-lg text-gray-900 mb-2">Values Library</h2>
+                    <p className="text-sm text-gray-600">
+                      Drag any value into the importance buckets above. Rearrange cards whenever you change your mind.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {palette.map((id, index) => (
+                      <Draggable key={id} draggableId={id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`
+                              border rounded-lg p-2.5 bg-gradient-to-br from-white to-gray-50
+                              hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-move
+                              ${snapshot.isDragging ? 'shadow-2xl scale-105 rotate-2 opacity-90' : 'shadow-sm'}
+                            `}
+                          >
+                            <div className="font-semibold text-sm text-gray-900 mb-1">{byId[id].name}</div>
+                            <div className="text-xs text-gray-600 line-clamp-2">{byId[id].description}</div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                  </div>
                   {provided.placeholder}
                 </div>
               )}
@@ -309,15 +348,33 @@ export default function ValueSetPage({ params }: { params: { set?: string } }) {
           </div>
         </DragDropContext>
 
-        <section className="mt-8 bg-white rounded-xl border p-4">
-          <div className="grid md:grid-cols-3 gap-6">
-            <div>
-              <Bar ref={chartRef as any} data={chartData} options={{ responsive: true, plugins: { legend: { display: false }}}} />
+        <section className="mt-8 bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-200 p-6 shadow-lg">
+          <h3 className="text-lg font-bold mb-4 text-gray-900">Summary</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <Bar ref={chartRef as any} data={chartData} options={{
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  title: {
+                    display: true,
+                    text: 'Distribution of Values by Importance',
+                    font: { size: 14 }
+                  }
+                }
+              }} />
             </div>
-            <div>
-              <h3 className="font-medium mb-1">Top 3</h3>
-              <ol className="list-decimal list-inside text-sm text-gray-700">
-                {top3.map((n)=> (<li key={n}>{n}</li>))}
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+              <h3 className="font-bold mb-3 text-purple-900">Your Top 3 Most Important Values</h3>
+              <ol className="space-y-2">
+                {top3.map((n, i)=> (
+                  <li key={n} className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-8 h-8 bg-purple-600 text-white rounded-full font-bold text-sm">
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-medium text-gray-800">{n}</span>
+                  </li>
+                ))}
               </ol>
             </div>
           </div>

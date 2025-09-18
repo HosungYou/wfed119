@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck } from 'lucide-react';
@@ -108,14 +108,17 @@ type Layout = {
 };
 const emptyLayout: Layout = { very_important: [], important: [], somewhat_important: [], not_important: [] };
 
-export default function ValueSetPage({ params }: { params: { set?: string } }) {
+export default function ValueSetPage({ params }: { params: Promise<{ set?: string }> }) {
+  // Unwrap the async params using React.use() for Next.js 15 compatibility
+  const resolvedParams = use(params);
+
   const normalizedSet = useMemo<SetKey>(() => {
-    const candidate = params?.set;
+    const candidate = resolvedParams?.set;
     if (candidate === 'terminal' || candidate === 'instrumental' || candidate === 'work') {
       return candidate;
     }
     return 'work';
-  }, [params?.set]);
+  }, [resolvedParams?.set]);
 
   const [routeSet, setRouteSet] = useState<SetKey>(normalizedSet);
   useEffect(() => { setRouteSet(normalizedSet); }, [normalizedSet]);

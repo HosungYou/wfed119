@@ -13,14 +13,14 @@ release-notes/
 │   ├── README.md               # Major feature release details
 │   └── UPGRADE_NOTES.md        # Technical upgrade guide
 ├── v2.1.0.md                   # Performance & stability improvements
-├── v2.5.0.md                   # Value Discovery module release
-├── v2.5.1.md                   # Stability & localization fixes
-└── v2.5.2.md                   # Enhanced Values Discovery UI/UX
+├── v2.2.0.md                   # Value Discovery module release
+├── v2.2.1.md                   # Stability & localization fixes
+└── v2.2.2.md                   # Enhanced Values Discovery UI/UX
 ```
 
 ## 🚀 Version Overview
 
-### [v2.5.2](v2.5.2.md) - Current Release
+### [v2.2.2](v2.2.2.md) - Current Release
 **Release Date**: September 18, 2025
 **Type**: Enhancement Release
 
@@ -33,7 +33,7 @@ release-notes/
 **Breaking Changes**: No
 **Migration Required**: No - drop-in enhancement
 
-### [v2.5.1](v2.5.1.md)
+### [v2.2.1](v2.2.1.md)
 **Release Date**: September 17, 2025
 **Type**: Patch Release
 
@@ -42,7 +42,7 @@ release-notes/
 - 🌍 **Localization Updates** (Korean → English)
 - 📐 **Responsive Layout** improvements
 
-### [v2.5.0](v2.5.0.md)
+### [v2.2.0](v2.2.0.md)
 **Release Date**: September 16, 2025
 **Type**: Feature Release
 
@@ -109,7 +109,7 @@ release-notes/
 
 ## 📊 Release Metrics Comparison
 
-| Metric | v1.0.0 | v2.0.0 | v2.5.2 | Latest Improvement |
+| Metric | v1.0.0 | v2.0.0 | v2.2.2 | Latest Improvement |
 |--------|--------|--------|--------|--------------------|
 | AI Response Time | 2.3s | 1.95s | 1.95s | Maintained |
 | Chart Render Time | 250ms | 150ms | 150ms | Maintained |
@@ -189,20 +189,20 @@ release-notes/
 ## 📅 Release History
 
 ```
-v2.5.2 (2025-09-18) ← Current Release
+v2.2.2 (2025-09-18) ← Current Release
 └── UI/UX Enhancement
     ├── Complete Values Discovery redesign
     ├── Gradient & glassmorphism effects
     ├── Responsive grid layout
     └── Enhanced animations
 
-v2.5.1 (2025-09-17)
+v2.2.1 (2025-09-17)
 └── Patch release
     ├── Client stability fixes
     ├── Localization updates
     └── Layout improvements
 
-v2.5.0 (2025-09-16)
+v2.2.0 (2025-09-16)
 └── Feature release
     ├── Value Discovery module
     ├── Drag-and-drop interface
@@ -232,12 +232,12 @@ v1.0.0 (2025-01-15)
 
 ## 🎯 Future Roadmap Preview
 
-### v2.5.3 (Planned: Q4 2025)
+### v2.2.3 (Planned: Q4 2025)
 - Export functionality for value sorting results
 - Comparison view for multiple sessions
 - Integration with AI insights
 
-### v2.6.0 (Planned: Q4 2025)
+### v2.3.0 (Planned: Q4 2025)
 - Results dashboard with detailed analytics
 - Value-based career recommendations
 - Cross-module insights integration
@@ -254,5 +254,5 @@ v1.0.0 (2025-01-15)
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
 **🔄 Last Updated**: September 18, 2025
-**📊 Current Version**: v2.5.2
+**📊 Current Version**: v2.2.2
 **👥 Maintained By**: WFED 119 Development Team

@@ -11,6 +11,12 @@ interface ScreenerItem { id: string; type: number; text: string }
 interface DiscItem { id: string; pair: string; leftType: number; rightType: number; prompt: string; optionA: string; optionB: string }
 interface InstinctItem { id: string; instinct: 'sp' | 'so' | 'sx'; text: string }
 
+const isStage = (value: unknown): value is Stage =>
+  value === 'screener' || value === 'discriminators' || value === 'wings' || value === 'narrative' || value === 'complete';
+
+const toErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
 function EnneagramWizardContent() {
   const router = useRouter();
   const search = useSearchParams();
@@ -60,8 +66,8 @@ function EnneagramWizardContent() {
       if (targetStage === 'discriminators') setDiscItems(data.items || []);
       if (targetStage === 'wings') setInstinctItems(data.items || []);
       if (targetStage === 'narrative') setNarrativePrompts(data.prompts || []);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load');
+    } catch (error) {
+      setError(toErrorMessage(error, 'Failed to load'));
     } finally {
       setLoading(false);
     }
@@ -77,27 +83,29 @@ function EnneagramWizardContent() {
     setLoading(true);
     setError(null);
     try {
-      let body: any = { sessionId, stage, locale };
+      const payload: { sessionId: string; stage: Stage; locale: Locale; input?: unknown } = { sessionId, stage, locale };
       if (stage === 'screener') {
-        body.input = { items: Object.entries(screenerResponses).map(([itemId, value]) => ({ itemId, value })) };
+        payload.input = { items: Object.entries(screenerResponses).map(([itemId, value]) => ({ itemId, value })) };
       } else if (stage === 'discriminators') {
-        body.input = { answers: Object.entries(discResponses).map(([itemId, choice]) => ({ itemId, choice })) };
+        payload.input = { answers: Object.entries(discResponses).map(([itemId, choice]) => ({ itemId, choice })) };
       } else if (stage === 'wings') {
-        body.input = { items: Object.entries(instinctResponses).map(([itemId, value]) => ({ itemId, value })) };
+        payload.input = { items: Object.entries(instinctResponses).map(([itemId, value]) => ({ itemId, value })) };
       } else if (stage === 'narrative') {
-        body.input = { texts: narrativeTexts };
+        payload.input = { texts: narrativeTexts };
       }
 
       const res = await fetch('/api/enneagram/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Failed to submit (${res.status})`);
-      const data = await res.json();
-      setStage(data.nextStage as Stage);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to submit');
+      const data = (await res.json()) as { nextStage?: unknown };
+      if (isStage(data.nextStage)) {
+        setStage(data.nextStage);
+      }
+    } catch (error) {
+      setError(toErrorMessage(error, 'Failed to submit'));
     } finally {
       setLoading(false);
     }
@@ -111,8 +119,8 @@ function EnneagramWizardContent() {
       if (!res.ok) throw new Error(`Failed to score (${res.status})`);
       // optional: show a toast/summary
       router.push(`/results?sessionId=${encodeURIComponent(sessionId)}`);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to score');
+    } catch (error) {
+      setError(toErrorMessage(error, 'Failed to score'));
     } finally {
       setLoading(false);
     }
@@ -337,4 +345,3 @@ export default function EnneagramWizard() {
     </Suspense>
   );
 }
-

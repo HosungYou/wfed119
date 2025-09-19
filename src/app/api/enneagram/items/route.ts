@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
-import { getDiscriminatorItems, getDiscriminatorPairsForTop } from '../../../../lib/enneagram/discriminators';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
-import { scoreStage1 } from '../../../../lib/enneagram/scoring';
 
 export async function GET(req: NextRequest) {
   try {

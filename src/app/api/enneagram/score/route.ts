@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import { prisma } from '../../../../lib/prisma';
-import { scoreStage1, primaryType as getPrimaryType, confidenceBand } from '../../../../lib/enneagram/scoring';
-import { itemById as discItemById } from '../../../../lib/enneagram/discriminators';
-import { scoreInstincts } from '../../../../lib/enneagram/instincts';
 
 export async function POST(req: NextRequest) {
   try {

@@ -5,11 +5,7 @@ import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import * as htmlToImage from 'html-to-image';
-
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 type Value = { id: string; name: string; description: string };
 type SetKey = 'terminal' | 'instrumental' | 'work';
@@ -107,6 +103,59 @@ type Layout = {
   not_important: string[];
 };
 const emptyLayout: Layout = { very_important: [], important: [], somewhat_important: [], not_important: [] };
+type LayoutBucket = keyof Layout;
+
+interface ValuePatterns {
+  securityCount: number;
+  socialCount: number;
+  growthCount: number;
+  achievementCount: number;
+  veryImportantValues: Value[];
+}
+
+interface PersonalityInsights {
+  mbtiType: string;
+  enneagramType: string;
+  coreTheme: string;
+}
+
+interface CareerInsights {
+  careers: string[];
+  workEnvironment: string;
+  leadershipStyle: string;
+}
+
+interface ThemeValue {
+  id: string;
+  name: string;
+  bucket: LayoutBucket;
+  priority: number;
+}
+
+interface ThemeScore {
+  name: string;
+  values: ThemeValue[];
+  count: number;
+  totalScore: number;
+  averageScore: number;
+  highPriorityCount: number;
+}
+
+interface ThemeAnalysis {
+  mostImportantThemes: ThemeScore[];
+  leastImportantThemes: ThemeScore[];
+  allThemes: ThemeScore[];
+}
+
+interface ThemeInsights {
+  profileInsight: string;
+  balanceInsight: string;
+}
+
+const layoutBucketIds: LayoutBucket[] = ['very_important', 'important', 'somewhat_important', 'not_important'];
+
+const isLayoutBucket = (value: string): value is LayoutBucket =>
+  layoutBucketIds.includes(value as LayoutBucket);
 
 export default function ValueSetPage({ params }: { params: Promise<{ set?: string }> }) {
   // Unwrap the async params using React.use() for Next.js 15 compatibility
@@ -140,7 +189,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
   // Load saved from server if available
   useEffect(() => {
-    const userId = session?.user?.email || (session as any)?.user?.id;
+    const userId = session?.user?.email ?? session?.user?.id ?? undefined;
     if (!userId || !routeSet) return;
     fetch(`/api/discover/values/results?user_id=${encodeURIComponent(userId)}&set=${routeSet}`)
       .then(r => r.json())
@@ -170,9 +219,9 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     // Remove from source
     if (sourceId === 'palette') {
       setPalette(prev => prev.filter(x => x !== draggableId));
-    } else {
-      const arr = (nextLayout[sourceId as keyof Layout] as string[]).filter(x => x !== draggableId);
-      (nextLayout[sourceId as keyof Layout] as string[]) = arr;
+    } else if (isLayoutBucket(sourceId)) {
+      const updated = nextLayout[sourceId].filter(x => x !== draggableId);
+      nextLayout[sourceId] = updated;
     }
 
     // Add to dest
@@ -180,9 +229,9 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       setPalette(prev => { const arr = [...prev]; arr.splice(destination.index, 0, draggableId); return arr; });
       // Ensure layout reflects removal from the source bucket
       setLayout(nextLayout);
-    } else {
+    } else if (isLayoutBucket(destId)) {
       // Check if destination bucket has room (max 7 items)
-      const destArray = nextLayout[destId as keyof Layout] as string[];
+      const destArray = nextLayout[destId];
       if (destArray.length >= 7) {
         // Bucket is full, don't allow the drop
         return;
@@ -190,19 +239,16 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
       const arr = [...destArray];
       arr.splice(destination.index, 0, draggableId);
-      (nextLayout[destId as keyof Layout] as string[]) = arr;
+      nextLayout[destId] = arr;
       setLayout(nextLayout);
     }
   }
 
-  const counts = [layout.very_important.length, layout.important.length, layout.somewhat_important.length, layout.not_important.length];
   const top3 = layout.very_important.slice(0, 3).map(id => byId[id]?.name || id);
-  const chartData = { labels: ['Very Important', 'Important', 'Somewhat Important', 'Not Important'], datasets: [{ label: 'Count', data: counts, backgroundColor: ['#7c3aed', '#2563eb', '#10b981', '#9ca3af'] }] };
 
   // Value Analysis Functions
-  function analyzeValuePatterns() {
+  function analyzeValuePatterns(): ValuePatterns | null {
     const veryImportantValues = layout.very_important.map(id => byId[id]);
-    const notImportantValues = layout.not_important.map(id => byId[id]);
 
     if (veryImportantValues.length === 0) return null;
 
@@ -233,7 +279,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     return { securityCount, socialCount, growthCount, achievementCount, veryImportantValues };
   }
 
-  function getPersonalityInsights(patterns: any) {
+  function getPersonalityInsights(patterns: ValuePatterns | null): PersonalityInsights | null {
     if (!patterns) return null;
 
     const { securityCount, socialCount, growthCount, achievementCount } = patterns;
@@ -293,10 +339,9 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     return { mbtiType, enneagramType, coreTheme };
   }
 
-  function getCareerInsights(patterns: any, personality: any) {
+  function getCareerInsights(patterns: ValuePatterns | null, personality: PersonalityInsights | null): CareerInsights | null {
     if (!patterns || !personality) return null;
 
-    const { securityCount, socialCount, growthCount, achievementCount } = patterns;
     const { coreTheme } = personality;
 
     let careers: string[] = [];
@@ -325,62 +370,27 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }
 
   // Enhanced Theme Analysis Functions
-  function analyzeValueThemes() {
-    const allBuckets = ['very_important', 'important', 'somewhat_important', 'not_important'] as const;
-
-    const themes = {
-      'Security & Stability': {
-        keywords: ['security', 'safety', 'stable', 'protection', 'family'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Personal Growth & Development': {
-        keywords: ['growth', 'wisdom', 'learning', 'development', 'improvement', 'authentic'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Social Impact & Recognition': {
-        keywords: ['social', 'global', 'community', 'recognition', 'justice', 'contribution'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Achievement & Success': {
-        keywords: ['accomplishment', 'success', 'achievement', 'excellence', 'innovation'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Relationships & Love': {
-        keywords: ['love', 'friendship', 'relationship', 'connection', 'intimacy'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Freedom & Autonomy': {
-        keywords: ['freedom', 'autonomy', 'independence', 'choice', 'liberation'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Pleasure & Comfort': {
-        keywords: ['pleasure', 'comfort', 'enjoyment', 'satisfying', 'ease'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Adventure & Excitement': {
-        keywords: ['exciting', 'adventure', 'stimulation', 'challenge', 'variety'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Peace & Harmony': {
-        keywords: ['peace', 'harmony', 'tranquility', 'balance', 'contentment'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      },
-      'Spirituality & Meaning': {
-        keywords: ['spirituality', 'meaning', 'purpose', 'transcendent', 'beauty'],
-        values: [] as { id: string; name: string; bucket: string; priority: number }[]
-      }
+  function analyzeValueThemes(): ThemeAnalysis {
+    const themes: Record<string, { keywords: string[]; values: ThemeValue[] }> = {
+      'Security & Stability': { keywords: ['security', 'safety', 'stable', 'protection', 'family'], values: [] },
+      'Personal Growth & Development': { keywords: ['growth', 'wisdom', 'learning', 'development', 'improvement', 'authentic'], values: [] },
+      'Social Impact & Recognition': { keywords: ['social', 'global', 'community', 'recognition', 'justice', 'contribution'], values: [] },
+      'Achievement & Success': { keywords: ['accomplishment', 'success', 'achievement', 'excellence', 'innovation'], values: [] },
+      'Relationships & Love': { keywords: ['love', 'friendship', 'relationship', 'connection', 'intimacy'], values: [] },
+      'Freedom & Autonomy': { keywords: ['freedom', 'autonomy', 'independence', 'choice', 'liberation'], values: [] },
+      'Pleasure & Comfort': { keywords: ['pleasure', 'comfort', 'enjoyment', 'satisfying', 'ease'], values: [] },
+      'Adventure & Excitement': { keywords: ['exciting', 'adventure', 'stimulation', 'challenge', 'variety'], values: [] },
+      'Peace & Harmony': { keywords: ['peace', 'harmony', 'tranquility', 'balance', 'contentment'], values: [] },
+      'Spirituality & Meaning': { keywords: ['spirituality', 'meaning', 'purpose', 'transcendent', 'beauty'], values: [] },
     };
 
-    // Priority mapping (higher number = more important)
-    const priorityMap = { very_important: 4, important: 3, somewhat_important: 2, not_important: 1 };
+    const priorityMap: Record<LayoutBucket, number> = { very_important: 4, important: 3, somewhat_important: 2, not_important: 1 };
 
-    // Analyze each bucket
-    allBuckets.forEach(bucket => {
+    layoutBucketIds.forEach(bucket => {
       const bucketValues = layout[bucket].map(id => byId[id]);
 
       bucketValues.forEach(value => {
-        // Find matching themes for this value
-        Object.entries(themes).forEach(([themeName, theme]) => {
+        Object.values(themes).forEach(theme => {
           const matches = theme.keywords.some(keyword =>
             value.name.toLowerCase().includes(keyword) ||
             value.description.toLowerCase().includes(keyword)
@@ -391,7 +401,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
               id: value.id,
               name: value.name,
               bucket,
-              priority: priorityMap[bucket]
+              priority: priorityMap[bucket],
             });
           }
         });
@@ -405,8 +415,8 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       count: theme.values.length,
       totalScore: theme.values.reduce((sum, v) => sum + v.priority, 0),
       averageScore: theme.values.length > 0 ? theme.values.reduce((sum, v) => sum + v.priority, 0) / theme.values.length : 0,
-      highPriorityCount: theme.values.filter(v => v.priority >= 3).length
-    })).filter(theme => theme.count > 0); // Only include themes with values
+      highPriorityCount: theme.values.filter(v => v.priority >= 3).length,
+    })).filter(theme => theme.count > 0);
 
     // Sort by total score (most important first)
     const mostImportantThemes = themeScores
@@ -422,7 +432,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     return { mostImportantThemes, leastImportantThemes, allThemes: themeScores };
   }
 
-  function getThemeInsights(themeAnalysis: any) {
+  function getThemeInsights(themeAnalysis: ThemeAnalysis | null): ThemeInsights | null {
     if (!themeAnalysis || themeAnalysis.mostImportantThemes.length === 0) return null;
 
     const { mostImportantThemes, leastImportantThemes } = themeAnalysis;
@@ -469,15 +479,6 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   const careerInsights = getCareerInsights(valuePatterns, personalityInsights);
   const themeAnalysis = analyzeValueThemes();
   const themeInsights = getThemeInsights(themeAnalysis);
-  const chartRef = useRef<any>(null);
-
-  function exportChartPNG() {
-    const chart = chartRef.current;
-    if (!chart) return;
-    const url = chart.toBase64Image();
-    const a = document.createElement('a');
-    a.href = url; a.download = `${routeSet}_values_summary.png`; a.click();
-  }
 
   async function exportBoardPNG() {
     if (!boardRef.current) return;
@@ -487,7 +488,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }
 
   async function saveToServer() {
-    const userId = (session as any)?.user?.id || session?.user?.email;
+    const userId = session?.user?.id ?? session?.user?.email ?? undefined;
     if (!userId) { alert('Please sign in to save.'); return; }
     const payload = { user_id: userId, set: routeSet, layout, top3 };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -509,7 +510,6 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
               <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>Sign out</button>
             )}
             <button onClick={saveToServer} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg"><Save className="w-4 h-4"/>Save</button>
-            <button onClick={exportChartPNG} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><Download className="w-4 h-4"/>Chart PNG</button>
             <button onClick={exportBoardPNG} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><Download className="w-4 h-4"/>Board PNG</button>
           </div>
         </div>
@@ -668,7 +668,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                   <h4 className="text-lg font-bold text-purple-900 mb-3 flex items-center gap-2">
                     🎯 Your Core Value Theme
                   </h4>
-                  <div className="text-2xl font-bold text-purple-800 mb-2">"{personalityInsights.coreTheme}"</div>
+                  <div className="text-2xl font-bold text-purple-800 mb-2">&ldquo;{personalityInsights.coreTheme}&rdquo;</div>
                   <p className="text-gray-700 text-sm">
                     Based on your value priorities, you embody the characteristics of a {personalityInsights.coreTheme.toLowerCase()}.
                   </p>

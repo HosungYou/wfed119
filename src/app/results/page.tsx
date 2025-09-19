@@ -11,6 +11,16 @@ const StrengthRadarChart = dynamic(
 );
 
 type Strengths = { skills: string[]; attitudes: string[]; values: string[] };
+interface EnneagramResult {
+  primaryType?: string | null;
+  confidence?: string | null;
+  wingEstimate?: string | null;
+  instinct?: string | null;
+  typeProbabilities?: Record<string, number | string> | null;
+}
+
+const toErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
 
 function ResultsPageContent() {
   const search = useSearchParams();
@@ -19,7 +29,7 @@ function ResultsPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [strengths, setStrengths] = useState<Strengths>({ skills: [], attitudes: [], values: [] });
-  const [enneagram, setEnneagram] = useState<any>(null);
+  const [enneagram, setEnneagram] = useState<EnneagramResult | null>(null);
 
   const canFetch = useMemo(() => sessionId && sessionId.length > 0, [sessionId]);
 
@@ -30,11 +40,11 @@ function ResultsPageContent() {
     try {
       const res = await fetch(`/api/results/${sessionId}`);
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
-      const data = await res.json();
+      const data = await res.json() as Partial<{ strengths: Strengths; enneagram: EnneagramResult | null }>;
       setStrengths(data?.strengths ?? { skills: [], attitudes: [], values: [] });
       setEnneagram(data?.enneagram ?? null);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load results');
+    } catch (error) {
+      setError(toErrorMessage(error, 'Failed to load results'));
     } finally {
       setLoading(false);
     }
@@ -143,4 +153,3 @@ export default function ResultsPage() {
     </Suspense>
   );
 }
-

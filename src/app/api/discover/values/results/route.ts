@@ -60,22 +60,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user identity, set, or layout' }, { status: 400 });
     }
 
-    const saved = await prisma.valueResult.upsert({
-      where: {
-        // Use composite unique constraint to uniquely identify a record per user+set
-        userId_valueSet: { userId: uid, valueSet: set },
-      },
-      update: {
-        layout,
-        top3: Array.isArray(top3) ? top3 : [],
-        updatedAt: new Date(),
-      },
-      create: {
-        userId: uid,
-        valueSet: set,
-        layout,
-        top3: Array.isArray(top3) ? top3 : [],
-      },
+    const top3Array = Array.isArray(top3) ? top3 : [];
+
+    const saved = await prisma.$transaction(async (tx) => {
+      const existing = await tx.valueResult.findMany({
+        where: { userId: uid, valueSet: set },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      const [latest, ...duplicates] = existing;
+
+      if (duplicates.length > 0) {
+        // Legacy saves could leave multiple rows per user/set; collapse them here.
+        await tx.valueResult.deleteMany({
+          where: { id: { in: duplicates.map((record) => record.id) } },
+        });
+      }
+
+      if (latest) {
+        return tx.valueResult.update({
+          where: { id: latest.id },
+          data: { layout, top3: top3Array },
+        });
+      }
+
+      return tx.valueResult.create({
+        data: {
+          userId: uid,
+          valueSet: set,
+          layout,
+          top3: top3Array,
+        },
+      });
     });
 
     return NextResponse.json({ success: true, id: saved.id });

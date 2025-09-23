@@ -3,7 +3,7 @@
 import React, { useMemo, useRef, useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck, RotateCcw } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import * as htmlToImage from 'html-to-image';
 
@@ -495,6 +495,13 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     if (!res.ok) alert('Save failed'); else alert('Saved successfully');
   }
 
+  function clearBoard() {
+    if (confirm('Are you sure you want to clear all your value placements? This will reset the board to start fresh.')) {
+      setLayout(emptyLayout);
+      setPalette(VALUES.map(v => v.id));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-10">
@@ -509,6 +516,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
             ) : (
               <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>Sign out</button>
             )}
+            <button onClick={clearBoard} className="flex items-center gap-1 px-3 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50"><RotateCcw className="w-4 h-4"/>Clear</button>
             <button onClick={saveToServer} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg"><Save className="w-4 h-4"/>Save</button>
             <button onClick={exportBoardPNG} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><Download className="w-4 h-4"/>Board PNG</button>
           </div>
@@ -517,15 +525,26 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2 capitalize bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            {routeSet} Values — Categorize
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold capitalize bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              {routeSet} Values — Categorize
+            </h1>
+            {layout.very_important.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                In Progress
+              </div>
+            )}
+          </div>
           <p className="text-gray-600">Drag and drop values to organize them by importance</p>
         </div>
 
         <div className="mb-4 text-xs text-gray-700 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
           <ShieldCheck className="w-4 h-4 text-blue-600"/>
           When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.
+          <span className="ml-auto text-orange-600 font-medium">
+            Tip: Use "Clear" button to start fresh on any value set
+          </span>
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>

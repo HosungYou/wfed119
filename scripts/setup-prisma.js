@@ -24,7 +24,7 @@ try {
     
     // Push schema to database
     console.log('🚀 Pushing schema to database...');
-    execSync('npx prisma db push --schema=prisma/schema.postgres.prisma', { 
+    execSync('npx prisma db push --schema=prisma/schema.postgres.prisma --accept-data-loss', {
       stdio: 'inherit',
       cwd: process.cwd()
     });

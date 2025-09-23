@@ -751,7 +751,6 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                           )}
                         </Draggable>
                       );})}
-                    </div>
                       {provided.placeholder}
                     </div>
                   </div>

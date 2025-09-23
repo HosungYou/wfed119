@@ -11,6 +11,14 @@ import {
   type ValueSet,
 } from './layout-utils';
 
+// Ensure Prisma runs in the Node.js runtime (Edge lacks Prisma support)
+export const runtime = 'nodejs';
+
+const dbDisabledResponse = () =>
+  NextResponse.json({ error: 'Database operations disabled' }, { status: 503 });
+
+const isDatabaseDisabled = () => process.env.DB_ENABLED === 'false';
+
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
   const session = await getServerSession(authOptions);
@@ -26,6 +34,10 @@ interface SaveRequestBody {
 }
 
 export async function GET(req: NextRequest) {
+  if (isDatabaseDisabled()) {
+    return dbDisabledResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const setParam = searchParams.get('set');
@@ -65,6 +77,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (isDatabaseDisabled()) {
+    return dbDisabledResponse();
+  }
+
   try {
     const body = (await req.json()) as SaveRequestBody;
     const set = body.set;

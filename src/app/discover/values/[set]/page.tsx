@@ -317,24 +317,44 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       enneagramType = 'Type 9 (Peacemaker)';
     }
 
-    // Core theme
-    if (securityCount > 0 && socialCount > 0) {
-      coreTheme = 'Responsible Guardian';
-    } else if (socialCount > 0 && growthCount > 0) {
-      coreTheme = 'Inspiring Mentor';
-    } else if (achievementCount > 0 && socialCount > 0) {
-      coreTheme = 'Influential Leader';
-    } else if (growthCount > 0 && securityCount > 0) {
-      coreTheme = 'Thoughtful Strategist';
-    } else if (securityCount >= 2) {
-      coreTheme = 'Reliable Protector';
-    } else if (socialCount >= 2) {
-      coreTheme = 'Community Builder';
-    } else if (growthCount >= 2) {
-      coreTheme = 'Independent Learner';
-    } else {
-      coreTheme = 'Balanced Individual';
-    }
+    // Enhanced Core theme generation using position-based scoring
+    const generateCoreThemeFromScoring = (): string => {
+      const topValues = layout.very_important.slice(0, 3).map(id => byId[id]);
+      if (topValues.length === 0) return 'Values Explorer';
+
+      const themeAnalysis = analyzeValueThemes();
+      if (themeAnalysis.mostImportantThemes.length === 0) return 'Values Explorer';
+
+      const primaryTheme = themeAnalysis.mostImportantThemes[0].name;
+      const secondaryTheme = themeAnalysis.mostImportantThemes[1]?.name;
+
+      // Generate theme based on top scoring patterns
+      if (primaryTheme.includes('Security') && secondaryTheme?.includes('Social')) {
+        return 'Protective Community Leader';
+      } else if (primaryTheme.includes('Growth') && secondaryTheme?.includes('Social')) {
+        return 'Developmental Catalyst';
+      } else if (primaryTheme.includes('Achievement') && secondaryTheme?.includes('Social')) {
+        return 'Impactful Achiever';
+      } else if (primaryTheme.includes('Freedom') && secondaryTheme?.includes('Growth')) {
+        return 'Independent Innovator';
+      } else if (primaryTheme.includes('Security') && secondaryTheme?.includes('Growth')) {
+        return 'Stable Progress Builder';
+      } else if (primaryTheme.includes('Relationships')) {
+        return 'Connection-Centered Leader';
+      } else if (primaryTheme.includes('Achievement')) {
+        return 'Excellence-Driven Professional';
+      } else if (primaryTheme.includes('Growth')) {
+        return 'Continuous Learning Champion';
+      } else if (primaryTheme.includes('Security')) {
+        return 'Stability-Focused Guardian';
+      } else if (primaryTheme.includes('Social')) {
+        return 'Community Impact Maker';
+      } else {
+        return primaryTheme.replace(' & ', '-').replace(/\s+/g, ' ') + ' Advocate';
+      }
+    };
+
+    coreTheme = generateCoreThemeFromScoring();
 
     return { mbtiType, enneagramType, coreTheme };
   }
@@ -369,7 +389,57 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     return { careers, workEnvironment, leadershipStyle };
   }
 
-  // Enhanced Theme Analysis Functions
+  // Position-Based Scoring System
+  function calculateValueScore(valueId: string): number {
+    // Find which bucket and position the value is in
+    let totalPosition = 0;
+
+    // Calculate position considering all buckets in order of importance
+    const bucketOrder: LayoutBucket[] = ['very_important', 'important', 'somewhat_important', 'not_important'];
+
+    for (const bucket of bucketOrder) {
+      const bucketValues = layout[bucket];
+      const indexInBucket = bucketValues.indexOf(valueId);
+
+      if (indexInBucket !== -1) {
+        // Found the value in this bucket
+        totalPosition = getTotalPositionsBefore(bucket) + indexInBucket;
+        break;
+      }
+    }
+
+    // If value is not placed, return 0
+    if (totalPosition === 0 && !isValuePlaced(valueId)) return 0;
+
+    // Convert position to score: 1st position = 100, 2nd = ~96, etc.
+    // Using formula: 100 - (position * 4) to get distributed scores
+    return Math.max(1, 100 - (totalPosition * 4));
+  }
+
+  function getTotalPositionsBefore(bucket: LayoutBucket): number {
+    const bucketOrder: LayoutBucket[] = ['very_important', 'important', 'somewhat_important', 'not_important'];
+    const bucketIndex = bucketOrder.indexOf(bucket);
+
+    let totalBefore = 0;
+    for (let i = 0; i < bucketIndex; i++) {
+      totalBefore += layout[bucketOrder[i]].length;
+    }
+    return totalBefore;
+  }
+
+  function isValuePlaced(valueId: string): boolean {
+    return layoutBucketIds.some(bucket => layout[bucket].includes(valueId));
+  }
+
+  function getAllValueScores(): Record<string, number> {
+    const scores: Record<string, number> = {};
+    VALUES.forEach(value => {
+      scores[value.id] = calculateValueScore(value.id);
+    });
+    return scores;
+  }
+
+  // Enhanced Theme Analysis Functions with Position-Based Scoring
   function analyzeValueThemes(): ThemeAnalysis {
     const themes: Record<string, { keywords: string[]; values: ThemeValue[] }> = {
       'Security & Stability': { keywords: ['security', 'safety', 'stable', 'protection', 'family'], values: [] },
@@ -384,12 +454,12 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       'Spirituality & Meaning': { keywords: ['spirituality', 'meaning', 'purpose', 'transcendent', 'beauty'], values: [] },
     };
 
-    const priorityMap: Record<LayoutBucket, number> = { very_important: 4, important: 3, somewhat_important: 2, not_important: 1 };
+    const valueScores = getAllValueScores();
 
     layoutBucketIds.forEach(bucket => {
       const bucketValues = layout[bucket].map(id => byId[id]);
 
-      bucketValues.forEach(value => {
+      bucketValues.forEach((value, indexInBucket) => {
         Object.values(themes).forEach(theme => {
           const matches = theme.keywords.some(keyword =>
             value.name.toLowerCase().includes(keyword) ||
@@ -397,35 +467,36 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
           );
 
           if (matches) {
+            const score = valueScores[value.id] || 0;
             theme.values.push({
               id: value.id,
               name: value.name,
               bucket,
-              priority: priorityMap[bucket],
+              priority: score, // Now using position-based score instead of bucket score
             });
           }
         });
       });
     });
 
-    // Calculate theme scores and rankings
+    // Calculate theme scores and rankings with new 100-point scale
     const themeScores = Object.entries(themes).map(([themeName, theme]) => ({
       name: themeName,
       values: theme.values,
       count: theme.values.length,
       totalScore: theme.values.reduce((sum, v) => sum + v.priority, 0),
       averageScore: theme.values.length > 0 ? theme.values.reduce((sum, v) => sum + v.priority, 0) / theme.values.length : 0,
-      highPriorityCount: theme.values.filter(v => v.priority >= 3).length,
+      highPriorityCount: theme.values.filter(v => v.priority >= 70).length, // High priority = score >= 70
     })).filter(theme => theme.count > 0);
 
     // Sort by total score (most important first)
     const mostImportantThemes = themeScores
-      .filter(theme => theme.averageScore >= 2.5)
+      .filter(theme => theme.averageScore >= 50) // Above 50 points average
       .sort((a, b) => b.totalScore - a.totalScore)
       .slice(0, 5);
 
     const leastImportantThemes = themeScores
-      .filter(theme => theme.averageScore < 2.5)
+      .filter(theme => theme.averageScore < 50 && theme.count > 0) // Below 50 points average
       .sort((a, b) => a.totalScore - b.totalScore)
       .slice(0, 5);
 
@@ -536,15 +607,48 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
               </div>
             )}
           </div>
-          <p className="text-gray-600">Drag and drop values to organize them by importance</p>
+          <p className="text-gray-600">Drag and drop values to organize them by importance and priority order</p>
         </div>
 
-        <div className="mb-4 text-xs text-gray-700 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <ShieldCheck className="w-4 h-4 text-blue-600"/>
-          When saved, your values classification (set, placements, Top 3) will be stored in the database for future module analysis.
-          <span className="ml-auto text-orange-600 font-medium">
-            Tip: Use "Clear" button to start fresh on any value set
-          </span>
+        {/* Enhanced User Instructions */}
+        <div className="mb-6 space-y-3">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span className="text-indigo-600 font-bold text-sm">📋</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-indigo-900 mb-2">Position-Based Scoring System</h3>
+                <div className="text-sm text-indigo-800 space-y-2">
+                  <p><strong>Individual Scores:</strong> Each value receives a unique score (1-100) based on its exact position across all categories.</p>
+                  <p><strong>Within Categories:</strong> Top position in each box gets the highest score, with gradients showing priority levels.</p>
+                  <p><strong>Score Display:</strong> See your score for each value in the top-right corner of each card.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span className="text-yellow-600 font-bold text-sm">🎯</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-yellow-900 mb-2">Strategic Positioning Tips</h3>
+                <div className="text-sm text-yellow-800 space-y-1">
+                  <p>• <strong>Order matters:</strong> Arrange items within each category by true priority</p>
+                  <p>• <strong>Golden rings:</strong> #1 items in each category get special highlighting</p>
+                  <p>• <strong>Gradient intensity:</strong> Stronger colors = higher priority within category</p>
+                  <p>• <strong>Use "Clear" button</strong> to start fresh on any value set</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-700 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <ShieldCheck className="w-4 h-4 text-blue-600"/>
+            When saved, your values classification with position-based scores will be stored for comprehensive analysis across all LifeCraft modules.
+          </div>
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -599,21 +703,55 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                       </span>
                     </div>
                     <div className="flex-1">
-                      {(layout[bucket] as string[]).map((id, index) => (
+                      {(layout[bucket] as string[]).map((id, index) => {
+                        // Position-based styling - higher position = stronger gradient
+                        const totalPosition = getTotalPositionsBefore(bucket) + index;
+                        const score = calculateValueScore(id);
+                        const isTopRank = index === 0;
+
+                        // Generate position-based styling
+                        const positionStyles = [
+                          // Very Important bucket gradients
+                          ['bg-gradient-to-r from-purple-100 to-purple-200 border-purple-300 shadow-purple-100/50', 'bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200', 'bg-gradient-to-r from-purple-25 to-purple-50 border-purple-100'],
+                          // Important bucket gradients
+                          ['bg-gradient-to-r from-blue-100 to-blue-200 border-blue-300 shadow-blue-100/50', 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200', 'bg-gradient-to-r from-blue-25 to-blue-50 border-blue-100'],
+                          // Somewhat Important gradients
+                          ['bg-gradient-to-r from-green-100 to-green-200 border-green-300 shadow-green-100/50', 'bg-gradient-to-r from-green-50 to-green-100 border-green-200', 'bg-gradient-to-r from-green-25 to-green-50 border-green-100'],
+                          // Not Important gradients
+                          ['bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 shadow-gray-100/50', 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200', 'bg-gradient-to-r from-gray-25 to-gray-50 border-gray-100']
+                        ];
+
+                        const intensityLevel = index < 2 ? 0 : index < 4 ? 1 : 2;
+                        const gradientStyle = positionStyles[bucketIndex]?.[intensityLevel] || 'bg-white border-gray-200';
+
+                        return (
                         <Draggable key={id} draggableId={id} index={index}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="border border-gray-200 rounded-lg p-2.5 mb-2 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-move"
+                              className={`${gradientStyle} rounded-lg p-2.5 mb-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-move relative ${
+                                isTopRank ? 'ring-2 ring-yellow-300 ring-opacity-70' : ''
+                              }`}
                             >
-                              <div className="font-semibold text-sm text-gray-900 mb-1">{byId[id].name}</div>
+                              {isTopRank && (
+                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                  1
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-semibold text-sm text-gray-900">{byId[id].name}</div>
+                                <div className="text-xs font-mono text-gray-500 bg-white/70 px-2 py-1 rounded">
+                                  {score}
+                                </div>
+                              </div>
                               <div className="text-xs text-gray-600 leading-relaxed">{byId[id].description}</div>
                             </div>
                           )}
                         </Draggable>
-                      ))}
+                      );})}
+                    </div>
                       {provided.placeholder}
                     </div>
                   </div>
@@ -711,7 +849,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                           <div className="flex-1">
                             <div className="font-semibold text-emerald-900 text-sm mb-1">{theme.name}</div>
                             <div className="text-xs text-emerald-700 mb-2">
-                              {theme.count} value{theme.count > 1 ? 's' : ''} • Score: {theme.totalScore}
+                              {theme.count} value{theme.count > 1 ? 's' : ''} • Total: {Math.round(theme.totalScore)} • Avg: {Math.round(theme.averageScore)}
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {theme.values.slice(0, 3).map((value) => (
@@ -746,7 +884,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                             <div className="flex-1">
                               <div className="font-semibold text-slate-900 text-sm mb-1">{theme.name}</div>
                               <div className="text-xs text-slate-600 mb-2">
-                                {theme.count} value{theme.count > 1 ? 's' : ''} • Score: {theme.totalScore}
+                                {theme.count} value{theme.count > 1 ? 's' : ''} • Total: {Math.round(theme.totalScore)} • Avg: {Math.round(theme.averageScore)}
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {theme.values.slice(0, 3).map((value) => (
@@ -792,56 +930,30 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
                 </div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Personality Insights */}
-                <div className="space-y-4">
-                  {personalityInsights && (
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                      <h4 className="font-bold mb-3 text-blue-900 flex items-center gap-2">
-                        🧠 Personality Insights
-                      </h4>
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <span className="font-semibold text-blue-800">MBTI Tendency:</span>
-                          <span className="ml-2 px-2 py-1 bg-blue-100 rounded text-blue-900 font-medium">
-                            {personalityInsights.mbtiType}
+              {/* Career Alignment */}
+              {careerInsights && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-6">
+                  <h4 className="font-bold mb-4 text-green-900 flex items-center gap-2">
+                    💼 Career Alignment
+                  </h4>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-green-800 block mb-2">Recommended Fields:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {careerInsights.careers.slice(0, 4).map((career, index) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 rounded-lg text-green-900 text-sm">
+                            {career}
                           </span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-blue-800">Enneagram:</span>
-                          <span className="ml-2 px-2 py-1 bg-blue-100 rounded text-blue-900 font-medium">
-                            {personalityInsights.enneagramType}
-                          </span>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  )}
-
-                  {careerInsights && (
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                      <h4 className="font-bold mb-3 text-green-900 flex items-center gap-2">
-                        💼 Career Alignment
-                      </h4>
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <span className="font-semibold text-green-800 block mb-1">Recommended Fields:</span>
-                          <div className="flex flex-wrap gap-1">
-                            {careerInsights.careers.slice(0, 3).map((career, index) => (
-                              <span key={index} className="px-2 py-1 bg-green-100 rounded text-green-900 text-xs">
-                                {career}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-green-800 block mb-1">Leadership Style:</span>
-                          <p className="text-green-700">{careerInsights.leadershipStyle}</p>
-                        </div>
-                      </div>
+                    <div>
+                      <span className="font-semibold text-green-800 block mb-2">Leadership Style:</span>
+                      <p className="text-green-700">{careerInsights.leadershipStyle}</p>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Growth Recommendations */}
               {valuePatterns && (

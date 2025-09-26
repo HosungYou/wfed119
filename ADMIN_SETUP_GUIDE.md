@@ -36,18 +36,22 @@ SUPER_ADMIN  - Super admin privileges (access to all features)
 **File**: `src/app/api/auth/[...nextauth]/route.ts`
 
 ```javascript
-const superAdminEmails = [
-  'newhosung@gmail.com',
-  'tvs5971@psu.edu',
-  // Add additional SUPER_ADMIN emails here
-  'collaborator@example.com',
-];
+const defaultSuperAdmins = ['newhosung@gmail.com', 'tvs5971@psu.edu'];
+const envSuperAdmins = (process.env.SUPER_ADMIN_EMAILS || '')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+const superAdminEmailSet = new Set([
+  ...defaultSuperAdmins.map((email) => email.toLowerCase()),
+  ...envSuperAdmins,
+]);
 ```
 
 **Advantages**:
-- Immediate application
-- Change history management through Git
-- Automatic deployment reflection
+- Default super-admins live in source control for traceability
+- Environment variable extends the list per deployment without code changes
+- Automatic database sync on next login (no manual fixups needed)
 
 ### Method 2: Promote Existing Users
 
@@ -59,7 +63,7 @@ npm run admin:promote user@example.com
 node scripts/promote-user-to-admin.js user@example.com
 ```
 
-**Requirement**: User must have signed in with Google at least once to create their account
+**Requirement**: User must have signed in with Google at least once so their account exists in the database (after they log in, their role is auto-updated to SUPER_ADMIN)
 
 ### Method 3: Environment Variables
 
@@ -74,6 +78,7 @@ npm run admin:env-setup
 **Advantages**:
 - Manage without code changes
 - Different admin settings per environment
+- On next Google login the placeholder record is linked to the real Google ID and the role is applied automatically
 
 ---
 

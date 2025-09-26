@@ -14,11 +14,28 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check user role in database
-    const user = await prisma.user.findUnique({
-      where: { googleId: session.user.id },
-      select: { role: true, email: true }
+    const googleId = session.user.id;
+    const normalizedEmail = session.user.email?.toLowerCase() ?? null;
+
+    let user = await prisma.user.findUnique({
+      where: { googleId },
+      select: { role: true, email: true, googleId: true },
     });
+
+    if (!user && normalizedEmail) {
+      const userByEmail = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { role: true, email: true, googleId: true },
+      });
+
+      if (userByEmail) {
+        user = await prisma.user.update({
+          where: { email: normalizedEmail },
+          data: { googleId },
+          select: { role: true, email: true, googleId: true },
+        });
+      }
+    }
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';

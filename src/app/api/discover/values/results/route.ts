@@ -83,6 +83,15 @@ export async function POST(req: NextRequest) {
     const saved = await prisma.$transaction(async (tx) => {
       const existing = await tx.valueResult.findMany({
         where: { userId: uid, valueSet },
+        select: {
+          id: true,
+          userId: true,
+          valueSet: true,
+          layout: true,
+          top3: true,
+          createdAt: true,
+          updatedAt: true
+        },
         orderBy: { updatedAt: 'desc' },
       });
 

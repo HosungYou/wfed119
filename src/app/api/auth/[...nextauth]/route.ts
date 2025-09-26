@@ -3,17 +3,25 @@ import GoogleProvider, { type GoogleProfile } from 'next-auth/providers/google';
 import type { JWT } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 
-type SanitizedGoogleProfile = Pick<GoogleProfile, 'sub' | 'email' | 'name' | 'picture'>;
+type SanitizedGoogleProfile = {
+  sub: string;
+  email: string;
+  name?: string;
+  picture?: string;
+};
 
 const toGoogleProfile = (profile: unknown): SanitizedGoogleProfile | null => {
   if (!profile || typeof profile !== 'object') return null;
   const candidate = profile as Partial<GoogleProfile>;
-  return {
-    sub: typeof candidate.sub === 'string' ? candidate.sub : undefined,
-    email: typeof candidate.email === 'string' ? candidate.email : undefined,
-    name: typeof candidate.name === 'string' ? candidate.name : undefined,
-    picture: typeof candidate.picture === 'string' ? candidate.picture : undefined,
-  };
+
+  const sub = typeof candidate.sub === 'string' ? candidate.sub : undefined;
+  const email = typeof candidate.email === 'string' ? candidate.email : undefined;
+  const name = typeof candidate.name === 'string' ? candidate.name : undefined;
+  const picture = typeof candidate.picture === 'string' ? candidate.picture : undefined;
+
+  if (!sub || !email) return null;
+
+  return { sub, email, name: name || undefined, picture: picture || undefined };
 };
 
 const applyTokenProfile = (token: JWT, profile: SanitizedGoogleProfile) => {
@@ -60,8 +68,15 @@ export const authOptions: NextAuthOptions = {
         const { sub: googleId, email, name, picture: image } = googleProfile;
 
         // Determine user role based on email
+        const superAdminEmails = [
+          'newhosung@gmail.com',
+          'tvs5971@psu.edu',
+          // 여기에 추가 SUPER_ADMIN 이메일 추가
+          // 'collaborator@example.com',
+        ];
+
         let role = 'USER';
-        if (email === 'newhosung@gmail.com') {
+        if (superAdminEmails.includes(email)) {
           role = 'SUPER_ADMIN';
         }
 
@@ -71,8 +86,8 @@ export const authOptions: NextAuthOptions = {
             email,
             name,
             image,
-            // Update role if user is newhosung@gmail.com
-            ...(email === 'newhosung@gmail.com' ? { role: 'SUPER_ADMIN' } : {})
+            // Update role if user is SUPER_ADMIN
+            ...(role === 'SUPER_ADMIN' ? { role: 'SUPER_ADMIN' } : {})
           },
           create: {
             googleId,

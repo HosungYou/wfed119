@@ -37,6 +37,15 @@ export async function GET(req: NextRequest) {
     try {
       valueResults = await prisma.valueResult.findMany({
         where: { userId },
+        select: {
+          id: true,
+          userId: true,
+          valueSet: true,
+          layout: true,
+          top3: true,
+          createdAt: true,
+          updatedAt: true
+        },
         orderBy: { updatedAt: 'desc' }
       });
       console.log('ValueResult query successful:', valueResults.length);

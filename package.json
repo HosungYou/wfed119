@@ -23,6 +23,8 @@
     "env:encrypt": "node scripts/simple-encrypt-env.js encrypt",
     "env:decrypt": "node scripts/simple-encrypt-env.js decrypt",
     "admin:setup": "node scripts/setup-collaborator-admin.js",
+    "admin:promote": "node scripts/promote-user-to-admin.js",
+    "admin:env-setup": "node scripts/setup-admin-from-env.js",
     "migrate:enhanced": "node scripts/migrate-to-enhanced-schema.js",
     "db:studio": "npx prisma studio",
     "db:reset": "npx prisma migrate reset --force",

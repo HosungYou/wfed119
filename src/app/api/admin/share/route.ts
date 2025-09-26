@@ -75,7 +75,16 @@ export async function GET(req: NextRequest) {
         switch (share.dataType) {
           case 'values':
             actualData = await prisma.valueResult.findMany({
-              where: { userId: share.userId }
+              where: { userId: share.userId },
+              select: {
+                id: true,
+                userId: true,
+                valueSet: true,
+                layout: true,
+                top3: true,
+                createdAt: true,
+                updatedAt: true
+              }
             });
             break;
 
@@ -101,7 +110,16 @@ export async function GET(req: NextRequest) {
           case 'all':
             actualData = {
               values: await prisma.valueResult.findMany({
-                where: { userId: share.userId }
+                where: { userId: share.userId },
+                select: {
+                  id: true,
+                  userId: true,
+                  valueSet: true,
+                  layout: true,
+                  top3: true,
+                  createdAt: true,
+                  updatedAt: true
+                }
               }),
               strengths: await prisma.userSession.findMany({
                 where: { userId: share.userId, completed: true },

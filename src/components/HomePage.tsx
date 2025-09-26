@@ -2,9 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb } from 'lucide-react';
+import { useSession, signIn, signOut } from 'next-auth/react';
+import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb, LogIn, LogOut } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
+  const { status } = useSession();
+  const isAuthenticated = status === 'authenticated';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -18,11 +22,29 @@ export const HomePage: React.FC = () => {
               LifeCraft
             </h1>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/dashboard" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">Dashboard</Link>
-            <a href="#features" className="text-gray-700 hover:text-gray-900 transition-colors">Features</a>
-            <a href="#about" className="text-gray-700 hover:text-gray-900 transition-colors">About</a>
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link href="/dashboard" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">Dashboard</Link>
+              <a href="#features" className="text-gray-700 hover:text-gray-900 transition-colors">Features</a>
+              <a href="#about" className="text-gray-700 hover:text-gray-900 transition-colors">About</a>
+            </nav>
+            <button
+              onClick={() => (isAuthenticated ? signOut() : signIn('google'))}
+              className="flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-white/80 shadow-sm"
+            >
+              {isAuthenticated ? (
+                <>
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign out</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign in</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

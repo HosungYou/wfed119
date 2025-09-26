@@ -487,10 +487,49 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     a.href = dataUrl; a.download = `${routeSet}_values_board.png`; a.click();
   }
 
+  const MODULE_VERSION = 'v2025-09-26';
+
   async function saveToServer() {
     const userId = session?.user?.id ?? session?.user?.email ?? undefined;
     if (!userId) { alert('Please sign in to save.'); return; }
-    const payload = { user_id: userId, set: routeSet, layout, top3 };
+    const bucketStats = {
+      veryImportant: layout.very_important.length,
+      important: layout.important.length,
+      somewhatImportant: layout.somewhat_important.length,
+      notImportant: layout.not_important.length,
+    };
+
+    const patternSummary = valuePatterns
+      ? {
+          securityCount: valuePatterns.securityCount,
+          socialCount: valuePatterns.socialCount,
+          growthCount: valuePatterns.growthCount,
+          achievementCount: valuePatterns.achievementCount,
+          veryImportantValues: layout.very_important.map((id) => {
+            const value = byId[id];
+            return value ? { id: value.id, name: value.name, description: value.description } : { id, name: id };
+          }),
+        }
+      : null;
+
+    const insightsPayload = {
+      bucketStats,
+      top3,
+      patternSummary,
+      personality: personalityInsights,
+      career: careerInsights,
+      themeInsights,
+      generatedAt: new Date().toISOString(),
+    };
+
+    const payload = {
+      user_id: userId,
+      set: routeSet,
+      layout,
+      top3,
+      insights: insightsPayload,
+      moduleVersion: MODULE_VERSION,
+    };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!res.ok) alert('Save failed'); else alert('Saved successfully');
   }

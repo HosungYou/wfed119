@@ -31,6 +31,7 @@ model User {
   sharedData    SharedData[]
   auditLogs     AuditLog[]
   analysisResults AnalysisResult[]
+  strengthProfiles StrengthProfile[]
 }
 
 enum UserRole {
@@ -83,6 +84,9 @@ model Strength {
   evidence      String      @db.Text
   confidence    Float       // 0-1 confidence score
   createdAt     DateTime    @default(now())
+  userEmail     String?
+  userGoogleId  String?
+  userName      String?
 
   @@index([sessionId, category])
 }
@@ -97,11 +101,28 @@ model ValueResult {
   layout        Json     // Categorized values layout
   top3          Json     // Top 3 selected values
   insights      Json?    // AI-generated insights
+  moduleVersion String?  @default("v1")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@unique([userId, valueSet])
   @@index([userId])
+}
+
+model StrengthProfile {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail     String?
+  strengths     Json
+  summary       String?
+  insights      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userEmail])
 }
 
 // =================== ADMIN & COLLABORATION ===================

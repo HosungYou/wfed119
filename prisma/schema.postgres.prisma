@@ -16,9 +16,14 @@ model Session {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   currentStage  String   @default("initial")
+  userGoogleId  String?
+  userEmail     String?
+  userName      String?
   conversations Conversation[]
   strengths     Strength[]
   completed     Boolean  @default(false)
+
+  @@index([userGoogleId])
 }
 
 model Conversation {
@@ -40,6 +45,12 @@ model Strength {
   evidence   String
   confidence Float    // 0-1 신뢰도
   createdAt  DateTime @default(now())
+  userGoogleId String?
+  userEmail    String?
+  userName     String?
+
+  @@index([sessionId, category])
+  @@index([userGoogleId])
 }
 
 
@@ -66,6 +77,7 @@ model User {
   userSessions UserSession[]
   valueResults ValueResult[]
   auditLogs    AuditLog[]
+  strengthProfiles StrengthProfile[]
 }
 
 /// User sessions for comprehensive tracking
@@ -80,6 +92,7 @@ model UserSession {
   completedAt  DateTime?
   startedAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  metadata     Json?
 }
 
 /// Audit log for admin actions
@@ -105,9 +118,27 @@ model ValueResult {
   valueSet   String   // 'terminal' | 'instrumental' | 'work'
   layout     Json     // { very_important: string[], important: string[], somewhat_important: string[], not_important: string[] }
   top3       Json
+  insights   Json?
+  moduleVersion String? @default("v1")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   // Ensure one record per user per set
   @@unique([userId, valueSet])
+}
+
+model StrengthProfile {
+  id         String   @id @default(uuid())
+  sessionKey String   @unique
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail  String?
+  strengths  Json
+  summary    String?
+  insights   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userEmail])
 }

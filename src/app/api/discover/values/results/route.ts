@@ -11,6 +11,16 @@ import {
   type ValueSet,
 } from './layout-utils';
 
+const isSerializableObject = (input: unknown): Record<string, unknown> | null => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  try {
+    JSON.stringify(input);
+    return input as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
   const session = await getServerSession(authOptions);
@@ -23,6 +33,8 @@ interface SaveRequestBody {
   set?: unknown;
   layout?: unknown;
   top3?: unknown;
+  insights?: unknown;
+  moduleVersion?: unknown;
 }
 
 export async function GET(req: NextRequest) {
@@ -56,6 +68,8 @@ export async function GET(req: NextRequest) {
       set: latest.valueSet,
       layout,
       top3,
+      insights: latest.insights ?? null,
+      moduleVersion: latest.moduleVersion ?? null,
       updatedAt: latest.updatedAt,
     });
   } catch (err) {
@@ -75,6 +89,8 @@ export async function POST(req: NextRequest) {
 
     const explicitUser = typeof body.user_id === 'string' ? body.user_id : typeof body.userId === 'string' ? body.userId : undefined;
     const uid = await resolveUserId(explicitUser);
+    const insights = isSerializableObject(body.insights);
+    const moduleVersion = typeof body.moduleVersion === 'string' ? body.moduleVersion : null;
 
     if (!uid || !valueSet || !layout) {
       return NextResponse.json({ error: 'Missing user identity, set, or layout' }, { status: 400 });
@@ -89,6 +105,8 @@ export async function POST(req: NextRequest) {
           valueSet: true,
           layout: true,
           top3: true,
+          insights: true,
+          moduleVersion: true,
           createdAt: true,
           updatedAt: true
         },
@@ -107,7 +125,12 @@ export async function POST(req: NextRequest) {
       if (latest) {
         return tx.valueResult.update({
           where: { id: latest.id },
-          data: { layout, top3: top3Array },
+          data: {
+            layout,
+            top3: top3Array,
+            insights: insights ?? null,
+            moduleVersion: moduleVersion ?? latest.moduleVersion,
+          },
         });
       }
 
@@ -117,6 +140,8 @@ export async function POST(req: NextRequest) {
           valueSet,
           layout,
           top3: top3Array,
+          insights: insights ?? null,
+          moduleVersion: moduleVersion ?? 'v1',
         },
       });
     });

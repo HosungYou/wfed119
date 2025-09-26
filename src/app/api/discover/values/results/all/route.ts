@@ -33,13 +33,15 @@ export async function GET(req: NextRequest) {
         valueSet: true,
         layout: true,
         top3: true,
+        insights: true,
+        moduleVersion: true,
         createdAt: true,
         updatedAt: true
       },
       orderBy: { updatedAt: 'desc' },
     });
 
-    const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; updatedAt: string } | null> = {
+    const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; updatedAt: string; insights: unknown; moduleVersion: string | null } | null> = {
       terminal: null,
       instrumental: null,
       work: null,
@@ -49,7 +51,13 @@ export async function GET(req: NextRequest) {
       if (!record) continue;
       const layout = parseLayout(record.layout) ?? emptyLayout;
       const top3 = normalizeTop3(record.top3);
-      latestBySet[set] = { layout, top3, updatedAt: record.updatedAt.toISOString() };
+      latestBySet[set] = {
+        layout,
+        top3,
+        updatedAt: record.updatedAt.toISOString(),
+        insights: record.insights ?? null,
+        moduleVersion: record.moduleVersion ?? null,
+      };
     }
 
     return NextResponse.json({ userId, results: latestBySet });

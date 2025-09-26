@@ -8,7 +8,7 @@ import {
   parseLayout,
   type ValueLayout,
   type ValueSet,
-} from './layout-utils';
+} from '../layout-utils';
 
 const valueSets: ValueSet[] = ['terminal', 'instrumental', 'work'];
 

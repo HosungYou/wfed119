@@ -5,6 +5,24 @@ import { prisma } from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
 
+type SessionWhere = {
+  completed?: boolean;
+  updatedAt?: { gte?: Date };
+};
+
+type SessionDelegate = {
+  count: (args?: { where?: SessionWhere }) => Promise<number>;
+};
+
+function resolveSessionDelegate(): SessionDelegate | null {
+  const client = prisma as unknown as Record<string, unknown>;
+  const primary = client.session as SessionDelegate | undefined;
+  if (primary?.count) return primary;
+  const fallback = client.userSession as SessionDelegate | undefined;
+  if (fallback?.count) return fallback;
+  return null;
+}
+
 async function checkSuperAdmin(userId: string) {
   const user = await prisma.user.findUnique({
     where: { googleId: userId },
@@ -25,41 +43,42 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
     }
 
-    // Fetch database statistics
     const [
       userCount,
       adminCount,
-      sessionCount,
-      completedSessionCount,
       valueResultCount,
       strengthCount,
-      conversationCount
+      conversationCount,
+      valuesByType,
+      uniqueStrengths
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } } }),
-      prisma.session.count(),
-      prisma.session.count({ where: { completed: true } }),
       prisma.valueResult.count(),
       prisma.strength.count(),
-      prisma.conversation.count()
+      prisma.conversation.count(),
+      prisma.valueResult.groupBy({ by: ['valueSet'], _count: true }),
+      prisma.strength.findMany({ distinct: ['name'], select: { name: true } })
     ]);
 
-    // Count value results by type
-    const valuesByType = await prisma.valueResult.groupBy({
-      by: ['valueSet'],
-      _count: true
-    });
+    const sessionDelegate = resolveSessionDelegate();
+    let sessionCount = 0;
+    let completedSessionCount = 0;
+    let activeSessionCount = 0;
+
+    if (sessionDelegate) {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      [sessionCount, completedSessionCount, activeSessionCount] = await Promise.all([
+        sessionDelegate.count(),
+        sessionDelegate.count({ where: { completed: true } }),
+        sessionDelegate.count({ where: { completed: false, updatedAt: { gte: oneDayAgo } } })
+      ]);
+    }
 
     const valueTypeMap = valuesByType.reduce((acc, item) => {
       acc[item.valueSet] = item._count;
       return acc;
     }, {} as Record<string, number>);
-
-    // Count unique strengths
-    const uniqueStrengths = await prisma.strength.findMany({
-      distinct: ['name'],
-      select: { name: true }
-    });
 
     // Calculate storage (for SQLite)
     let storageInfo = { used: '0 MB', limit: '500 MB', percentage: 0 };
@@ -94,15 +113,6 @@ export async function GET(req: NextRequest) {
         }
       }
     }
-
-    // Active sessions (last 24 hours)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const activeSessionCount = await prisma.session.count({
-      where: {
-        updatedAt: { gte: oneDayAgo },
-        completed: false
-      }
-    });
 
     return NextResponse.json({
       users: {

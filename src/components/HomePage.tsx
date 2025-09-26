@@ -19,6 +19,7 @@ export const HomePage: React.FC = () => {
             </h1>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/dashboard" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">Dashboard</Link>
             <a href="#features" className="text-gray-700 hover:text-gray-900 transition-colors">Features</a>
             <a href="#about" className="text-gray-700 hover:text-gray-900 transition-colors">About</a>
           </nav>

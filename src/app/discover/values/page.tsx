@@ -11,7 +11,12 @@ export default function ValuesLanding() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Value Discovery</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold">Value Discovery</h1>
+            <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              View Dashboard →
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             {status !== 'authenticated' ? (
               <button

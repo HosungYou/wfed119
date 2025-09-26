@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, stage, messages, strengths } = await req.json();
+
+    // Get authenticated user if available
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     
     if (!sessionId) {
       return NextResponse.json(
@@ -12,22 +18,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Skip database operations in production
-    if (process.env.NODE_ENV !== 'production') {
-      // Upsert session record
-      await prisma.session.upsert({
-        where: { sessionId },
-        update: {
-          currentStage: stage || 'initial',
-          updatedAt: new Date(),
-          completed: stage === 'summary'
-        },
-        create: {
-          sessionId,
-          currentStage: stage || 'initial',
-          completed: stage === 'summary'
+    // Save to database with user association if authenticated
+      // If user is authenticated, create UserSession, otherwise use legacy Session
+      if (userId) {
+        // Find or create the user
+        const user = await prisma.user.findUnique({
+          where: { googleId: userId }
+        });
+
+        if (user) {
+          await prisma.userSession.upsert({
+            where: { sessionId },
+            update: {
+              currentStage: stage || 'initial',
+              completed: stage === 'summary',
+              completedAt: stage === 'summary' ? new Date() : null
+            },
+            create: {
+              userId: user.id,
+              sessionId,
+              sessionType: 'strengths',
+              currentStage: stage || 'initial',
+              completed: stage === 'summary',
+              completedAt: stage === 'summary' ? new Date() : null
+            }
+          });
         }
-      });
+      } else {
+        // Fallback to legacy Session table for unauthenticated users
+        await prisma.session.upsert({
+          where: { sessionId },
+          update: {
+            currentStage: stage || 'initial',
+            updatedAt: new Date(),
+            completed: stage === 'summary'
+          },
+          create: {
+            sessionId,
+            currentStage: stage || 'initial',
+            completed: stage === 'summary'
+          }
+        });
+      }
 
       // If messages are provided, update them
       if (messages && Array.isArray(messages)) {
@@ -82,7 +114,6 @@ export async function POST(req: NextRequest) {
           await Promise.all(strengthPromises);
         }
       }
-    }
 
     return NextResponse.json({
       success: true,

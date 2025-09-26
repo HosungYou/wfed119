@@ -17,7 +17,12 @@
     "migrate:export": "node scripts/export-current-data.js",
     "migrate:postgresql": "node scripts/migrate-data-to-postgresql.js",
     "migrate:verify": "node scripts/verify-migration.js",
-    "migrate:rollback": "node scripts/rollback-to-sqlite.js"
+    "migrate:rollback": "node scripts/rollback-to-sqlite.js",
+    "setup:collaborator": "bash scripts/setup-collaborator-env.sh",
+    "admin:setup": "node scripts/setup-collaborator-admin.js",
+    "db:studio": "npx prisma studio",
+    "db:reset": "npx prisma migrate reset --force",
+    "db:seed": "npx prisma db seed"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

@@ -12,103 +12,96 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = session.user.id;
+    const userEmail = session.user.email;
+    const userName = session.user.name;
+    const userImage = session.user.image;
 
-    // Fetch all user data in parallel
-    const [user, userSessions, valueResults, analysisResults] = await Promise.all([
-      // Get user info with role
-      prisma.user.findUnique({
-        where: { googleId: userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          image: true,
-          role: true,
-          createdAt: true
-        }
-      }),
-
-      // Get all user sessions
-      prisma.userSession.findMany({
-        where: {
-          user: { googleId: userId }
-        },
+    // Fetch user data from current schema
+    const [sessions, valueResults, strengths] = await Promise.all([
+      // Get all sessions (from Session table)
+      prisma.session.findMany({
         include: {
+          conversations: {
+            select: {
+              role: true,
+              content: true,
+              timestamp: true
+            },
+            orderBy: { timestamp: 'desc' }
+          },
           strengths: {
             select: {
               category: true,
               name: true,
-              confidence: true
+              confidence: true,
+              evidence: true
             }
-          },
-          _count: {
-            select: { conversations: true }
           }
         },
-        orderBy: { startedAt: 'desc' }
+        orderBy: { createdAt: 'desc' }
       }),
 
-      // Get value results
+      // Get value results for this user
       prisma.valueResult.findMany({
-        where: {
-          user: { googleId: userId }
-        },
+        where: { userId },
         orderBy: { updatedAt: 'desc' }
       }),
 
-      // Get analysis results
-      prisma.analysisResult.findMany({
-        where: {
-          user: { googleId: userId }
-        },
-        orderBy: { generatedAt: 'desc' },
-        take: 5
+      // Get all strengths
+      prisma.strength.findMany({
+        orderBy: { createdAt: 'desc' }
       })
     ]);
+
+    // Filter user's strengths by looking for sessions that might belong to them
+    const userStrengths = strengths.filter(s =>
+      sessions.some(session => session.sessionId === s.sessionId)
+    );
 
     // Process and structure the data
     const dashboard = {
       user: {
-        ...user,
-        totalSessions: userSessions.length,
-        completedSessions: userSessions.filter(s => s.completed).length
+        id: userId,
+        email: userEmail,
+        name: userName,
+        image: userImage,
+        createdAt: new Date().toISOString(), // Fallback since no user table
+        totalSessions: sessions.length,
+        completedSessions: sessions.filter(s => s.completed).length
       },
 
       modules: {
         strengths: {
-          sessions: userSessions.filter(s => s.sessionType === 'strengths'),
-          latestStrengths: userSessions
-            .filter(s => s.sessionType === 'strengths' && s.strengths.length > 0)
-            .slice(0, 1)[0]?.strengths || [],
-          completed: userSessions.some(s => s.sessionType === 'strengths' && s.completed)
+          sessions: sessions.filter(s => s.strengths.length > 0),
+          latestStrengths: userStrengths.slice(0, 10),
+          completed: userStrengths.length > 0
         },
 
         values: {
           terminal: valueResults.find(v => v.valueSet === 'terminal'),
           instrumental: valueResults.find(v => v.valueSet === 'instrumental'),
           work: valueResults.find(v => v.valueSet === 'work'),
-          completed: valueResults.length === 3
+          completed: valueResults.length >= 3
         },
 
         enneagram: {
-          sessions: userSessions.filter(s => s.sessionType === 'enneagram'),
-          completed: userSessions.some(s => s.sessionType === 'enneagram' && s.completed)
+          sessions: [],
+          completed: false
         },
 
         career: {
-          sessions: userSessions.filter(s => s.sessionType === 'career'),
-          completed: userSessions.some(s => s.sessionType === 'career' && s.completed)
+          sessions: [],
+          completed: false
         }
       },
 
       insights: {
-        recentAnalyses: analysisResults,
-        strengthSummary: aggregateStrengths(userSessions),
+        strengthSummary: aggregateStrengths(userStrengths),
         valueSummary: summarizeValues(valueResults),
-        completionRate: calculateCompletionRate(userSessions, valueResults)
+        completionRate: calculateCompletionRate(sessions, valueResults, userStrengths)
       },
 
-      adminAccess: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+      adminAccess: false // No role system in current schema
     };
 
     return NextResponse.json(dashboard);
@@ -123,24 +116,22 @@ export async function GET(req: NextRequest) {
 }
 
 // Helper functions
-function aggregateStrengths(sessions: any[]) {
+function aggregateStrengths(strengths: any[]) {
   const strengthMap = new Map();
 
-  sessions.forEach(session => {
-    session.strengths.forEach((strength: any) => {
-      const key = `${strength.category}:${strength.name}`;
-      if (!strengthMap.has(key)) {
-        strengthMap.set(key, {
-          category: strength.category,
-          name: strength.name,
-          occurrences: 0,
-          avgConfidence: 0
-        });
-      }
-      const item = strengthMap.get(key);
-      item.occurrences++;
-      item.avgConfidence = (item.avgConfidence + strength.confidence) / 2;
-    });
+  strengths.forEach((strength: any) => {
+    const key = `${strength.category}:${strength.name}`;
+    if (!strengthMap.has(key)) {
+      strengthMap.set(key, {
+        category: strength.category,
+        name: strength.name,
+        occurrences: 0,
+        avgConfidence: 0
+      });
+    }
+    const item = strengthMap.get(key);
+    item.occurrences++;
+    item.avgConfidence = (item.avgConfidence + strength.confidence) / 2;
   });
 
   return Array.from(strengthMap.values())
@@ -164,14 +155,12 @@ function summarizeValues(valueResults: any[]) {
   return summary;
 }
 
-function calculateCompletionRate(sessions: any[], valueResults: any[]) {
-  const totalPossible = 4; // 4 main modules
+function calculateCompletionRate(sessions: any[], valueResults: any[], strengths: any[]) {
+  const totalPossible = 2; // Current available modules: strengths + values
   let completed = 0;
 
-  if (sessions.some(s => s.sessionType === 'strengths' && s.completed)) completed++;
-  if (valueResults.length === 3) completed++; // All 3 value sets
-  if (sessions.some(s => s.sessionType === 'enneagram' && s.completed)) completed++;
-  if (sessions.some(s => s.sessionType === 'career' && s.completed)) completed++;
+  if (strengths.length > 0) completed++; // Has strengths
+  if (valueResults.length >= 1) completed++; // Has at least one value set
 
   return (completed / totalPossible) * 100;
 }

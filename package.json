@@ -20,9 +20,10 @@
     "migrate:rollback": "node scripts/rollback-to-sqlite.js",
     "setup:collaborator": "bash scripts/setup-collaborator-env.sh",
     "setup:env": "node scripts/setup-env-from-secrets.js",
-    "env:encrypt": "node scripts/encrypt-env.js encrypt",
-    "env:decrypt": "node scripts/encrypt-env.js decrypt",
+    "env:encrypt": "node scripts/simple-encrypt-env.js encrypt",
+    "env:decrypt": "node scripts/simple-encrypt-env.js decrypt",
     "admin:setup": "node scripts/setup-collaborator-admin.js",
+    "migrate:enhanced": "node scripts/migrate-to-enhanced-schema.js",
     "db:studio": "npx prisma studio",
     "db:reset": "npx prisma migrate reset --force",
     "db:seed": "npx prisma db seed"

@@ -58,11 +58,44 @@ export const authOptions: NextAuthOptions = {
         const googleProfile = toGoogleProfile(profile);
         if (!googleProfile?.sub) return;
         const { sub: googleId, email, name, picture: image } = googleProfile;
+
+        // Determine user role based on email
+        let role = 'USER';
+        if (email === 'newhosung@gmail.com') {
+          role = 'SUPER_ADMIN';
+        }
+
         await prisma.user.upsert({
           where: { googleId },
-          update: { email, name, image },
-          create: { googleId, email, name, image },
+          update: {
+            email,
+            name,
+            image,
+            // Update role if user is newhosung@gmail.com
+            ...(email === 'newhosung@gmail.com' ? { role: 'SUPER_ADMIN' } : {})
+          },
+          create: {
+            googleId,
+            email,
+            name,
+            image,
+            role: role as any // Cast to handle role enum
+          },
         });
+
+        // Log admin access
+        if (role === 'SUPER_ADMIN') {
+          await prisma.auditLog.create({
+            data: {
+              action: 'LOGIN_SUPER_ADMIN',
+              tableName: 'User',
+              newValues: { email, googleId },
+              ipAddress: 'oauth-signin',
+              userAgent: 'google-oauth'
+            }
+          }).catch(() => {}); // Ignore if AuditLog table doesn't exist yet
+        }
+
       } catch (e) {
         console.error('User upsert failed', e);
       }

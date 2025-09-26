@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const algorithm = 'aes-256-gcm';
+const algorithm = 'aes-256-cbc';
 
 function encrypt(text, password) {
   const salt = crypto.randomBytes(16);
@@ -17,17 +17,13 @@ function encrypt(text, password) {
   const iv = crypto.randomBytes(16);
 
   const cipher = crypto.createCipher(algorithm, key);
-  cipher.setAAD(Buffer.from('env-encryption'));
 
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
 
-  const authTag = cipher.getAuthTag();
-
   return {
     salt: salt.toString('hex'),
     iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
     encrypted: encrypted
   };
 }
@@ -37,8 +33,6 @@ function decrypt(encryptedData, password) {
   const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
 
   const decipher = crypto.createDecipher(algorithm, key);
-  decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
-  decipher.setAAD(Buffer.from('env-encryption'));
 
   let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');

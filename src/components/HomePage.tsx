@@ -19,8 +19,14 @@ export const HomePage: React.FC = () => {
   const checkAuth = async () => {
     try {
       const supabase = createSupabaseClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) {
+        console.log('No authenticated user:', error.message);
+        setUser(null);
+      } else {
+        setUser(user);
+      }
     } catch (err) {
       console.error('Auth check error:', err);
       setError('인증 확인 중 오류가 발생했습니다.');

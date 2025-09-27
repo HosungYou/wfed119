@@ -22,26 +22,46 @@ export async function POST(req: NextRequest) {
     const normalizedStage = typeof stage === 'string' && stage ? stage : 'initial';
     const isCompleted = normalizedStage === 'summary';
 
-    // Save or update user session
-    const { error: sessionError } = await supabase
+    // Save or update user session (manual upsert logic)
+    const { data: existingSession } = await supabase
       .from('user_sessions')
-      .upsert({
-        session_id: sessionId,
-        user_id: userId,
-        session_type: 'strengths',
-        current_stage: normalizedStage,
-        completed: isCompleted,
-        completed_at: isCompleted ? new Date().toISOString() : null,
-        metadata: {
-          module: 'strengths',
-          lastUpdated: new Date().toISOString(),
-          userEmail: userEmail,
-          userName: userName
-        }
-      });
+      .select('id')
+      .eq('session_id', sessionId)
+      .single();
+
+    const sessionData = {
+      session_id: sessionId,
+      user_id: userId,
+      session_type: 'strengths',
+      current_stage: normalizedStage,
+      completed: isCompleted,
+      completed_at: isCompleted ? new Date().toISOString() : null,
+      metadata: {
+        module: 'strengths',
+        lastUpdated: new Date().toISOString(),
+        userEmail: userEmail,
+        userName: userName
+      }
+    };
+
+    let sessionError;
+    if (existingSession) {
+      // Update existing session
+      const { error } = await supabase
+        .from('user_sessions')
+        .update(sessionData)
+        .eq('session_id', sessionId);
+      sessionError = error;
+    } else {
+      // Insert new session
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert(sessionData);
+      sessionError = error;
+    }
 
     if (sessionError) {
-      console.error('Session upsert error:', sessionError);
+      console.error('Session save error:', sessionError);
     }
 
     // Handle strengths data
@@ -83,20 +103,40 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      // Save strength profile
-      const { error: strengthError } = await supabase
+      // Save strength profile (manual upsert logic)
+      const { data: existingProfile } = await supabase
         .from('strength_profiles')
-        .upsert({
-          session_id: sessionId,
-          user_id: userId,
-          user_email: userEmail,
-          strengths: normalisedStrengths,
-          summary: summarySegments.join(' | ') || null,
-          insights: profileInsights,
-        });
+        .select('id')
+        .eq('session_id', sessionId)
+        .single();
+
+      const profileData = {
+        session_id: sessionId,
+        user_id: userId,
+        user_email: userEmail,
+        strengths: normalisedStrengths,
+        summary: summarySegments.join(' | ') || null,
+        insights: profileInsights,
+      };
+
+      let strengthError;
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('strength_profiles')
+          .update(profileData)
+          .eq('session_id', sessionId);
+        strengthError = error;
+      } else {
+        // Insert new profile
+        const { error } = await supabase
+          .from('strength_profiles')
+          .insert(profileData);
+        strengthError = error;
+      }
 
       if (strengthError) {
-        console.error('Strength profile upsert error:', strengthError);
+        console.error('Strength profile save error:', strengthError);
       }
     }
 

@@ -114,28 +114,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing set or layout' }, { status: 400 });
     }
 
-    // Upsert value result
-    const { data, error } = await supabase
+    // Manual upsert logic for value result
+    const { data: existingResult } = await supabase
       .from('value_results')
-      .upsert({
-        user_id: session.user.id,
-        value_set: valueSet,
-        layout,
-        top3: top3Array,
-        insights: insights || null,
-        module_version: moduleVersion || 'v1'
-      }, {
-        onConflict: 'user_id,value_set'
-      })
-      .select()
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('value_set', valueSet)
       .single();
+
+    const resultData = {
+      user_id: session.user.id,
+      value_set: valueSet,
+      layout,
+      top3: top3Array,
+      insights: insights || null,
+      module_version: moduleVersion || 'v1'
+    };
+
+    let error;
+    let data;
+    if (existingResult) {
+      // Update existing result
+      const response = await supabase
+        .from('value_results')
+        .update(resultData)
+        .eq('user_id', session.user.id)
+        .eq('value_set', valueSet)
+        .select();
+      error = response.error;
+      data = response.data;
+    } else {
+      // Insert new result
+      const response = await supabase
+        .from('value_results')
+        .insert(resultData)
+        .select();
+      error = response.error;
+      data = response.data;
+    }
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, id: data.id });
+    return NextResponse.json({ success: true, id: data?.[0]?.id });
   } catch (err) {
     console.error('POST /api/discover/values/results error', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

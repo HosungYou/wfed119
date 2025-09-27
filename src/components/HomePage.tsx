@@ -44,10 +44,17 @@ export const HomePage: React.FC = () => {
       const supabase = createSupabaseClient();
       console.log('Supabase client created, attempting Google OAuth...');
 
+      // 프로덕션 환경에서는 실제 도메인 사용
+      const redirectUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:3000/auth/callback'
+        : `${window.location.origin}/auth/callback`;
+
+      console.log('Redirect URL:', redirectUrl);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectUrl
         }
       });
 

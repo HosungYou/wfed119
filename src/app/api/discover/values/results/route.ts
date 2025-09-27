@@ -40,20 +40,35 @@ interface SaveRequestBody {
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('[GET /api/discover/values/results] Request received');
+
     const supabase = createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError) {
+      console.error('[GET /api/discover/values/results] Auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error', details: authError.message }, { status: 500 });
+    }
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.log('[GET /api/discover/values/results] No session found');
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
     }
+
+    console.log('[GET /api/discover/values/results] User authenticated:', session.user.id);
 
     const { searchParams } = new URL(req.url);
     const setParam = searchParams.get('set');
     const set = (setParam === 'terminal' || setParam === 'instrumental' || setParam === 'work') ? setParam : null;
 
+    console.log('[GET /api/discover/values/results] Params:', { setParam, set });
+
     if (!set) {
-      return NextResponse.json({ error: 'Missing set parameter' }, { status: 400 });
+      console.error('[GET /api/discover/values/results] Invalid or missing set parameter:', setParam);
+      return NextResponse.json({ error: 'Missing or invalid set parameter. Must be: terminal, instrumental, or work' }, { status: 400 });
     }
+
+    console.log('[GET /api/discover/values/results] Querying database for user:', session.user.id, 'set:', set);
 
     const { data: latest, error } = await supabase
       .from('value_results')
@@ -65,13 +80,20 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      console.error('[GET /api/discover/values/results] Database error:', error);
+      return NextResponse.json({
+        error: 'Database error',
+        details: error.message,
+        code: error.code
+      }, { status: 500 });
     }
 
     if (!latest) {
+      console.log('[GET /api/discover/values/results] No saved results found for user');
       return NextResponse.json({ exists: false }, { status: 200 });
     }
+
+    console.log('[GET /api/discover/values/results] Found saved results:', latest.id);
 
     const layout = parseLayout(latest.layout) ?? emptyLayout;
     const top3 = normalizeTop3(latest.top3);
@@ -87,18 +109,51 @@ export async function GET(req: NextRequest) {
       updatedAt: latest.updated_at,
     });
   } catch (err) {
-    console.error('GET /api/discover/values/results error', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[GET /api/discover/values/results] Unexpected error:', err);
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      message: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[POST /api/discover/values/results] Request received');
+
     const supabase = createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError) {
+      console.error('[POST /api/discover/values/results] Auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error', details: authError.message }, { status: 500 });
+    }
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.log('[POST /api/discover/values/results] No session found');
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
+    }
+
+    console.log('[POST /api/discover/values/results] User authenticated:', session.user.id);
+
+    // Auto-create user in users table if not exists (for development)
+    const { error: upsertUserError } = await supabase
+      .from('users')
+      .upsert({
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || session.user.email,
+        role: 'USER',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: true
+      });
+
+    if (upsertUserError) {
+      console.log('[POST /api/discover/values/results] User upsert failed (non-critical):', upsertUserError);
     }
 
     const body = (await req.json()) as SaveRequestBody;
@@ -110,17 +165,15 @@ export async function POST(req: NextRequest) {
     const insights = isSerializableObject(body.insights);
     const moduleVersion = typeof body.moduleVersion === 'string' ? body.moduleVersion : null;
 
+    console.log('[POST /api/discover/values/results] Params:', { valueSet, hasLayout: !!layout });
+
     if (!valueSet || !layout) {
+      console.error('[POST /api/discover/values/results] Missing required data:', { valueSet, hasLayout: !!layout });
       return NextResponse.json({ error: 'Missing set or layout' }, { status: 400 });
     }
 
-    // Manual upsert logic for value result
-    const { data: existingResult } = await supabase
-      .from('value_results')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('value_set', valueSet)
-      .single();
+    // Proper Supabase upsert using onConflict with unique constraint
+    console.log('[POST /api/discover/values/results] Performing proper upsert with unique constraint...');
 
     const resultData = {
       user_id: session.user.id,
@@ -128,39 +181,61 @@ export async function POST(req: NextRequest) {
       layout,
       top3: top3Array,
       insights: insights || null,
-      module_version: moduleVersion || 'v1'
+      module_version: moduleVersion || 'v1',
+      updated_at: new Date().toISOString()
     };
 
-    let error;
-    let data;
-    if (existingResult) {
-      // Update existing result
-      const response = await supabase
-        .from('value_results')
-        .update(resultData)
-        .eq('user_id', session.user.id)
-        .eq('value_set', valueSet)
-        .select();
-      error = response.error;
-      data = response.data;
-    } else {
-      // Insert new result
-      const response = await supabase
-        .from('value_results')
-        .insert(resultData)
-        .select();
-      error = response.error;
-      data = response.data;
-    }
+    // Use proper Supabase upsert with onConflict parameter
+    const { data, error } = await supabase
+      .from('value_results')
+      .upsert(resultData, {
+        onConflict: 'user_id,value_set', // Must match the unique constraint
+        ignoreDuplicates: false // We want to update, not ignore
+      })
+      .select();
 
     if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      console.error('[POST /api/discover/values/results] Upsert error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+
+      // Handle specific error cases
+      if (error.code === '42P10') {
+        return NextResponse.json({
+          error: 'Database constraint missing',
+          message: 'Unique constraint (user_id, value_set) is required. Please run the database migration.',
+          details: error.message
+        }, { status: 500 });
+      }
+
+      if (error.code === '23505') {
+        // This shouldn't happen with proper upsert, but handle it
+        console.log('[POST /api/discover/values/results] Unique constraint violation - this should not happen with upsert');
+        return NextResponse.json({
+          error: 'Unique constraint violation',
+          message: 'Concurrent modification detected. Please try again.',
+          details: error.message
+        }, { status: 409 });
+      }
+
+      return NextResponse.json({
+        error: 'Database error',
+        details: error.message,
+        code: error.code
+      }, { status: 500 });
     }
 
+    console.log('[POST /api/discover/values/results] Upsert successful');
     return NextResponse.json({ success: true, id: data?.[0]?.id });
+
   } catch (err) {
-    console.error('POST /api/discover/values/results error', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[POST /api/discover/values/results] Unexpected error:', err);
+    return NextResponse.json({
+      error: 'Internal Server Error',
+      message: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

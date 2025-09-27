@@ -1,31 +1,62 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 
+type SupabaseClientConfig = {
+  url: string
+  anonKey: string
+}
+
+const resolveSupabaseClientConfig = (context: 'client' | 'server'): SupabaseClientConfig => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+
+  if (!url || !anonKey) {
+    const missing = [
+      url ? null : 'NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)',
+      anonKey ? null : 'NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)'
+    ].filter(Boolean)
+
+    throw new Error(
+      `Supabase configuration is missing in ${context} environment. Set ${missing.join(
+        ' and '
+      )} before continuing.`
+    )
+  }
+
+  return { url, anonKey }
+}
+
+const resolveServiceRoleKey = () => {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined. Add it to your environment variables.')
+  }
+
+  return serviceRoleKey
+}
+
 // Client-side Supabase client
 export const createSupabaseClient = () => {
-  // 임시 하드코딩으로 테스트
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mldxtonwtfjvmxudwfma.supabase.co'
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sZHh0b253dGZqdm14dWR3Zm1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMjEyMTIsImV4cCI6MjA0Mjg5NzIxMn0.DuPLJ5ZUn8EhPMrxe7OWyOQ8hHpNrsaXl_5d7H_6k3E'
-
-  console.log('Supabase URL:', supabaseUrl)
-  console.log('Supabase Key:', supabaseKey ? 'Set' : 'Missing')
-
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  const { url, anonKey } = resolveSupabaseClientConfig('client')
+  return createBrowserClient(url, anonKey)
 }
 
 // Server-side Supabase client with service role
 export const createSupabaseAdmin = () => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
+  const { url } = resolveSupabaseClientConfig('server')
+  const serviceRoleKey = resolveServiceRoleKey()
+
+  return createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }
+
+export const getSupabaseClientConfig = resolveSupabaseClientConfig
+export const getSupabaseServiceRoleKey = resolveServiceRoleKey
 
 export type Database = {
   public: {

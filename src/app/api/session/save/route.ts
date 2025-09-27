@@ -15,19 +15,34 @@ export async function POST(req: NextRequest) {
     const supabase = createServerSupabaseClient();
     const { data: { session: authSession } } = await supabase.auth.getSession();
 
-    const userId = authSession?.user?.id ?? null;
-    const userEmail = authSession?.user?.email ?? null;
-    const userName = authSession?.user?.user_metadata?.name ?? null;
+    if (!authSession?.user) {
+      return NextResponse.json(
+        { error: 'Supabase session is required to save progress.' },
+        { status: 401 }
+      );
+    }
+
+    const userId = authSession.user.id;
+    const userEmail = authSession.user.email ?? null;
+    const userName = authSession.user.user_metadata?.name ?? null;
 
     const normalizedStage = typeof stage === 'string' && stage ? stage : 'initial';
     const isCompleted = normalizedStage === 'summary';
 
     // Save or update user session (manual upsert logic)
-    const { data: existingSession } = await supabase
+    const { data: existingSession, error: findSessionError } = await supabase
       .from('user_sessions')
       .select('id')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
+
+    if (findSessionError) {
+      console.error('Session lookup error:', findSessionError);
+      return NextResponse.json(
+        { error: 'Failed to lookup session record.' },
+        { status: 500 }
+      );
+    }
 
     const sessionData = {
       session_id: sessionId,
@@ -62,6 +77,10 @@ export async function POST(req: NextRequest) {
 
     if (sessionError) {
       console.error('Session save error:', sessionError);
+      return NextResponse.json(
+        { error: 'Failed to save session progress.' },
+        { status: 500 }
+      );
     }
 
     // Handle strengths data
@@ -104,11 +123,19 @@ export async function POST(req: NextRequest) {
       };
 
       // Save strength profile (manual upsert logic)
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: findProfileError } = await supabase
         .from('strength_profiles')
         .select('id')
         .eq('session_id', sessionId)
-        .single();
+        .maybeSingle();
+
+      if (findProfileError) {
+        console.error('Strength profile lookup error:', findProfileError);
+        return NextResponse.json(
+          { error: 'Failed to lookup strength profile.' },
+          { status: 500 }
+        );
+      }
 
       const profileData = {
         session_id: sessionId,
@@ -137,6 +164,10 @@ export async function POST(req: NextRequest) {
 
       if (strengthError) {
         console.error('Strength profile save error:', strengthError);
+        return NextResponse.json(
+          { error: 'Failed to save strength profile.' },
+          { status: 500 }
+        );
       }
     }
 

@@ -169,16 +169,16 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     return 'work';
   }, [resolvedParams?.set]);
 
-  const [routeSet, setRouteSet] = useState<SetKey>(normalizedSet);
-  useEffect(() => { setRouteSet(normalizedSet); }, [normalizedSet]);
+  // Don't use state for routeSet - use normalizedSet directly to avoid timing issues
+  const routeSet = normalizedSet;
 
   const VALUES = useMemo(() => {
-    switch (routeSet) {
+    switch (normalizedSet) {
       case 'terminal': return TERMINAL;
       case 'instrumental': return INSTRUMENTAL;
       default: return WORK;
     }
-  }, [routeSet]);
+  }, [normalizedSet]);
 
   const [user, setUser] = useState<any>(null);
   const [palette, setPalette] = useState<string[]>([]);
@@ -199,10 +199,28 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
   // Load saved from server if available
   useEffect(() => {
-    const userId = user?.email ?? user?.id ?? undefined;
-    if (!userId || !routeSet) return;
-    fetch(`/api/discover/values/results?user_id=${encodeURIComponent(userId)}&set=${routeSet}`)
-      .then(r => r.json())
+    console.log('[Values Page] Load effect triggered:', { user: !!user, routeSet, normalizedSet });
+
+    // Only fetch if user is authenticated
+    if (!user || !routeSet) {
+      console.log('[Values Page] Skipping fetch:', { hasUser: !!user, routeSet });
+      return;
+    }
+
+    console.log('[Values Page] Fetching saved results for set:', routeSet);
+
+    // API uses session authentication, no need to pass user_id
+    fetch(`/api/discover/values/results?set=${routeSet}`)
+      .then(r => {
+        if (!r.ok) {
+          console.error('Failed to fetch saved results:', r.status, r.statusText);
+          if (r.status === 401) {
+            console.error('User not authenticated');
+          }
+          return { exists: false };
+        }
+        return r.json();
+      })
       .then(data => {
         if (data && data.exists) {
           const saved: Layout = data.layout;
@@ -211,7 +229,9 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
           setPalette(VALUES.filter(v => !placed.has(v.id)).map(v => v.id));
         }
       })
-      .catch(() => {});
+      .catch(err => {
+        console.error('Error fetching saved results:', err);
+      });
   }, [user, routeSet, VALUES]);
 
   const byId = useMemo(() => Object.fromEntries(VALUES.map(v => [v.id, v])), [VALUES]);

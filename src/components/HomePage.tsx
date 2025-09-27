@@ -34,8 +34,15 @@ export const HomePage: React.FC = () => {
       setSignInLoading(true);
       setError(null);
 
+      // 환경 변수 확인
+      console.log('Environment check:', {
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        origin: window.location.origin
+      });
+
       const supabase = createSupabaseClient();
-      console.log('Attempting to sign in with Google...');
+      console.log('Supabase client created, attempting Google OAuth...');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -44,15 +51,21 @@ export const HomePage: React.FC = () => {
         }
       });
 
+      console.log('OAuth response:', { data, error });
+
       if (error) {
         console.error('Sign in error:', error);
         setError(`로그인 중 오류가 발생했습니다: ${error.message}`);
       } else {
         console.log('Sign in initiated successfully:', data);
+        // OAuth 요청이 성공했다면 리다이렉트가 발생해야 함
+        if (!data?.url) {
+          setError('OAuth URL이 반환되지 않았습니다. Supabase 설정을 확인해주세요.');
+        }
       }
     } catch (err) {
       console.error('Sign in exception:', err);
-      setError('로그인 중 예상치 못한 오류가 발생했습니다.');
+      setError(`로그인 중 예외가 발생했습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     } finally {
       setSignInLoading(false);
     }

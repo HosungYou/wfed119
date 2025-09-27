@@ -9,32 +9,64 @@ import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbul
 export const HomePage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    const supabase = createSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user || null);
-    setLoading(false);
+    try {
+      const supabase = createSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    } catch (err) {
+      console.error('Auth check error:', err);
+      setError('인증 확인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignIn = async () => {
-    const supabase = createSupabaseClient();
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+    try {
+      setSignInLoading(true);
+      setError(null);
+
+      const supabase = createSupabaseClient();
+      console.log('Attempting to sign in with Google...');
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        console.error('Sign in error:', error);
+        setError(`로그인 중 오류가 발생했습니다: ${error.message}`);
+      } else {
+        console.log('Sign in initiated successfully:', data);
       }
-    });
+    } catch (err) {
+      console.error('Sign in exception:', err);
+      setError('로그인 중 예상치 못한 오류가 발생했습니다.');
+    } finally {
+      setSignInLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
-    const supabase = createSupabaseClient();
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      const supabase = createSupabaseClient();
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (err) {
+      console.error('Sign out error:', err);
+      setError('로그아웃 중 오류가 발생했습니다.');
+    }
   };
 
   const isAuthenticated = !!user;
@@ -60,9 +92,15 @@ export const HomePage: React.FC = () => {
             </nav>
             <button
               onClick={() => (isAuthenticated ? handleSignOut() : handleSignIn())}
-              className="flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-white/80 shadow-sm"
+              disabled={signInLoading}
+              className="flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-white/80 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isAuthenticated ? (
+              {signInLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+                  <span>로그인 중...</span>
+                </>
+              ) : isAuthenticated ? (
                 <>
                   <LogOut className="w-4 h-4" />
                   <span>Sign out</span>
@@ -77,6 +115,21 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-6xl mx-auto px-4 mt-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+            <button
+              onClick={() => setError(null)}
+              className="ml-2 text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto px-4 py-12">

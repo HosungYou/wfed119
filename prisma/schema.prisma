@@ -96,7 +96,7 @@ model Strength {
 model ValueResult {
   id            String   @id @default(uuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [googleId], onDelete: Cascade)
   valueSet      String   // 'terminal' | 'instrumental' | 'work'
   layout        Json     // Categorized values layout
   top3          Json     // Top 3 selected values

@@ -5,7 +5,7 @@ An AI-powered career coaching assistant designed for WFED 119 (Career Planning a
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat&logo=Prisma&logoColor=white)](https://www.prisma.io/)
+[![Supabase](https://img.shields.io/badge/Supabase-181818?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 
 ## 📖 Overview
 
@@ -44,7 +44,11 @@ This project welcomes backend and database developers. Current collaborators hav
 # Clone and setup
 git clone https://github.com/HosungYou/wfed119.git
 cd wfed119
-npm run setup:collaborator
+npm install
+
+# Setup environment (contact owner for Supabase credentials)
+cp .env.example .env.local
+# Add your Supabase credentials to .env.local
 
 # Start development
 npm run dev

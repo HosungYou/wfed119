@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import {
   emptyLayout,
   isValueLayout,
@@ -23,22 +21,11 @@ const isSerializableObject = (input: unknown): Record<string, unknown> | null =>
 
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
-  const session = await getServerSession(authOptions);
 
-  // Get the actual User.id from database using googleId
-  if (session?.user?.id) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { googleId: session.user.id },
-        select: { id: true }
-      });
-      return user?.id;
-    } catch (error) {
-      console.error('Error finding user by googleId:', error);
-    }
-  }
+  const supabase = createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  return undefined;
+  return session?.user?.id;
 };
 
 interface SaveRequestBody {
@@ -53,21 +40,34 @@ interface SaveRequestBody {
 
 export async function GET(req: NextRequest) {
   try {
+    const supabase = createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const setParam = searchParams.get('set');
     const set = (setParam === 'terminal' || setParam === 'instrumental' || setParam === 'work') ? setParam : null;
 
-    const queryUserId = searchParams.get('user_id') || searchParams.get('userId') || undefined;
-    const userId = await resolveUserId(queryUserId || undefined);
-
-    if (!userId || !set) {
-      return NextResponse.json({ error: 'Missing user_id and set' }, { status: 400 });
+    if (!set) {
+      return NextResponse.json({ error: 'Missing set parameter' }, { status: 400 });
     }
 
-    const latest = await prisma.valueResult.findFirst({
-      where: { userId, valueSet: set },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const { data: latest, error } = await supabase
+      .from('value_results')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('value_set', set)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 
     if (!latest) {
       return NextResponse.json({ exists: false }, { status: 200 });
@@ -78,13 +78,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       exists: true,
-      userId: latest.userId,
-      set: latest.valueSet,
+      userId: latest.user_id,
+      set: latest.value_set,
       layout,
       top3,
       insights: latest.insights ?? null,
-      moduleVersion: latest.moduleVersion ?? null,
-      updatedAt: latest.updatedAt,
+      moduleVersion: latest.module_version ?? null,
+      updatedAt: latest.updated_at,
     });
   } catch (err) {
     console.error('GET /api/discover/values/results error', err);
@@ -94,73 +94,48 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = (await req.json()) as SaveRequestBody;
     const set = body.set;
     const valueSet: ValueSet | null =
       set === 'terminal' || set === 'instrumental' || set === 'work' ? set : null;
     const layout: ValueLayout | null = isValueLayout(body.layout) ? body.layout : null;
     const top3Array = normalizeTop3(body.top3);
-
-    const explicitUser = typeof body.user_id === 'string' ? body.user_id : typeof body.userId === 'string' ? body.userId : undefined;
-    const uid = await resolveUserId(explicitUser);
     const insights = isSerializableObject(body.insights);
     const moduleVersion = typeof body.moduleVersion === 'string' ? body.moduleVersion : null;
 
-    if (!uid || !valueSet || !layout) {
-      return NextResponse.json({ error: 'Missing user identity, set, or layout' }, { status: 400 });
+    if (!valueSet || !layout) {
+      return NextResponse.json({ error: 'Missing set or layout' }, { status: 400 });
     }
 
-    const saved = await prisma.$transaction(async (tx) => {
-      const existing = await tx.valueResult.findMany({
-        where: { userId: uid, valueSet },
-        select: {
-          id: true,
-          userId: true,
-          valueSet: true,
-          layout: true,
-          top3: true,
-          insights: true,
-          moduleVersion: true,
-          createdAt: true,
-          updatedAt: true
-        },
-        orderBy: { updatedAt: 'desc' },
-      });
+    // Upsert value result
+    const { data, error } = await supabase
+      .from('value_results')
+      .upsert({
+        user_id: session.user.id,
+        value_set: valueSet,
+        layout,
+        top3: top3Array,
+        insights: insights || null,
+        module_version: moduleVersion || 'v1'
+      }, {
+        onConflict: 'user_id,value_set'
+      })
+      .select()
+      .single();
 
-      const [latest, ...duplicates] = existing;
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 
-      if (duplicates.length > 0) {
-        // Legacy saves could leave multiple rows per user/set; collapse them here.
-        await tx.valueResult.deleteMany({
-          where: { id: { in: duplicates.map((record) => record.id) } },
-        });
-      }
-
-      if (latest) {
-        return tx.valueResult.update({
-          where: { id: latest.id },
-          data: {
-            layout,
-            top3: top3Array,
-            insights: insights ?? null,
-            moduleVersion: moduleVersion ?? latest.moduleVersion,
-          },
-        });
-      }
-
-      return tx.valueResult.create({
-        data: {
-          userId: uid,
-          valueSet,
-          layout,
-          top3: top3Array,
-          insights: insights ?? null,
-          moduleVersion: moduleVersion ?? 'v1',
-        },
-      });
-    });
-
-    return NextResponse.json({ success: true, id: saved.id });
+    return NextResponse.json({ success: true, id: data.id });
   } catch (err) {
     console.error('POST /api/discover/values/results error', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

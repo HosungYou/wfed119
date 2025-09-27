@@ -3,10 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 
 // Client-side Supabase client
 export const createSupabaseClient = () => {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // 임시 하드코딩으로 테스트
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mldxtonwtfjvmxudwfma.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sZHh0b253dGZqdm14dWR3Zm1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjczMjEyMTIsImV4cCI6MjA0Mjg5NzIxMn0.DuPLJ5ZUn8EhPMrxe7OWyOQ8hHpNrsaXl_5d7H_6k3E'
+
+  console.log('Supabase URL:', supabaseUrl)
+  console.log('Supabase Key:', supabaseKey ? 'Set' : 'Missing')
+
+  return createBrowserClient(supabaseUrl, supabaseKey)
 }
 
 // Server-side Supabase client with service role

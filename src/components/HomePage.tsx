@@ -50,18 +50,13 @@ export const HomePage: React.FC = () => {
       const supabase = createSupabaseClient();
       console.log('Supabase client created, attempting Google OAuth...');
 
-      // 프로덕션 환경에서는 실제 도메인 사용
-      const redirectUrl = window.location.hostname === 'localhost'
-        ? 'http://localhost:3000/auth/callback'
-        : `${window.location.origin}/auth/callback`;
-
-      console.log('Redirect URL:', redirectUrl);
+      // Supabase는 자체 콜백 URL을 사용 (redirectTo 제거)
+      console.log('Starting Google OAuth via Supabase...');
+      console.log('Current origin:', window.location.origin);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl
-        }
+        provider: 'google'
+        // redirectTo 옵션 제거 - Supabase가 자동으로 Site URL로 리다이렉트
       });
 
       console.log('OAuth response:', { data, error });

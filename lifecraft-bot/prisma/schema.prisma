@@ -1,12 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Unified Prisma schema for Lifecraft bot (development)
+// Mirrors the production schema while retaining local-only models (Consent, EnneagramSession, ExportArtifact)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,63 +16,152 @@ model Session {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   currentStage  String   @default("initial")
+  userGoogleId  String?
+  userEmail     String?
+  userName      String?
   conversations Conversation[]
   strengths     Strength[]
   completed     Boolean  @default(false)
+
+  @@index([userGoogleId])
 }
 
 model Conversation {
   id        String   @id @default(uuid())
   sessionId String
   session   Session  @relation(fields: [sessionId], references: [sessionId])
-  role      String   // "user" or "assistant"
+  role      String
   content   String
   timestamp DateTime @default(now())
-  metadata  String?  // JSON string for additional analysis data
+  metadata  Json?
 }
 
 model Strength {
-  id         String   @id @default(uuid())
-  sessionId  String
-  session    Session  @relation(fields: [sessionId], references: [sessionId])
-  category   String   // "skill", "attitude", "value"
-  name       String
-  evidence   String
-  confidence Float    // 0-1 신뢰도
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [sessionId])
+  category     String
+  name         String
+  evidence     String
+  confidence   Float
+  createdAt    DateTime @default(now())
+  userGoogleId String?
+  userEmail    String?
+  userName     String?
+
+  @@index([sessionId, category])
+  @@index([userGoogleId])
 }
 
-/// Consent + locale for persistence control (session-first by default)
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id               String   @id @default(uuid())
+  googleId         String   @unique
+  email            String?  @unique
+  name             String?
+  image            String?
+  role             UserRole @default(USER)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  userSessions     UserSession[]
+  valueResults     ValueResult[]
+  auditLogs        AuditLog[]
+  strengthProfiles StrengthProfile[]
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId    String   @unique
+  sessionType  String   @default("general")
+  currentStage String   @default("initial")
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  startedAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  metadata     Json?
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  tableName String?
+  recordId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+model ValueResult {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [googleId], onDelete: Cascade)
+  valueSet      String
+  layout        Json
+  top3          Json
+  insights      Json?
+  moduleVersion String? @default("v1")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([userId, valueSet])
+}
+
+model StrengthProfile {
+  id         String   @id @default(uuid())
+  sessionKey String   @unique
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail  String?
+  strengths  Json
+  summary    String?
+  insights   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([userEmail])
+}
+
 model Consent {
   id         String   @id @default(uuid())
   sessionId  String   @unique
   persist    Boolean  @default(false)
-  locale     String   @default("en") // "en" | "kr"
+  locale     String   @default("en")
   createdAt  DateTime @default(now())
 }
 
-/// Enneagram staged assessment session
 model EnneagramSession {
-  id            String   @id @default(uuid())
-  sessionId     String   @unique
-  stage         String   // screener|discriminators|wings|narrative|complete
-  responses     Json     // {stage1:[], stage2:[], stage3:[], texts:[]}
-  typeScores    Json     // {"1":0.11, ..., "9":0.06}
-  primaryType   String?
-  wingEstimate  String?
-  instinct      String?
-  confidence    String?  // high|medium|low
-  aiEvidence    Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  sessionId    String   @unique
+  stage        String
+  responses    Json
+  typeScores   Json
+  primaryType  String?
+  wingEstimate String?
+  instinct     String?
+  confidence   String?
+  aiEvidence   Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
-/// Saved export artifacts for inter-module contracts or portfolio
 model ExportArtifact {
-  id         String   @id @default(uuid())
-  sessionId  String
-  kind       String   // values-contract | mission-contract | goals-contract | portfolio | enneagram-profile
-  content    Json
-  format     String   // json | md | pdf
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  sessionId String
+  kind      String
+  content   Json
+  format    String
+  createdAt DateTime @default(now())
 }

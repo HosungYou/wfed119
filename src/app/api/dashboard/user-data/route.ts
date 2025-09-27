@@ -1,60 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
-    // Get authenticated user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // Get authenticated user from Supabase
+    const supabase = createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.id;
     const userEmail = session.user.email;
-    const userName = session.user.name;
-    const userImage = session.user.image;
-
-    // Simple test - check if prisma is working
-    console.log('Testing Prisma connection...');
+    const userName = session.user.user_metadata?.name || session.user.email;
+    const userImage = session.user.user_metadata?.avatar_url;
 
     // Test basic database connection
-    let testResult;
-    try {
-      testResult = await prisma.$queryRaw`SELECT 1 as test`;
-      console.log('Database connection successful:', testResult);
-    } catch (dbError) {
-      console.error('Database connection failed:', dbError);
-      return NextResponse.json({
-        error: 'Database connection failed',
-        details: dbError.message
-      }, { status: 500 });
-    }
+    console.log('Testing Supabase connection...');
 
-    // Try to get value results only (simplest query)
-    let valueResults;
+    // Get user data from users table
+    const { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    // Try to get value results
+    let valueResults = [];
     try {
-      valueResults = await prisma.valueResult.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          userId: true,
-          valueSet: true,
-          layout: true,
-          top3: true,
-          createdAt: true,
-          updatedAt: true
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
-      console.log('ValueResult query successful:', valueResults.length);
+      const { data, error } = await supabase
+        .from('value_results')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('ValueResult query error:', error);
+      } else {
+        valueResults = data || [];
+        console.log('ValueResult query successful:', valueResults.length);
+      }
     } catch (valueError) {
       console.error('ValueResult query failed:', valueError);
-      return NextResponse.json({
-        error: 'ValueResult query failed',
-        details: valueError.message
-      }, { status: 500 });
     }
 
     // Return simplified dashboard data
@@ -64,7 +52,7 @@ export async function GET(req: NextRequest) {
         email: userEmail,
         name: userName,
         image: userImage,
-        createdAt: new Date().toISOString(),
+        createdAt: userData?.created_at || new Date().toISOString(),
       },
 
       modules: {
@@ -74,9 +62,9 @@ export async function GET(req: NextRequest) {
         },
 
         values: {
-          terminal: valueResults.find(v => v.valueSet === 'terminal') || null,
-          instrumental: valueResults.find(v => v.valueSet === 'instrumental') || null,
-          work: valueResults.find(v => v.valueSet === 'work') || null,
+          terminal: valueResults.find(v => v.value_set === 'terminal') || null,
+          instrumental: valueResults.find(v => v.value_set === 'instrumental') || null,
+          work: valueResults.find(v => v.value_set === 'work') || null,
           completed: valueResults.length >= 3
         },
 
@@ -94,7 +82,7 @@ export async function GET(req: NextRequest) {
         completionRate: valueResults.length > 0 ? 50 : 0
       },
 
-      adminAccess: false
+      adminAccess: userData?.role === 'ADMIN' || userData?.role === 'SUPER_ADMIN'
     };
 
     return NextResponse.json(dashboard);

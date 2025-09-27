@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { createSupabaseClient } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   User, Shield, Brain, Heart, Target, Briefcase,
@@ -22,18 +22,31 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      fetchDashboardData();
-    } else if (status === 'unauthenticated') {
+    checkAuthAndFetchData();
+  }, []);
+
+  const checkAuthAndFetchData = async () => {
+    try {
+      const supabase = createSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUser(session.user);
+        await fetchDashboardData();
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err);
       setLoading(false);
     }
-  }, [status]);
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -49,7 +62,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -57,7 +70,17 @@ export default function DashboardPage() {
     );
   }
 
-  if (status === 'unauthenticated') {
+  const handleSignIn = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+  };
+
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="max-w-4xl mx-auto px-4 py-20">
@@ -68,7 +91,7 @@ export default function DashboardPage() {
               Please sign in with Google to view your personalized dashboard and analysis results.
             </p>
             <button
-              onClick={() => signIn('google')}
+              onClick={handleSignIn}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Sign in with Google
@@ -97,7 +120,7 @@ export default function DashboardPage() {
 
   if (!dashboardData) return null;
 
-  const { user, modules, insights, adminAccess } = dashboardData;
+  const { user: dashboardUser, modules, insights, adminAccess } = dashboardData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -106,20 +129,20 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {user.image && (
+              {dashboardUser.image && (
                 <img
-                  src={user.image}
-                  alt={user.name}
+                  src={dashboardUser.image}
+                  alt={dashboardUser.name}
                   className="w-10 h-10 rounded-full"
                 />
               )}
               <div>
-                <h1 className="text-xl font-semibold">{user.name}'s Dashboard</h1>
-                <p className="text-sm text-gray-600">{user.email}</p>
+                <h1 className="text-xl font-semibold">{dashboardUser.name}'s Dashboard</h1>
+                <p className="text-sm text-gray-600">{dashboardUser.email}</p>
               </div>
             </div>
             <div className="text-sm text-gray-600">
-              Member since {new Date(user.createdAt).toLocaleDateString()}
+              Member since {new Date(dashboardUser.createdAt).toLocaleDateString()}
             </div>
           </div>
         </div>

@@ -2,12 +2,42 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { createSupabaseClient } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb, LogIn, LogOut } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { status } = useSession();
-  const isAuthenticated = status === 'authenticated';
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const supabase = createSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || null);
+    setLoading(false);
+  };
+
+  const handleSignIn = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+  };
+
+  const handleSignOut = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const isAuthenticated = !!user;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -29,7 +59,7 @@ export const HomePage: React.FC = () => {
               <a href="#about" className="text-gray-700 hover:text-gray-900 transition-colors">About</a>
             </nav>
             <button
-              onClick={() => (isAuthenticated ? signOut() : signIn('google'))}
+              onClick={() => (isAuthenticated ? handleSignOut() : handleSignIn())}
               className="flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-white/80 shadow-sm"
             >
               {isAuthenticated ? (

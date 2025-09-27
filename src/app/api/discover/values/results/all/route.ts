@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import {
   emptyLayout,
   normalizeTop3,
@@ -14,7 +12,8 @@ const valueSets: ValueSet[] = ['terminal', 'instrumental', 'work'];
 
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
-  const session = await getServerSession(authOptions);
+  const supabase = createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
   return session?.user?.id || session?.user?.email || undefined;
 };
 
@@ -25,38 +24,45 @@ export async function GET(req: NextRequest) {
     const userId = await resolveUserId(queryUserId);
     if (!userId) return NextResponse.json({ error: 'Missing user identity' }, { status: 400 });
 
-    const rows = await prisma.valueResult.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        valueSet: true,
-        layout: true,
-        top3: true,
-        insights: true,
-        moduleVersion: true,
-        createdAt: true,
-        updatedAt: true
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const supabase = createServerSupabaseClient();
+    const { data: rows, error } = await supabase
+      .from('value_results')
+      .select(`
+        id,
+        user_id,
+        value_set,
+        layout,
+        top3,
+        insights,
+        module_version,
+        created_at,
+        updated_at
+      `)
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase query error:', error);
+      return NextResponse.json({ error: 'Database query failed' }, { status: 500 });
+    }
 
     const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; updatedAt: string; insights: unknown; moduleVersion: string | null } | null> = {
       terminal: null,
       instrumental: null,
       work: null,
     };
+
     for (const set of valueSets) {
-      const record = rows.find((row) => row.valueSet === set);
+      const record = rows?.find((row) => row.value_set === set);
       if (!record) continue;
       const layout = parseLayout(record.layout) ?? emptyLayout;
       const top3 = normalizeTop3(record.top3);
       latestBySet[set] = {
         layout,
         top3,
-        updatedAt: record.updatedAt.toISOString(),
+        updatedAt: record.updated_at,
         insights: record.insights ?? null,
-        moduleVersion: record.moduleVersion ?? null,
+        moduleVersion: record.module_version ?? null,
       };
     }
 

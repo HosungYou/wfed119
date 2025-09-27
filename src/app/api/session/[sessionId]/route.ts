@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function GET(
   req: NextRequest,
@@ -15,63 +15,66 @@ export async function GET(
       );
     }
 
-    // Find the session
-    const session = await prisma.session.findUnique({
-      where: { sessionId },
-      include: {
-        conversations: {
-          orderBy: { timestamp: 'asc' }
-        },
-        strengths: {
-          orderBy: { createdAt: 'asc' }
-        }
-      }
-    });
+    const supabase = createServerSupabaseClient();
 
-    if (!session) {
+    // Find the session in user_sessions table
+    const { data: session, error: sessionError } = await supabase
+      .from('user_sessions')
+      .select('*')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
       );
     }
 
-    // Transform conversations back to chat messages format
-    const messages = session.conversations.map(conv => ({
-      role: conv.role,
-      content: conv.content,
-      timestamp: conv.timestamp.toISOString()
-    }));
+    // Get strength profiles for this session
+    const { data: strengthProfiles } = await supabase
+      .from('strength_profiles')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
 
     // Transform strengths back to categorized format
     const strengths = {
-      skills: session.strengths
-        .filter(s => s.category === 'skills')
-        .map(s => s.name),
-      attitudes: session.strengths
-        .filter(s => s.category === 'attitudes')
-        .map(s => s.name),
-      values: session.strengths
-        .filter(s => s.category === 'values')
-        .map(s => s.name)
+      skills: [],
+      attitudes: [],
+      values: []
     };
 
+    if (strengthProfiles && strengthProfiles.length > 0) {
+      const latestProfile = strengthProfiles[strengthProfiles.length - 1];
+      if (latestProfile.strengths) {
+        // Extract strengths from the stored data structure
+        const strengthsData = latestProfile.strengths;
+        if (typeof strengthsData === 'object') {
+          strengths.skills = (strengthsData as any).skills || [];
+          strengths.attitudes = (strengthsData as any).attitudes || [];
+          strengths.values = (strengthsData as any).values || [];
+        }
+      }
+    }
+
     return NextResponse.json({
-      sessionId: session.sessionId,
-      stage: session.currentStage,
+      sessionId: session.session_id,
+      stage: session.current_stage,
       completed: session.completed,
-      messages,
+      messages: [], // Note: Conversation messages would need separate table
       strengths,
       metadata: {
-        createdAt: session.createdAt.toISOString(),
-        updatedAt: session.updatedAt.toISOString(),
-        messageCount: messages.length,
-        strengthCount: session.strengths.length
+        createdAt: session.started_at,
+        updatedAt: session.updated_at,
+        messageCount: 0, // Would need to count from conversations table
+        strengthCount: Object.values(strengths).flat().length
       }
     });
 
   } catch (error) {
     console.error('Session Load API Error:', error);
-    
+
     return NextResponse.json(
       { error: 'Failed to load session. Please try again.' },
       { status: 500 }
@@ -93,19 +96,27 @@ export async function DELETE(
       );
     }
 
-    // Delete all related data first (due to foreign key constraints)
-    await prisma.conversation.deleteMany({
-      where: { sessionId }
-    });
+    const supabase = createServerSupabaseClient();
 
-    await prisma.strength.deleteMany({
-      where: { sessionId }
-    });
+    // Delete strength profiles for this session
+    await supabase
+      .from('strength_profiles')
+      .delete()
+      .eq('session_id', sessionId);
 
     // Delete the session itself
-    await prisma.session.delete({
-      where: { sessionId }
-    });
+    const { error } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('session_id', sessionId);
+
+    if (error) {
+      console.error('Delete session error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete session' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -115,7 +126,7 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Session Delete API Error:', error);
-    
+
     return NextResponse.json(
       { error: 'Failed to delete session. Please try again.' },
       { status: 500 }

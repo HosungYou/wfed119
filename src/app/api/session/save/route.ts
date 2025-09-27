@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,89 +12,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const authSession = await getServerSession(authOptions);
-    const userGoogleId = authSession?.user?.id ?? null;
+    const supabase = createServerSupabaseClient();
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
+    const userId = authSession?.user?.id ?? null;
     const userEmail = authSession?.user?.email ?? null;
-    const userName = authSession?.user?.name ?? null;
+    const userName = authSession?.user?.user_metadata?.name ?? null;
 
     const normalizedStage = typeof stage === 'string' && stage ? stage : 'initial';
     const isCompleted = normalizedStage === 'summary';
 
-    let linkedUserId: string | null = null;
-
-    if (userGoogleId) {
-      const existingUser = await prisma.user.findUnique({ where: { googleId: userGoogleId } });
-      if (existingUser) {
-        linkedUserId = existingUser.id;
-        await prisma.userSession.upsert({
-          where: { sessionId },
-          update: {
-            currentStage: normalizedStage,
-            completed: isCompleted,
-            completedAt: isCompleted ? new Date() : null,
-            metadata: {
-              module: 'strengths',
-              lastUpdated: new Date().toISOString(),
-            },
-          },
-          create: {
-            userId: existingUser.id,
-            sessionId,
-            sessionType: 'strengths',
-            currentStage: normalizedStage,
-            completed: isCompleted,
-            completedAt: isCompleted ? new Date() : null,
-            metadata: {
-              module: 'strengths',
-              lastUpdated: new Date().toISOString(),
-            },
-          },
-        });
-      }
-    }
-
-    if (!linkedUserId) {
-      await prisma.session.upsert({
-        where: { sessionId },
-        update: {
-          currentStage: normalizedStage,
-          updatedAt: new Date(),
-          completed: isCompleted,
-          userGoogleId: userGoogleId ?? undefined,
-          userEmail: userEmail ?? undefined,
-          userName: userName ?? undefined,
-        },
-        create: {
-          sessionId,
-          currentStage: normalizedStage,
-          completed: isCompleted,
-          userGoogleId: userGoogleId ?? undefined,
-          userEmail: userEmail ?? undefined,
-          userName: userName ?? undefined,
-        },
+    // Save or update user session
+    const { error: sessionError } = await supabase
+      .from('user_sessions')
+      .upsert({
+        session_id: sessionId,
+        user_id: userId,
+        session_type: 'strengths',
+        current_stage: normalizedStage,
+        completed: isCompleted,
+        completed_at: isCompleted ? new Date().toISOString() : null,
+        metadata: {
+          module: 'strengths',
+          lastUpdated: new Date().toISOString(),
+          userEmail: userEmail,
+          userName: userName
+        }
       });
+
+    if (sessionError) {
+      console.error('Session upsert error:', sessionError);
     }
 
-    if (messages && Array.isArray(messages)) {
-      await prisma.conversation.deleteMany({ where: { sessionId } });
-
-      if (messages.length > 0) {
-        const nowIso = new Date().toISOString();
-        await prisma.conversation.createMany({
-          data: messages.map((message: { role: string; content: string; timestamp?: string }, index: number) => ({
-            sessionId,
-            role: message.role,
-            content: message.content,
-            metadata: JSON.stringify({
-              timestamp: message.timestamp || nowIso,
-              messageIndex: index,
-              stage: normalizedStage,
-            }),
-          })),
-        });
-      }
-    }
-
+    // Handle strengths data
     const normalisedStrengths = {
       skills: Array.isArray(strengths?.skills) ? strengths.skills : [],
       attitudes: Array.isArray(strengths?.attitudes) ? strengths.attitudes : [],
@@ -108,34 +56,6 @@ export async function POST(req: NextRequest) {
       normalisedStrengths.attitudes.length ||
       normalisedStrengths.values.length
     ) {
-      await prisma.strength.deleteMany({ where: { sessionId } });
-
-      const timestamp = new Date().toISOString();
-      const strengthPromises: Promise<unknown>[] = [];
-
-      for (const [category, items] of Object.entries(normalisedStrengths)) {
-        for (const item of items) {
-          strengthPromises.push(
-            prisma.strength.create({
-              data: {
-                sessionId,
-                category,
-                name: item,
-                evidence: `Recorded via Strengths module at ${timestamp}`,
-                confidence: 0.8,
-                userGoogleId: userGoogleId ?? undefined,
-                userEmail: userEmail ?? undefined,
-                userName: userName ?? undefined,
-              },
-            }),
-          );
-        }
-      }
-
-      if (strengthPromises.length > 0) {
-        await Promise.all(strengthPromises);
-      }
-
       const summarySegments: string[] = [];
       if (normalisedStrengths.skills.length) {
         summarySegments.push(`Skills ▸ ${normalisedStrengths.skills.slice(0, 3).join(', ')}`);
@@ -161,26 +81,23 @@ export async function POST(req: NextRequest) {
         stage: normalizedStage,
         completed: isCompleted,
         updatedAt: new Date().toISOString(),
-      } as const;
+      };
 
-      await prisma.strengthProfile.upsert({
-        where: { sessionKey: sessionId },
-        update: {
-          userId: linkedUserId ?? undefined,
-          userEmail: userEmail ?? undefined,
+      // Save strength profile
+      const { error: strengthError } = await supabase
+        .from('strength_profiles')
+        .upsert({
+          session_id: sessionId,
+          user_id: userId,
+          user_email: userEmail,
           strengths: normalisedStrengths,
           summary: summarySegments.join(' | ') || null,
           insights: profileInsights,
-        },
-        create: {
-          sessionKey: sessionId,
-          userId: linkedUserId ?? undefined,
-          userEmail: userEmail ?? undefined,
-          strengths: normalisedStrengths,
-          summary: summarySegments.join(' | ') || null,
-          insights: profileInsights,
-        },
-      });
+        });
+
+      if (strengthError) {
+        console.error('Strength profile upsert error:', strengthError);
+      }
     }
 
     return NextResponse.json({

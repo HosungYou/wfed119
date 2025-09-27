@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { createSupabaseClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import {
   Database, Users, FileText, Activity, Shield, Download,
@@ -18,27 +18,30 @@ interface DatabaseStats {
 }
 
 export default function DatabaseAdminPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState<DatabaseStats | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DatabaseStats | null>(null);
   const [selectedTable, setSelectedTable] = useState('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [lastBackup, setLastBackup] = useState<Date | null>(null);
 
   useEffect(() => {
     checkAdminAccess();
-  }, [status, session]);
+  }, []);
 
   const checkAdminAccess = async () => {
-    if (status === 'loading') return;
-
-    if (!session?.user?.id) {
-      router.push('/');
-      return;
-    }
-
     try {
+      const supabase = createSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        router.push('/');
+        return;
+      }
+
+      setUser(session.user);
+
       const res = await fetch('/api/admin/check-access');
       const data = await res.json();
 

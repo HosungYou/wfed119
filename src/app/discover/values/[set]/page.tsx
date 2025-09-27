@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { createSupabaseClient } from '@/lib/supabase';
 import * as htmlToImage from 'html-to-image';
 
 type Value = { id: string; name: string; description: string };
@@ -180,16 +180,26 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     }
   }, [routeSet]);
 
-  const { data: session, status } = useSession();
+  const [user, setUser] = useState<any>(null);
   const [palette, setPalette] = useState<string[]>([]);
   const [layout, setLayout] = useState<Layout>(emptyLayout);
   const boardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const supabase = createSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || null);
+  };
 
   useEffect(() => { setPalette(VALUES.map(v => v.id)); setLayout(emptyLayout); }, [VALUES]);
 
   // Load saved from server if available
   useEffect(() => {
-    const userId = session?.user?.email ?? session?.user?.id ?? undefined;
+    const userId = user?.email ?? user?.id ?? undefined;
     if (!userId || !routeSet) return;
     fetch(`/api/discover/values/results?user_id=${encodeURIComponent(userId)}&set=${routeSet}`)
       .then(r => r.json())
@@ -202,7 +212,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
         }
       })
       .catch(() => {});
-  }, [session, routeSet, VALUES]);
+  }, [user, routeSet, VALUES]);
 
   const byId = useMemo(() => Object.fromEntries(VALUES.map(v => [v.id, v])), [VALUES]);
 
@@ -489,8 +499,24 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
   const MODULE_VERSION = 'v2025-09-26';
 
+  const handleSignIn = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+  };
+
+  const handleSignOut = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   async function saveToServer() {
-    const userId = session?.user?.id ?? session?.user?.email ?? undefined;
+    const userId = user?.id ?? user?.email ?? undefined;
     if (!userId) { alert('Please sign in to save.'); return; }
     const bucketStats = {
       veryImportant: layout.very_important.length,
@@ -543,10 +569,10 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
             <span>Back to Values</span>
           </Link>
           <div className="flex items-center gap-2">
-            {status !== 'authenticated' ? (
-              <button onClick={() => signIn('google')} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogIn className="w-4 h-4"/>Sign in with Google</button>
+            {!user ? (
+              <button onClick={handleSignIn} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogIn className="w-4 h-4"/>Sign in with Google</button>
             ) : (
-              <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>Sign out</button>
+              <button onClick={handleSignOut} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><LogOut className="w-4 h-4"/>Sign out</button>
             )}
             <button onClick={saveToServer} className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg"><Save className="w-4 h-4"/>Save</button>
             <button onClick={exportBoardPNG} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"><Download className="w-4 h-4"/>Board PNG</button>

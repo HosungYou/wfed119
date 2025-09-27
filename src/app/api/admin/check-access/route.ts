@@ -1,41 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const supabase = createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json(
         { isAdmin: false, error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const googleId = session.user.id;
-    const normalizedEmail = session.user.email?.toLowerCase() ?? null;
-
-    let user = await prisma.user.findUnique({
-      where: { googleId },
-      select: { role: true, email: true, googleId: true },
-    });
-
-    if (!user && normalizedEmail) {
-      const userByEmail = await prisma.user.findUnique({
-        where: { email: normalizedEmail },
-        select: { role: true, email: true, googleId: true },
-      });
-
-      if (userByEmail) {
-        user = await prisma.user.update({
-          where: { email: normalizedEmail },
-          data: { googleId },
-          select: { role: true, email: true, googleId: true },
-        });
-      }
-    }
+    const { data: user } = await supabase
+      .from('users')
+      .select('role, email, id')
+      .eq('id', session.user.id)
+      .single();
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';

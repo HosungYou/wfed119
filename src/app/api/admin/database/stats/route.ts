@@ -1,40 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
-import fs from 'fs';
-import path from 'path';
-
-type SessionWhere = {
-  completed?: boolean;
-  updatedAt?: { gte?: Date };
-};
-
-type SessionDelegate = {
-  count: (args?: { where?: SessionWhere }) => Promise<number>;
-};
-
-function resolveSessionDelegate(): SessionDelegate | null {
-  const client = prisma as unknown as Record<string, unknown>;
-  const primary = client.session as SessionDelegate | undefined;
-  if (primary?.count) return primary;
-  const fallback = client.userSession as SessionDelegate | undefined;
-  if (fallback?.count) return fallback;
-  return null;
-}
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 async function checkSuperAdmin(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { googleId: userId },
-    select: { role: true }
-  });
+  const supabase = createServerSupabaseClient();
+  const { data: user } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
   return user?.role === 'SUPER_ADMIN';
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const supabase = createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -43,99 +25,87 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
     }
 
+    // Get counts from Supabase tables
     const [
-      userCount,
-      adminCount,
-      valueResultCount,
-      strengthCount,
-      conversationCount,
-      valuesByType,
-      uniqueStrengths
+      { count: userCount },
+      { count: adminCount },
+      { count: valueResultCount },
+      { count: strengthCount },
+      { count: sessionCount }
     ] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } } }),
-      prisma.valueResult.count(),
-      prisma.strength.count(),
-      prisma.conversation.count(),
-      prisma.valueResult.groupBy({ by: ['valueSet'], _count: true }),
-      prisma.strength.findMany({ distinct: ['name'], select: { name: true } })
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['ADMIN', 'SUPER_ADMIN']),
+      supabase.from('value_results').select('*', { count: 'exact', head: true }),
+      supabase.from('strength_profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('user_sessions').select('*', { count: 'exact', head: true })
     ]);
 
-    const sessionDelegate = resolveSessionDelegate();
-    let sessionCount = 0;
-    let completedSessionCount = 0;
-    let activeSessionCount = 0;
+    // Get completed sessions count
+    const { count: completedSessionCount } = await supabase
+      .from('user_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('completed', true);
 
-    if (sessionDelegate) {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      [sessionCount, completedSessionCount, activeSessionCount] = await Promise.all([
-        sessionDelegate.count(),
-        sessionDelegate.count({ where: { completed: true } }),
-        sessionDelegate.count({ where: { completed: false, updatedAt: { gte: oneDayAgo } } })
-      ]);
-    }
+    // Get active sessions (updated in last 24 hours)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: activeSessionCount } = await supabase
+      .from('user_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('completed', false)
+      .gte('updated_at', oneDayAgo);
 
-    const valueTypeMap = valuesByType.reduce((acc, item) => {
-      acc[item.valueSet] = item._count;
+    // Get value results by type
+    const { data: valuesByType } = await supabase
+      .from('value_results')
+      .select('value_set');
+
+    const valueTypeMap = valuesByType?.reduce((acc, item) => {
+      acc[item.value_set] = (acc[item.value_set] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, number>) || {};
 
-    // Calculate storage (for SQLite)
-    let storageInfo = { used: '0 MB', limit: '500 MB', percentage: 0 };
+    // Get unique strengths count
+    const { data: strengthData } = await supabase
+      .from('strength_profiles')
+      .select('strengths');
 
-    try {
-      const dbPath = path.join(process.cwd(), 'prisma', 'dev.db');
-      if (fs.existsSync(dbPath)) {
-        const stats = fs.statSync(dbPath);
-        const sizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
-        storageInfo = {
-          used: `${sizeInMB} MB`,
-          limit: '500 MB',
-          percentage: Math.round((parseFloat(sizeInMB) / 500) * 100)
-        };
+    const uniqueStrengths = new Set();
+    strengthData?.forEach(profile => {
+      if (profile.strengths && Array.isArray(profile.strengths)) {
+        profile.strengths.forEach((strength: any) => {
+          if (strength.name) uniqueStrengths.add(strength.name);
+        });
       }
-    } catch (e) {
-      console.error('Storage calculation error:', e);
-    }
+    });
 
-    // Check for last backup
-    let lastBackup = null;
-    const backupDir = path.join(process.cwd(), 'backup');
-    if (fs.existsSync(backupDir)) {
-      const files = fs.readdirSync(backupDir);
-      const backupFiles = files.filter(f => f.endsWith('.db'));
-      if (backupFiles.length > 0) {
-        const latestBackup = backupFiles.sort().pop();
-        if (latestBackup) {
-          const backupPath = path.join(backupDir, latestBackup);
-          const stats = fs.statSync(backupPath);
-          lastBackup = stats.mtime;
-        }
-      }
-    }
+    // Simple storage placeholder (Supabase manages storage)
+    const storageInfo = {
+      used: 'N/A',
+      limit: 'Managed by Supabase',
+      percentage: 0
+    };
 
     return NextResponse.json({
       users: {
-        total: userCount,
-        admins: adminCount,
-        active: activeSessionCount
+        total: userCount || 0,
+        admins: adminCount || 0,
+        active: activeSessionCount || 0
       },
       sessions: {
-        total: sessionCount,
-        completed: completedSessionCount,
-        active: activeSessionCount
+        total: sessionCount || 0,
+        completed: completedSessionCount || 0,
+        active: activeSessionCount || 0
       },
       values: {
-        total: valueResultCount,
+        total: valueResultCount || 0,
         byType: valueTypeMap
       },
       strengths: {
-        total: strengthCount,
-        unique: uniqueStrengths.length
+        total: strengthCount || 0,
+        unique: uniqueStrengths.size
       },
-      conversations: conversationCount,
       storage: storageInfo,
-      lastBackup
+      lastBackup: null // Supabase handles backups automatically
     });
 
   } catch (error) {

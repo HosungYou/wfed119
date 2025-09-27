@@ -3,10 +3,36 @@
 import React from 'react';
 import Link from 'next/link';
 import { Heart, Target, Briefcase, LogIn, LogOut } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { createSupabaseClient } from '@/lib/supabase';
 
 export default function ValuesLanding() {
-  const { status } = useSession();
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const supabase = createSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || null);
+  };
+
+  const handleSignIn = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+  };
+
+  const handleSignOut = async () => {
+    const supabase = createSupabaseClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
@@ -18,9 +44,9 @@ export default function ValuesLanding() {
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            {status !== 'authenticated' ? (
+            {!user ? (
               <button
-                onClick={() => signIn('google')}
+                onClick={handleSignIn}
                 className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"
               >
                 <LogIn className="w-4 h-4" />
@@ -28,7 +54,7 @@ export default function ValuesLanding() {
               </button>
             ) : (
               <button
-                onClick={() => signOut()}
+                onClick={handleSignOut}
                 className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"
               >
                 <LogOut className="w-4 h-4" />

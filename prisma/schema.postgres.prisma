@@ -114,7 +114,7 @@ model AuditLog {
 model ValueResult {
   id         String   @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [googleId], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   valueSet   String   // 'terminal' | 'instrumental' | 'work'
   layout     Json     // { very_important: string[], important: string[], somewhat_important: string[], not_important: string[] }
   top3       Json

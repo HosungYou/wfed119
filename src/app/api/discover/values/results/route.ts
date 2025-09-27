@@ -24,7 +24,21 @@ const isSerializableObject = (input: unknown): Record<string, unknown> | null =>
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
   const session = await getServerSession(authOptions);
-  return session?.user?.id || session?.user?.email || undefined;
+
+  // Get the actual User.id from database using googleId
+  if (session?.user?.id) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { googleId: session.user.id },
+        select: { id: true }
+      });
+      return user?.id;
+    } catch (error) {
+      console.error('Error finding user by googleId:', error);
+    }
+  }
+
+  return undefined;
 };
 
 interface SaveRequestBody {

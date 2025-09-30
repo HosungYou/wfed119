@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { buildSystemPrompt, STRENGTH_EXTRACTION_EXAMPLES } from '../prompts/systemPromptV2';
+import { ENHANCED_SYSTEM_PROMPT } from '../prompts/enhancedSystemPrompt';
 
 // Initialize Claude client (using Anthropic API)
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({
@@ -141,13 +141,8 @@ export class AIService {
       }
     }
 
-    // Build optimized system prompt (V2)
-    const systemPrompt = buildSystemPrompt(sessionContext.stage, {
-      messageCount: sessionContext.messageCount,
-      invalidCount: sessionContext.invalidResponseCount || 0,
-      userThemes: sessionContext.extractedThemes
-    });
-
+    const contextualPrompt = this.buildContextualPrompt(sessionContext);
+    
     // Try Claude first, fallback to OpenAI
     if (anthropic) {
       try {
@@ -160,7 +155,7 @@ export class AIService {
         const completion = await anthropic.messages.create({
           model: "claude-3-haiku-20240307", // Most cost-effective model
           messages: claudeMessages,
-          system: systemPrompt,
+          system: ENHANCED_SYSTEM_PROMPT + contextualPrompt,
           max_tokens: 600,
           temperature: 0.7,
         });
@@ -193,18 +188,13 @@ export class AIService {
       throw new Error('OpenAI client not initialized.');
     }
 
-    // Build optimized system prompt (V2)
-    const systemPrompt = buildSystemPrompt(sessionContext.stage, {
-      messageCount: sessionContext.messageCount,
-      invalidCount: sessionContext.invalidResponseCount || 0,
-      userThemes: sessionContext.extractedThemes
-    });
-
+    const contextualPrompt = this.buildContextualPrompt(sessionContext);
+    
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: ENHANCED_SYSTEM_PROMPT + contextualPrompt },
           ...messages
         ],
         temperature: 0.7,
@@ -236,13 +226,8 @@ export class AIService {
       }
     }
 
-    // Build optimized system prompt (V2)
-    const systemPrompt = buildSystemPrompt(sessionContext.stage, {
-      messageCount: sessionContext.messageCount,
-      invalidCount: sessionContext.invalidResponseCount || 0,
-      userThemes: sessionContext.extractedThemes
-    });
-
+    const contextualPrompt = this.buildContextualPrompt(sessionContext);
+    
     if (anthropic) {
       try {
         const claudeMessages = messages.map(msg => ({
@@ -253,7 +238,7 @@ export class AIService {
         const stream = await anthropic.messages.create({
           model: "claude-3-haiku-20240307",
           messages: claudeMessages,
-          system: systemPrompt,
+          system: ENHANCED_SYSTEM_PROMPT + contextualPrompt,
           max_tokens: 600,
           temperature: 0.7,
           stream: true,
@@ -290,17 +275,12 @@ export class AIService {
     }
 
     try {
-      // Build optimized system prompt (V2)
-      const systemPrompt = buildSystemPrompt(sessionContext.stage, {
-        messageCount: sessionContext.messageCount,
-        invalidCount: sessionContext.invalidResponseCount || 0,
-        userThemes: sessionContext.extractedThemes
-      });
-
+      const contextualPrompt = this.buildContextualPrompt(sessionContext);
+      
       const stream = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: ENHANCED_SYSTEM_PROMPT + contextualPrompt },
           ...messages
         ],
         temperature: 0.7,
@@ -320,6 +300,64 @@ export class AIService {
     }
   }
 
+  private buildContextualPrompt(context: SessionContext): string {
+    const { stage, messageCount, invalidResponseCount = 0 } = context;
+    
+    let additionalContext = `\n\nCURRENT CONTEXT:
+- Conversation Stage: ${stage}
+- Valid Message Count: ${messageCount}
+- Invalid Response Count: ${invalidResponseCount}
+`;
+
+    // Add response validation emphasis if user has given invalid responses
+    if (invalidResponseCount > 0) {
+      additionalContext += `
+- USER NEEDS GUIDANCE: They've provided ${invalidResponseCount} invalid responses
+- Be extra clear about what kind of response you're looking for
+- Provide specific examples to guide them`;
+    }
+
+    switch (stage) {
+      case 'initial':
+        additionalContext += `
+- FOCUS: Elicit a meaningful story about work satisfaction
+- Ask the opening question warmly and wait for their complete story
+- If they give short or invalid response, guide them to share more detail
+- Don't rush into analysis`;
+        break;
+      case 'exploration':
+        additionalContext += `
+- FOCUS: Acknowledge their story warmly, then ask ONE unique follow-up question
+- Structure: Brief acknowledgment → Thoughtful interpretation → Encouraging observation → UNIQUE QUESTION (?)
+- Avoid repetitive questions - each question should explore something new
+- CRITICAL: Must end with unique question mark (?)`;
+        break;
+      case 'deepening':
+        additionalContext += `
+- FOCUS: Continue questioning with warm engagement to uncover deeper insights
+- Build on what they've shared - reference their specific words and experiences
+- Each question should explore a different dimension from previous ones
+- CRITICAL: Must end with exactly one question mark (?)`;
+        break;
+      case 'analysis':
+        additionalContext += `
+- FOCUS: Question while categorizing patterns, avoid repetitive inquiries
+- Ask varied questions about skill applications, attitude consistency, value conflicts
+- Begin organizing themes while still questioning
+- CRITICAL: Must end with unique question mark (?)`;
+        break;
+      case 'summary':
+        additionalContext += `
+- FOCUS: Provide comprehensive strength summary and future connections
+- CRITICAL: DO NOT end with a question - provide definitive report/wrap-up
+- Base ALL strengths on specific examples they shared
+- Be comprehensive and conclusive
+- End with hope and agency reinforcement`;
+        break;
+    }
+
+    return additionalContext;
+  }
 
   async analyzeStrengths(conversation: string): Promise<StrengthAnalysis> {
     // First, validate that there's meaningful content to analyze
@@ -333,37 +371,29 @@ export class AIService {
       };
     }
 
-    // Enhanced analysis prompt with few-shot examples
-    const analysisPrompt = `Extract career strengths from this conversation.
+    const analysisPrompt = `Analyze this conversation and extract career strengths. 
 
-${STRENGTH_EXTRACTION_EXAMPLES}
+VALIDATION FIRST:
+1. Check if conversation contains actual work/project experiences (not just questions)
+2. Verify responses relate to skills/accomplishments/experiences
+3. Ensure sufficient detail exists for extraction
 
-Now analyze this conversation:
+IF INVALID (questions only, off-topic, or no experiences shared):
+Return: {"skills":[],"attitudes":[],"values":[],"invalid":true,"reason":"[specific reason]"}
 
-${conversation.substring(0, 1500)}
+IF VALID, extract strengths with these rules:
+- SKILLS (max 6): Specific abilities or competencies demonstrated
+- ATTITUDES (max 6): Mindsets or approaches to work
+- VALUES (max 6): Core beliefs or principles shown
 
-Rules:
-1. Validate conversation has actual work/project stories (not just questions)
-2. Each strength needs clear evidence from their specific examples
-3. Max 6 items per category
-4. Be specific, not generic (e.g., "Mobile App Development" not "Programming")
+Each strength must:
+- Link to specific statement in conversation
+- Be 2-3 words maximum
+- Have clear evidence
 
-Return JSON format:
-{
-  "skills": ["specific skill 1", "specific skill 2", ...],
-  "attitudes": ["attitude 1", "attitude 2", ...],
-  "values": ["value 1", "value 2", ...],
-  "invalid": false
-}
+Conversation: ${conversation.substring(0, 1500)}
 
-If invalid (no real examples), return:
-{
-  "skills": [],
-  "attitudes": [],
-  "values": [],
-  "invalid": true,
-  "reason": "description of why"
-}`;
+Return valid JSON only: {"skills":["..."],"attitudes":["..."],"values":["..."],"invalid":false}`;
 
     try {
       if (anthropic) {
@@ -372,9 +402,9 @@ If invalid (no real examples), return:
           messages: [
             { role: 'user', content: analysisPrompt }
           ],
-          system: 'You are a career strength analyzer. Extract strengths from specific work experiences. Follow the examples shown. Return valid JSON only.',
-          max_tokens: 400,
-          temperature: 0.2, // Lower temperature for more consistent extraction
+          system: 'You are a career strength analyzer. Extract strengths ONLY from valid work experiences shared. Return JSON only.',
+          max_tokens: 300,
+          temperature: 0.3,
         });
 
         const response = completion.content[0];
@@ -385,11 +415,11 @@ If invalid (no real examples), return:
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { role: 'system', content: 'Extract career strengths from specific work experiences. Follow the examples. Return valid JSON only.' },
+            { role: 'system', content: 'Extract career strengths. Return valid JSON only.' },
             { role: 'user', content: analysisPrompt }
           ],
-          temperature: 0.2,
-          max_completion_tokens: 400,
+          temperature: 0.3,
+          max_completion_tokens: 300,
           response_format: { type: "json_object" }
         }, {
           timeout: 5000
@@ -397,10 +427,10 @@ If invalid (no real examples), return:
 
         const result = completion.choices[0].message.content;
         if (!result) throw new Error('No analysis result received');
-
+        
         return JSON.parse(result);
       }
-
+      
       throw new Error('No AI service available');
     } catch (error) {
       console.error('Strength Analysis Error:', error);
@@ -409,7 +439,7 @@ If invalid (no real examples), return:
         attitudes: [],
         values: [],
         invalid: true,
-        reason: 'Analysis failed due to error'
+        reason: 'Analysis failed'
       };
     }
   }

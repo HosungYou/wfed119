@@ -1,66 +1,66 @@
-# WFED119 데이터 저장 및 협업 시스템 - 구현 완료
+# WFED119 Data Storage and Collaboration System - Implementation Complete
 
-## 🎯 구현 완료 사항 (2024)
+## 🎯 Completed Implementation (2024)
 
-### 1. ✅ Google 인증 통합
-- NextAuth를 통한 Google OAuth 구현
-- 모든 모듈에서 사용자 인증 지원
-- 세션별 사용자 데이터 연결
+### 1. ✅ Google Authentication Integration
+- Google OAuth implementation via NextAuth
+- User authentication support across all modules
+- Session-based user data connection
 
-### 2. ✅ 통합 데이터베이스 스키마
-- PostgreSQL 지원 스키마 (`schema.enhanced.prisma`)
-- UserSession 테이블로 모든 세션 통합 관리
-- User 테이블과 모든 데이터 연결
+### 2. ✅ Unified Database Schema
+- PostgreSQL-compatible schema (`schema.enhanced.prisma`)
+- Unified session management via UserSession table
+- All data connected to User table
 
-### 3. ✅ 사용자 대시보드
-- `/dashboard` - 통합 분석 결과 확인
-- 모든 모듈 진행 상황 표시
-- Strengths, Values, Enneagram, Career 데이터 통합
+### 3. ✅ User Dashboard
+- `/dashboard` - Unified analysis results view
+- Progress tracking for all modules
+- Integration of Strengths, Values, Enneagram, and Career data
 
-### 4. ✅ 관리자 권한 시스템
-- User Role 기반 권한 관리 (USER, ADMIN, SUPER_ADMIN)
-- AdminGroup으로 관리자 그룹 생성
-- GroupPermission으로 세부 권한 설정
+### 4. ✅ Administrator Permission System
+- User role-based permission management (USER, ADMIN, SUPER_ADMIN)
+- AdminGroup for administrator group creation
+- GroupPermission for granular permission settings
 
-### 5. ✅ 데이터 공유 API
-- `/api/admin/share` - 관리자 데이터 공유
-- `/api/dashboard/user-data` - 사용자 데이터 조회
-- 권한 기반 접근 제어
+### 5. ✅ Data Sharing API
+- `/api/admin/share` - Administrator data sharing
+- `/api/dashboard/user-data` - User data retrieval
+- Permission-based access control
 
-## 현재 시스템 분석
+## Current System Analysis
 
-### 1. 데이터 저장 구조 ✅
-- **Google OAuth 인증**: NextAuth를 통한 Google 로그인 구현 완료
-- **사용자 데이터 저장**:
-  - User 테이블에 googleId, email, name, image 저장
-  - ValueResult 테이블에 사용자별 value 선택 결과 저장
-  - userId + valueSet 조합으로 유니크 제약 (중복 방지)
-- **저장 프로세스**:
-  1. Google 로그인 시 User 테이블에 upsert
-  2. Values Terminal 완료 시 ValueResult에 layout과 top3 저장
-  3. 각 value set (terminal/instrumental/work)별로 별도 저장
+### 1. Data Storage Structure ✅
+- **Google OAuth Authentication**: Google login via NextAuth implementation complete
+- **User Data Storage**:
+  - Store googleId, email, name, image in User table
+  - Store user-specific value selection results in ValueResult table
+  - Unique constraint on userId + valueSet combination (prevents duplicates)
+- **Storage Process**:
+  1. Upsert to User table on Google login
+  2. Store layout and top3 in ValueResult when Values Terminal completed
+  3. Store separately for each value set (terminal/instrumental/work)
 
-### 2. 현재 구현된 기능
-- ✅ Google 로그인/로그아웃
-- ✅ 드래그 앤 드롭으로 가치 분류
-- ✅ 서버에 결과 저장 (POST /api/discover/values/results)
-- ✅ 기존 결과 불러오기 (GET /api/discover/values/results)
-- ✅ PNG 이미지 내보내기
+### 2. Currently Implemented Features
+- ✅ Google login/logout
+- ✅ Drag and drop value classification
+- ✅ Save results to server (POST /api/discover/values/results)
+- ✅ Load existing results (GET /api/discover/values/results)
+- ✅ Export PNG images
 
-## 문제점 및 개선 필요사항
+## Issues and Improvement Needs
 
-### 1. 협업 기능 부재
-현재 시스템은 개인별 데이터 저장만 가능하며, 다른 사용자와의 데이터 공유나 협업 기능이 없습니다.
+### 1. Lack of Collaboration Features
+The current system only supports individual data storage without data sharing or collaboration features with other users.
 
-### 2. 데이터베이스 제한
-SQLite 사용으로 인한 동시성 문제 가능성 (여러 사용자가 동시에 접근 시)
+### 2. Database Limitations
+Potential concurrency issues due to SQLite usage (when multiple users access simultaneously)
 
-## 개선 방안
+## Improvement Proposals
 
-### 1. 협업 기능 추가를 위한 스키마 확장
+### 1. Schema Extension for Collaboration Features
 
 ```prisma
-// 협업 그룹 모델 추가
+// Add collaboration group model
 model CollaborationGroup {
   id          String   @id @default(uuid())
   name        String
@@ -71,7 +71,7 @@ model CollaborationGroup {
   sharedResults SharedValueResult[]
 }
 
-// 그룹 멤버 관계
+// Group member relationship
 model GroupMember {
   id        String   @id @default(uuid())
   groupId   String
@@ -83,7 +83,7 @@ model GroupMember {
   @@unique([groupId, userId])
 }
 
-// 공유된 결과
+// Shared results
 model SharedValueResult {
   id           String   @id @default(uuid())
   groupId      String
@@ -94,7 +94,7 @@ model SharedValueResult {
   permissions  String   // "view" | "comment" | "edit"
 }
 
-// 코멘트 기능
+// Comment functionality
 model ValueComment {
   id          String   @id @default(uuid())
   valueResultId String
@@ -104,119 +104,119 @@ model ValueComment {
 }
 ```
 
-### 2. API 엔드포인트 추가
+### 2. Additional API Endpoints
 
 ```typescript
-// 그룹 생성
+// Create group
 POST /api/collaboration/groups
 
-// 그룹 멤버 초대
+// Invite group members
 POST /api/collaboration/groups/{groupId}/members
 
-// 결과 공유
+// Share results
 POST /api/collaboration/share
 
-// 공유된 결과 조회
+// View shared results
 GET /api/collaboration/shared
 
-// 그룹 내 모든 결과 조회
+// View all results in group
 GET /api/collaboration/groups/{groupId}/results
 ```
 
-### 3. 실시간 협업을 위한 WebSocket 구현
+### 3. WebSocket Implementation for Real-time Collaboration
 
 ```typescript
-// Socket.IO 또는 Pusher 사용
-- 실시간 편집 알림
-- 새로운 공유 알림
-- 댓글 알림
+// Use Socket.IO or Pusher
+- Real-time edit notifications
+- New share notifications
+- Comment notifications
 ```
 
-### 4. 데이터베이스 마이그레이션
+### 4. Database Migration
 
-**SQLite → PostgreSQL 전환 권장**
-- 동시 접근 처리 개선
-- 트랜잭션 처리 강화
-- 스케일링 가능
+**SQLite → PostgreSQL Migration Recommended**
+- Improved concurrent access handling
+- Enhanced transaction processing
+- Scalability support
 
 ```env
-# .env 파일 수정
+# Update .env file
 DATABASE_URL="postgresql://user:password@localhost:5432/wfed119"
 ```
 
-### 5. UI 개선사항
+### 5. UI Improvements
 
 ```tsx
-// 협업 기능 UI 추가
-- 공유 버튼
-- 그룹 선택 드롭다운
-- 멤버 초대 모달
-- 공유된 결과 비교 뷰
-- 팀 대시보드
+// Add collaboration feature UI
+- Share button
+- Group selection dropdown
+- Member invitation modal
+- Shared results comparison view
+- Team dashboard
 ```
 
-### 6. 권한 관리
+### 6. Permission Management
 
 ```typescript
-// 미들웨어 추가
+// Add middleware
 export async function checkCollaborationPermission(
   userId: string,
   resourceId: string,
   requiredPermission: 'view' | 'edit' | 'delete'
 ) {
-  // 권한 확인 로직
+  // Permission verification logic
 }
 ```
 
-## 🚀 즉시 사용 가능한 기능
+## 🚀 Immediately Available Features
 
-### 사용자 기능
-1. **Google 로그인**
-   - 모든 페이지에서 Google 인증 가능
-   - 로그인 시 자동으로 사용자 데이터 연결
+### User Features
+1. **Google Login**
+   - Google authentication available on all pages
+   - Automatic user data connection on login
 
-2. **통합 대시보드** (`/dashboard`)
-   - 모든 모듈 진행 상황 확인
-   - Strengths 분석 결과
-   - Values 분류 결과 (Terminal, Instrumental, Work)
-   - 전체 완성도 표시
+2. **Unified Dashboard** (`/dashboard`)
+   - View progress for all modules
+   - Strengths analysis results
+   - Values classification results (Terminal, Instrumental, Work)
+   - Overall completion percentage
 
-3. **데이터 영속성**
-   - 로그인 후 모든 분석 결과 자동 저장
-   - 다른 기기에서도 동일한 데이터 접근
+3. **Data Persistence**
+   - All analysis results automatically saved after login
+   - Access same data from different devices
 
-### 관리자 기능
-1. **관리자 패널** (`/admin`)
-   - 사용자 데이터 조회
-   - 데이터 공유 설정
-   - 그룹 관리
+### Administrator Features
+1. **Admin Panel** (`/admin`)
+   - User data retrieval
+   - Data sharing configuration
+   - Group management
 
-2. **데이터 공유**
-   - 관리자 그룹 생성
-   - 특정 사용자 데이터 공유
-   - 권한 기반 접근 제어
+2. **Data Sharing**
+   - Create admin groups
+   - Share specific user data
+   - Permission-based access control
 
-## 🔧 배포 가이드
+## 🔧 Deployment Guide
 
-### 1. PostgreSQL 마이그레이션
+### 1. PostgreSQL Migration
 ```bash
-# 1. PostgreSQL 데이터베이스 생성
-# 2. .env 파일 업데이트
+# 1. Create PostgreSQL database
+# 2. Update .env file
 DATABASE_URL="postgresql://user:password@host:5432/wfed119"
 
-# 3. Prisma 스키마 적용
+# 3. Apply Prisma schema
 cp prisma/schema.enhanced.prisma prisma/schema.prisma
 npx prisma generate
 npx prisma db push
 ```
 
-### 2. 관리자 권한 설정
+### 2. Administrator Permission Setup
 ```sql
--- 특정 사용자를 관리자로 설정
+-- Set specific user as administrator
 UPDATE "User" SET role = 'ADMIN' WHERE email = 'admin@example.com';
 ```
 
-### 3. 환경 변수 설정
+### 3. Environment Variable Configuration
 ```env
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id
@@ -225,60 +225,60 @@ NEXTAUTH_SECRET=your_secret
 NEXTAUTH_URL=https://wfed119-1.onrender.com
 ```
 
-## 보안 고려사항
+## Security Considerations
 
-1. **데이터 접근 제어**
-   - JWT 토큰 검증
-   - 그룹 멤버십 확인
-   - 권한 레벨 체크
+1. **Data Access Control**
+   - JWT token verification
+   - Group membership validation
+   - Permission level checking
 
-2. **데이터 프라이버시**
-   - 개인 데이터 암호화
-   - GDPR 준수
-   - 데이터 삭제 권한
+2. **Data Privacy**
+   - Personal data encryption
+   - GDPR compliance
+   - Data deletion rights
 
 3. **Rate Limiting**
-   - API 요청 제한
-   - DDoS 방지
+   - API request limiting
+   - DDoS prevention
 
-## ✅ 검증 완료 사항
+## ✅ Verified Implementations
 
-1. **Values Terminal 데이터 저장**
-   - Google 로그인 시 User 테이블에 저장
-   - Terminal 완료 시 ValueResult 저장
-   - userId + valueSet으로 중복 방지
+1. **Values Terminal Data Storage**
+   - Saved to User table on Google login
+   - ValueResult saved on Terminal completion
+   - Duplicate prevention with userId + valueSet
 
-2. **Strengths Discovery 통합**
-   - 인증된 사용자는 UserSession에 저장
-   - 미인증 사용자는 기존 Session 테이블 사용
-   - 자동 전환 지원
+2. **Strengths Discovery Integration**
+   - Authenticated users saved to UserSession
+   - Unauthenticated users use existing Session table
+   - Automatic conversion support
 
-3. **대시보드 통합**
-   - 모든 모듈 데이터 통합 표시
-   - 진행률 계산 및 표시
-   - 관리자 도구 접근
+3. **Dashboard Integration**
+   - Unified display of all module data
+   - Progress calculation and display
+   - Administrator tool access
 
-## 테스트 시나리오
+## Test Scenarios
 
-1. **Google 로그인 테스트**
-   - 신규 사용자 등록
-   - 기존 사용자 로그인
-   - 세션 유지
+1. **Google Login Test**
+   - New user registration
+   - Existing user login
+   - Session persistence
 
-2. **데이터 저장 테스트**
-   - Terminal values 저장
-   - 중복 저장 방지
-   - 업데이트 확인
+2. **Data Storage Test**
+   - Save terminal values
+   - Prevent duplicate saves
+   - Verify updates
 
-3. **협업 테스트**
-   - 그룹 생성
-   - 멤버 초대
-   - 권한 확인
-   - 동시 편집
+3. **Collaboration Test**
+   - Create group
+   - Invite members
+   - Verify permissions
+   - Concurrent editing
 
-## 모니터링
+## Monitoring
 
-- Prisma 쿼리 로깅
-- 에러 트래킹 (Sentry)
-- 성능 모니터링
-- 사용자 활동 로깅
+- Prisma query logging
+- Error tracking (Sentry)
+- Performance monitoring
+- User activity logging

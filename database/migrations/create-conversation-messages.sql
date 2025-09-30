@@ -8,11 +8,7 @@ CREATE TABLE IF NOT EXISTS conversation_messages (
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
   content TEXT NOT NULL,
   metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Indexes for performance
-  CONSTRAINT conversation_messages_session_id_idx
-    FOREIGN KEY (session_id) REFERENCES user_sessions(session_id) ON DELETE CASCADE
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Create indexes

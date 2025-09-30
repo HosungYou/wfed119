@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
 
@@ -16,32 +15,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ items: getScreenerItems(locale) });
     }
 
-    // Skip DB operations for now to enable deployment
-    // Return empty for non-screener stages
-    return NextResponse.json({ items: [] });
-
-    // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
-    // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-
-    // if (stage === 'discriminators') {
-    //   const stage1 = (enne.responses as any)?.stage1 ?? [];
-    //   const { probabilities } = scoreStage1(stage1, locale);
-    //   const sorted = Object.entries(probabilities)
-    //     .map(([k, v]) => ({ type: Number(k), p: v }))
-    //     .sort((a, b) => b.p - a.p);
-    //   const top = sorted.slice(0, 3).map((x) => x.type);
-    //   const pairs = getDiscriminatorPairsForTop(top);
-    //   const items = getDiscriminatorItems(locale, pairs);
-
-    //   // store plan once for consistency
-    //   const responses = enne.responses as any;
-    //   if (!responses.stage2Plan) {
-    //     responses.stage2Plan = items.map((i) => ({ id: i.id, pair: i.pair }));
-    //     // await prisma.enneagramSession.update({ where: { sessionId }, data: { responses } });
-    //   }
-
-    //   return NextResponse.json({ items });
-    // }
+    // TODO: Implement discriminators stage with Supabase
+    // Discriminators stage requires loading session data and scoring
+    if (stage === 'discriminators') {
+      return NextResponse.json({ items: [] });
+    }
 
     if (stage === 'wings') {
       return NextResponse.json({ items: getInstinctItems(locale) });

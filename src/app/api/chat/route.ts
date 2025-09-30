@@ -70,7 +70,51 @@ export async function POST(req: NextRequest) {
     // Generate AI response with correct stage
     const response = await aiService.generateResponse(messages, sessionContext);
 
-    // Note: Conversation saving to be implemented with proper Supabase schema
+    // Save conversation messages to database
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
+    if (authSession?.user) {
+      const userId = authSession.user.id;
+
+      // Save user message
+      const userMessageData = {
+        session_id: sessionId,
+        user_id: userId,
+        role: 'user',
+        content: lastMessage.content,
+        metadata: {
+          stage: currentStage,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      // Save assistant response
+      const assistantMessageData = {
+        session_id: sessionId,
+        user_id: userId,
+        role: 'assistant',
+        content: response,
+        metadata: {
+          stage: currentStage,
+          timestamp: new Date().toISOString(),
+          messageCount: messages.length + 1
+        }
+      };
+
+      // Insert both messages in a single transaction
+      const { error: messageError } = await supabase
+        .from('conversation_messages')
+        .insert([userMessageData, assistantMessageData]);
+
+      if (messageError) {
+        console.error('[CHAT_API] Failed to save conversation:', messageError);
+        // Don't fail the request if conversation saving fails
+      } else {
+        console.log('[CHAT_API] Conversation messages saved successfully');
+      }
+    } else {
+      console.warn('[CHAT_API] No authenticated user - conversation not saved');
+    }
 
     let strengths = null;
 

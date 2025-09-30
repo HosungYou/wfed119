@@ -12,22 +12,10 @@
     "push": "bash scripts/git-push.sh",
     "watch:push": "bash scripts/auto-commit-push.sh",
     "hooks:setup": "git config core.hooksPath .githooks && chmod +x .githooks/post-commit scripts/*.sh || true",
-    "migrate": "node scripts/migration-runner.js",
-    "migrate:export": "node scripts/export-current-data.js",
-    "migrate:postgresql": "node scripts/migrate-data-to-postgresql.js",
-    "migrate:verify": "node scripts/verify-migration.js",
-    "migrate:rollback": "node scripts/rollback-to-sqlite.js",
     "setup:collaborator": "bash scripts/setup-collaborator-env.sh",
     "setup:env": "node scripts/setup-env-from-secrets.js",
     "env:encrypt": "node scripts/simple-encrypt-env.js encrypt",
-    "env:decrypt": "node scripts/simple-encrypt-env.js decrypt",
-    "admin:setup": "node scripts/setup-collaborator-admin.js",
-    "admin:promote": "node scripts/promote-user-to-admin.js",
-    "admin:env-setup": "node scripts/setup-admin-from-env.js",
-    "migrate:enhanced": "node scripts/migrate-to-enhanced-schema.js",
-    "db:studio": "npx prisma studio",
-    "db:reset": "npx prisma migrate reset --force",
-    "db:seed": "npx prisma db seed"
+    "env:decrypt": "node scripts/simple-encrypt-env.js decrypt"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

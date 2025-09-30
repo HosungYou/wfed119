@@ -19,49 +19,42 @@ fi
 echo "📦 Installing dependencies..."
 npm install
 
-# Check database connection
-echo "🔌 Checking database connection..."
-if npx prisma db ping &>/dev/null; then
-    echo "✅ Database connection successful"
-
-    # Generate Prisma client
-    echo "🔧 Generating Prisma client..."
-    npx prisma generate
-
-    # Push schema to database
-    echo "📊 Pushing database schema..."
-    npx prisma db push --accept-data-loss
-
-    echo "✅ Database setup completed"
-else
-    echo "⚠️  Database connection failed"
-    echo "📝 Please check your DATABASE_URL in .env file"
-    echo ""
-    echo "Available options:"
-    echo "1. Request Prisma Accelerate API key from project owner"
-    echo "2. Set up local PostgreSQL database"
-    echo "3. Use SQLite for local development (DATABASE_URL=\"file:./dev.db\")"
+# Check Supabase connection
+echo "🔌 Checking Supabase connection..."
+# Source .env file to get Supabase URL
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
 fi
 
-# Create local development database (SQLite fallback)
-echo ""
-echo "🗄️  Creating local SQLite database as fallback..."
-echo 'DATABASE_URL="file:./dev.db"' > .env.local
-npx prisma db push --schema-only &>/dev/null || true
+if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+    echo "✅ Supabase URL configured"
+    echo "📊 Database is ready - Supabase handles schema automatically"
+else
+    echo "⚠️  Supabase connection not configured"
+    echo "📝 Please update your .env file with Supabase credentials"
+    echo ""
+    echo "Required environment variables:"
+    echo "1. NEXT_PUBLIC_SUPABASE_URL - Your Supabase project URL"
+    echo "2. NEXT_PUBLIC_SUPABASE_ANON_KEY - Public anon key"
+    echo "3. SUPABASE_SERVICE_ROLE_KEY - Service role key (for admin operations)"
+    echo ""
+    echo "Get these from: Supabase Dashboard > Settings > API"
+fi
 
 echo ""
 echo "🎉 Setup completed!"
 echo ""
 echo "Next steps:"
-echo "1. Update .env with your API keys"
+echo "1. Update .env with your Supabase credentials and API keys"
 echo "2. Run 'npm run dev' to start development server"
 echo "3. Visit http://localhost:3000"
 echo ""
 echo "For database management:"
-echo "- Run 'npx prisma studio' to open database GUI"
-echo "- Check COLLABORATOR_SETUP.md for detailed instructions"
+echo "- Access Supabase Dashboard > Table Editor"
+echo "- Run SQL queries in SQL Editor"
+echo "- Check docs/collaboration/ for detailed instructions"
 echo ""
 echo "Need help? Contact the project owner for:"
-echo "- Prisma Accelerate API key"
+echo "- Supabase project access"
 echo "- Google OAuth credentials"
 echo "- Production environment access"

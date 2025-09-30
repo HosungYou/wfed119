@@ -27,16 +27,21 @@ const envTemplate = {
     default: ''
   },
 
-  // Database
-  DATABASE_URL: {
-    description: 'Database URL (Prisma Accelerate recommended)',
+  // Supabase Configuration
+  NEXT_PUBLIC_SUPABASE_URL: {
+    description: 'Supabase Project URL (get from Supabase Dashboard)',
     required: true,
-    default: 'file:./dev.db',
-    options: [
-      'Prisma Accelerate (shared production DB)',
-      'Local PostgreSQL',
-      'SQLite (development only)'
-    ]
+    default: 'https://your-project.supabase.co'
+  },
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: {
+    description: 'Supabase Anon/Public Key',
+    required: true,
+    default: ''
+  },
+  SUPABASE_SERVICE_ROLE_KEY: {
+    description: 'Supabase Service Role Key (for admin operations)',
+    required: false,
+    default: ''
   },
 
   // Google OAuth
@@ -118,14 +123,9 @@ async function setupEnvironment() {
     envVars[key] = await promptUser(key, config);
   }
 
-  // Handle database URL options
-  if (envVars.DATABASE_URL === '1' || envVars.DATABASE_URL.toLowerCase().includes('prisma')) {
-    console.log('\n🔗 For Prisma Accelerate, contact project owner for API key');
-    envVars.DATABASE_URL = 'prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_API_KEY_HERE';
-  } else if (envVars.DATABASE_URL === '2' || envVars.DATABASE_URL.toLowerCase().includes('postgres')) {
-    envVars.DATABASE_URL = 'postgresql://admin:password@localhost:5432/wfed119_dev';
-  } else if (envVars.DATABASE_URL === '3' || envVars.DATABASE_URL.toLowerCase().includes('sqlite')) {
-    envVars.DATABASE_URL = 'file:./dev.db';
+  // Validate Supabase URL format
+  if (envVars.NEXT_PUBLIC_SUPABASE_URL && !envVars.NEXT_PUBLIC_SUPABASE_URL.includes('supabase.co')) {
+    console.log('\n⚠️  Warning: Supabase URL should be in format: https://your-project.supabase.co');
   }
 
   // Generate .env file
@@ -152,14 +152,15 @@ NEXT_PUBLIC_ENABLE_REALTIME_FEEDBACK=true
   console.log('\n✅ Environment setup completed!');
   console.log(`📄 .env file created at: ${envPath}`);
 
-  if (envVars.DATABASE_URL.includes('YOUR_API_KEY_HERE')) {
-    console.log('\n⚠️  Don\'t forget to update DATABASE_URL with actual Prisma Accelerate API key');
+  if (envVars.NEXT_PUBLIC_SUPABASE_URL.includes('your-project')) {
+    console.log('\n⚠️  Don\'t forget to update Supabase credentials with actual values from Supabase Dashboard');
   }
 
   console.log('\n🚀 Next steps:');
-  console.log('1. npm install');
-  console.log('2. npm run dev');
-  console.log('3. Contact project owner for any missing API keys');
+  console.log('1. Update Supabase credentials in .env (from Supabase Dashboard > Settings > API)');
+  console.log('2. npm install');
+  console.log('3. npm run dev');
+  console.log('4. Contact project owner for any missing API keys');
 
   rl.close();
 }

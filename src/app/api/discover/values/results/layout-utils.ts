@@ -1,5 +1,4 @@
-import type { Prisma } from '@prisma/client';
-
+// Type definitions for value layout - no longer dependent on Prisma
 export const layoutBuckets = ['very_important', 'important', 'somewhat_important', 'not_important'] as const;
 export type LayoutBucket = (typeof layoutBuckets)[number];
 
@@ -23,7 +22,8 @@ export const isValueLayout = (value: unknown): value is ValueLayout => {
   return layoutBuckets.every((bucket) => isStringArray(candidate[bucket]));
 };
 
-export const parseLayout = (value: Prisma.JsonValue | null): ValueLayout | null =>
+// Updated to accept any JSON value (Supabase uses standard JSON types)
+export const parseLayout = (value: unknown): ValueLayout | null =>
   isValueLayout(value) ? value : null;
 
 export const normalizeTop3 = (value: unknown): string[] =>

@@ -21,7 +21,23 @@ release-notes/
 
 ## 🚀 Version Overview
 
-### [v2.2.3](v2.2.3.md) - Current Release
+### [v2.6.1](v2.6.1.md) - Current Release
+**Release Date**: October 7, 2025
+**Type**: Feature Enhancement / Bug Fix / Localization
+
+**Key Highlights:**
+- 🌍 **Complete English Localization** of Vision Statement module
+- 🔑 **Development Mode Authentication** for local testing without OAuth
+- 🤖 **Auto-Send AI Messages** in Steps 2-4 for better UX
+- 🗄️ **Database Migration** for vision_statements table
+- 🚀 **Render Deployment Fixes** with corrected root directory
+- 🎨 **Chat Box Height Optimization** for better layout
+- 🎴 **Hardcoded Vision Card Templates** (4 gradients)
+
+**Breaking Changes**: Yes - requires Supabase migration
+**Migration Required**: Yes - run `create-vision-statements.sql`
+
+### [v2.2.3](v2.2.3.md)
 **Release Date**: September 18, 2025
 **Type**: Major Enhancement Release
 
@@ -281,8 +297,233 @@ v1.0.0 (2025-01-15)
 
 ---
 
+## 📋 Release Notes Writing Guide
+
+### Purpose
+Release notes serve as comprehensive documentation for developers, providing:
+- **Change Tracking**: What changed, why, and how
+- **Code Examples**: Actual code snippets showing before/after
+- **Migration Guidance**: Step-by-step upgrade instructions
+- **Technical Context**: Architecture decisions and trade-offs
+
+### Target Audience
+- **Developers**: Team members and contributors
+- **DevOps**: Deployment and infrastructure teams
+- **Technical Leads**: Architecture and planning decisions
+
+### Required Sections
+
+#### 1. Header Information
+```markdown
+# Release Notes vX.Y.Z - [Title]
+
+**Release Date**: YYYY-MM-DD
+**Priority**: [Low | Medium | High | Critical]
+**Type**: [Feature | Enhancement | Bug Fix | Security | Localization]
+```
+
+#### 2. Overview (Required)
+- **Purpose**: 2-3 sentence summary of the release
+- **Scope**: What areas of the codebase changed
+- **Impact**: User-facing and technical impacts
+
+#### 3. Major Features (If applicable)
+Format for each feature:
+```markdown
+### N) Feature Name
+**What Changed**: Brief description
+**Why**: Business/technical justification
+**Commits**: Commit hash(es)
+
+**Files Changed**:
+- `path/to/file1.ts`
+- `path/to/file2.tsx`
+
+**Code Example**:
+\`\`\`typescript
+// Before
+old code here
+
+// After
+new code here
+\`\`\`
+
+**Usage**:
+\`\`\`typescript
+// How to use the new feature
+example code
+\`\`\`
+```
+
+#### 4. Bug Fixes (If applicable)
+Format for each fix:
+```markdown
+### N) Bug Name
+**Problem**: What was broken
+**Root Cause**: Why it was broken
+**Resolution**: How it was fixed
+**Commits**: Commit hash(es)
+
+**Fix**:
+\`\`\`typescript
+// Before (broken)
+old code
+
+// After (fixed)
+new code
+\`\`\`
+```
+
+#### 5. Technical Changes (Required)
+- Architecture modifications
+- API changes
+- Database schema updates
+- Configuration changes
+- Performance improvements
+
+#### 6. Deployment Checklist (Required)
+```markdown
+### Environment Setup
+1. **Variable 1**: Description and required value
+2. **Variable 2**: Description and required value
+
+### Database Migration (If applicable)
+1. Step 1
+2. Step 2
+
+### Verification Steps
+1. Check 1
+2. Check 2
+```
+
+#### 7. Breaking Changes (If applicable)
+```markdown
+### N) Breaking Change Name
+- **What Changed**: Description
+- **Action Required**: What developers must do
+- **Impact**: Who is affected
+- **Migration**: How to migrate
+```
+
+#### 8. Known Issues & Limitations (If applicable)
+- Current bugs or limitations
+- Workarounds
+- Future improvements planned
+
+#### 9. Code Statistics (Required)
+```markdown
+**Files Changed**: N files
+- **Modified**: N files
+- **Added**: N files
+- **Lines Added**: N
+- **Lines Removed**: N
+
+**Commits in This Release**:
+1. `hash` - Commit message
+2. `hash` - Commit message
+```
+
+#### 10. Developer Notes (Optional but recommended)
+- Working with new features
+- Testing strategies
+- Common pitfalls
+- Debugging tips
+
+### Code Example Guidelines
+
+**Always Include**:
+- Actual production code (not pseudocode)
+- File paths as comments
+- Before/after comparisons
+- Context about why the change was made
+
+**Example Format**:
+```typescript
+// src/app/api/route.ts
+
+// Before: Synchronous cookies API (Next.js 14)
+export function GET() {
+  const cookieStore = cookies()
+  return NextResponse.json({ data: 'value' })
+}
+
+// After: Async cookies API (Next.js 15)
+export async function GET() {
+  const cookieStore = await cookies()
+  return NextResponse.json({ data: 'value' })
+}
+```
+
+### File Naming Convention
+- **Format**: `vX.Y.Z.md`
+- **Examples**: `v2.6.1.md`, `v3.0.0.md`
+- **Location**: `release-notes/` directory root
+
+### Version Numbering (Semantic Versioning)
+
+**Major Version (X.0.0)**:
+- Breaking changes
+- Major features
+- Architecture rewrites
+- API incompatibilities
+
+**Minor Version (X.Y.0)**:
+- New features
+- Non-breaking enhancements
+- New modules
+- Backward compatible changes
+
+**Patch Version (X.Y.Z)**:
+- Bug fixes
+- Security patches
+- Minor improvements
+- Hotfixes
+
+### Git Commit References
+
+**Always include commit hashes**:
+```markdown
+**Commits**:
+- `32471d5` - Translate Vision module UI to English
+- `1ffe92d` - Add database migration for vision_statements
+- `1c4056a` - Fix Render deployment configuration
+- `7ed494d` - Fix Vision module UX issues
+```
+
+### Writing Tips
+
+1. **Be Specific**: "Added authentication" → "Added Google OAuth 2.0 authentication with Supabase"
+
+2. **Show Code**: Don't just describe changes, show actual code snippets
+
+3. **Explain Why**: Every change should have a "why" explanation
+
+4. **Think Forward**: Include upgrade paths and migration strategies
+
+5. **Use Examples**: Real-world usage examples help developers understand
+
+6. **Link Related Items**: Reference related commits, issues, or PRs
+
+7. **Verify Accuracy**: Test all code examples before publishing
+
+### Template Location
+See [CLAUDE.md](CLAUDE.md) for Claude Code-specific instructions on generating release notes automatically.
+
+### Quality Checklist
+Before publishing, verify:
+- [ ] All code examples tested and working
+- [ ] Commit hashes are correct
+- [ ] File paths are accurate
+- [ ] Migration steps are complete
+- [ ] Breaking changes clearly marked
+- [ ] Deployment checklist is comprehensive
+- [ ] Known issues documented
+- [ ] Future improvements noted
+
+---
+
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
-**🔄 Last Updated**: September 18, 2025
-**📊 Current Version**: v2.2.3
+**🔄 Last Updated**: October 7, 2025
+**📊 Current Version**: v2.6.1
 **👥 Maintained By**: WFED 119 Development Team

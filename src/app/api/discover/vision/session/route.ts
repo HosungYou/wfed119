@@ -144,3 +144,42 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/discover/vision/session
+ *
+ * Vision Statement 세션 삭제 (새로운 세션 시작을 위함)
+ * - 현재 세션을 삭제하여 GET 호출 시 새 세션이 생성되도록 함
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createServerSupabaseClient();
+
+    // 1. Authentication check with dev mode support
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
+
+    if (!requireAuth(auth)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = auth.userId;
+
+    // 2. 기존 세션 삭제
+    const { error: deleteError } = await supabase
+      .from('vision_statements')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('[Vision Session] Delete error:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete session' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Session deleted successfully' });
+
+  } catch (error) {
+    console.error('[Vision Session] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

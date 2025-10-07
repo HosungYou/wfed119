@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Loader2, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Check, Sparkles, RefreshCw } from 'lucide-react';
 import StepProgress from '../components/StepProgress';
 import AIChatBox from '../components/AIChatBox';
 
@@ -185,6 +185,45 @@ export default function VisionStep4() {
     } catch (error) {
       console.error('[Step4] Complete error:', error);
       alert('Failed to complete module.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function startNewSession() {
+    if (!confirm('Are you sure you want to start a new vision statement? Your current work will be saved as a completed session.')) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // First, complete current session if not already completed
+      if (!session?.is_completed) {
+        await fetch('/api/discover/vision/session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            current_step: 4,
+            final_statement: finalStatement.trim(),
+            selected_template_id: selectedTemplateId,
+            is_completed: true
+          })
+        });
+      }
+
+      // Create new session by resetting to step 1
+      const response = await fetch('/api/discover/vision/session', {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to reset session');
+
+      alert('✓ New session started! Redirecting to Step 1...');
+      router.push('/discover/vision/step1');
+    } catch (error) {
+      console.error('[Step4] New session error:', error);
+      alert('Failed to start new session.');
     } finally {
       setSaving(false);
     }
@@ -435,8 +474,8 @@ export default function VisionStep4() {
           </div>
         </div>
 
-        {/* Complete Button */}
-        <div className="flex justify-center">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={completeModule}
             disabled={saving || !validationPassed || !selectedTemplateId}
@@ -453,6 +492,15 @@ export default function VisionStep4() {
                 Complete Vision Statement
               </>
             )}
+          </button>
+
+          <button
+            onClick={startNewSession}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-4 bg-white text-purple-600 text-lg font-semibold rounded-xl hover:bg-purple-50 border-2 border-purple-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            <RefreshCw className="w-5 h-5" />
+            Start New Session
           </button>
         </div>
       </div>

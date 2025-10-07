@@ -7,21 +7,28 @@ This directory contains comprehensive release documentation for all versions of 
 ```
 release-notes/
 ├── README.md                    # This overview file
+├── CLAUDE.md                    # Claude Code automation guide
 ├── v1.0/                       # Version 1.0 Documentation
 │   └── README.md               # Initial release details
-├── v2.0/                       # Version 2.0 Documentation
-│   ├── README.md               # Major feature release details
-│   └── UPGRADE_NOTES.md        # Technical upgrade guide
-├── v2.1.0.md                   # Performance & stability improvements
-├── v2.2.0.md                   # Value Discovery module release
-├── v2.2.1.md                   # Stability & localization fixes
-├── v2.2.2.md                   # Enhanced Values Discovery UI/UX
-└── v2.2.3.md                   # Intelligent Values Analysis System
+└── v2.0/                       # Version 2.x Documentation
+    ├── README.md               # Major feature release details
+    ├── UPGRADE_NOTES.md        # Technical upgrade guide
+    ├── v2.1.0.md               # Performance & stability improvements
+    ├── v2.2.0.md               # Value Discovery module release
+    ├── v2.2.1.md               # Stability & localization fixes
+    ├── v2.2.2.md               # Enhanced Values Discovery UI/UX
+    ├── v2.2.3.md               # Intelligent Values Analysis System
+    ├── v2.3.0.md               # Additional enhancements
+    ├── v2.3.1.md               # Bug fixes
+    ├── v2.3.2.md               # Save persistence fixes
+    ├── v2.4.0.md               # Feature updates
+    ├── v2.6.0.md               # Vision module initial release
+    └── v2.6.1.md               # Vision module localization & fixes
 ```
 
 ## 🚀 Version Overview
 
-### [v2.6.1](v2.6.1.md) - Current Release
+### [v2.6.1](v2.0/v2.6.1.md) - Current Release
 **Release Date**: October 7, 2025
 **Type**: Feature Enhancement / Bug Fix / Localization
 
@@ -37,7 +44,7 @@ release-notes/
 **Breaking Changes**: Yes - requires Supabase migration
 **Migration Required**: Yes - run `create-vision-statements.sql`
 
-### [v2.2.3](v2.2.3.md)
+### [v2.2.3](v2.0/v2.2.3.md)
 **Release Date**: September 18, 2025
 **Type**: Major Enhancement Release
 
@@ -54,7 +61,7 @@ release-notes/
 **Breaking Changes**: No
 **Migration Required**: No - enhanced analysis experience
 
-### [v2.2.2](v2.2.2.md)
+### [v2.2.2](v2.0/v2.2.2.md)
 **Release Date**: September 18, 2025
 **Type**: Enhancement Release
 
@@ -64,7 +71,7 @@ release-notes/
 - 🌈 **Color-Coded Categories** with gradient themes
 - ✨ **Enhanced Animations** with smooth drag feedback
 
-### [v2.2.1](v2.2.1.md)
+### [v2.2.1](v2.0/v2.2.1.md)
 **Release Date**: September 17, 2025
 **Type**: Patch Release
 
@@ -73,7 +80,7 @@ release-notes/
 - 🌍 **Localization Updates** (Korean → English)
 - 📐 **Responsive Layout** improvements
 
-### [v2.2.0](v2.2.0.md)
+### [v2.2.0](v2.0/v2.2.0.md)
 **Release Date**: September 16, 2025
 **Type**: Feature Release
 
@@ -83,7 +90,7 @@ release-notes/
 - 🎯 **Four-Category Sorting** system
 - 🎨 **Enhanced Homepage** with three-module grid
 
-### [v2.1.0](v2.1.0.md)
+### [v2.1.0](v2.0/v2.1.0.md)
 **Release Date**: September 1, 2025
 **Type**: Minor Release
 

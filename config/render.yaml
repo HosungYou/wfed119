@@ -1,12 +1,7 @@
 # Render Blueprint for LifeCraft Bot
 # This file defines the infrastructure for deploying on Render
+# Using Supabase for database (no PostgreSQL database needed)
 
-databases:
-  - name: lifecraft-db
-    databaseName: lifecraft_prod
-    user: lifecraft_user
-    plan: starter # Change to 'standard' for production
-    
 services:
   # Main Web Service
   - type: web
@@ -19,16 +14,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: lifecraft-db
-          property: connectionString
-      - key: SESSION_SECRET
-        generateValue: true
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false # Set in Render dashboard - Required
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false # Set in Render dashboard - Required
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # Set in Render dashboard - Required
       - key: ANTHROPIC_API_KEY
-        sync: false # Set in Render dashboard
+        sync: false # Set in Render dashboard - Optional
       - key: OPENAI_API_KEY
-        sync: false # Set in Render dashboard
+        sync: false # Set in Render dashboard - Optional
       # Do not set PORT; Render provides it automatically
     healthCheckPath: /api/health
     autoDeploy: true # Automatically deploy on push to main branch

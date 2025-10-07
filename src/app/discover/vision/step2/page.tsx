@@ -48,7 +48,7 @@ export default function VisionStep2() {
 
       // Verify Step 1 is complete
       if (!sessionData.future_imagery) {
-        alert('먼저 Step 1을 완료해주세요.');
+        alert('Please complete Step 1 first.');
         router.push('/discover/vision/step1');
         return;
       }
@@ -70,7 +70,7 @@ export default function VisionStep2() {
 
     } catch (error) {
       console.error('[Step2] Load error:', error);
-      alert('데이터를 불러오는데 실패했습니다.');
+      alert('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -96,10 +96,10 @@ export default function VisionStep2() {
 
       if (!response.ok) throw new Error('Save failed');
 
-      alert('저장되었습니다.');
+      alert('Saved successfully!');
     } catch (error) {
       console.error('[Step2] Save error:', error);
-      alert('저장에 실패했습니다.');
+      alert('Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -110,12 +110,12 @@ export default function VisionStep2() {
 
     // Validate: at least 3 aspirations selected
     if (selectedAspirations.size < 3) {
-      alert('최소 3개의 핵심 열망을 선택해주세요.');
+      alert('Please select at least 3 core aspirations.');
       return;
     }
 
     if (selectedAspirations.size > 5) {
-      alert('최대 5개의 핵심 열망만 선택할 수 있습니다.');
+      alert('You can select up to 5 core aspirations.');
       return;
     }
 
@@ -138,7 +138,7 @@ export default function VisionStep2() {
       router.push('/discover/vision/step3');
     } catch (error) {
       console.error('[Step2] Next step error:', error);
-      alert('다음 단계로 이동하는데 실패했습니다.');
+      alert('Failed to proceed to next step.');
     } finally {
       setSaving(false);
     }
@@ -192,10 +192,10 @@ export default function VisionStep2() {
   }
 
   function addManualAspiration() {
-    const keyword = prompt('핵심 키워드를 입력하세요:');
+    const keyword = prompt('Enter core keyword:');
     if (!keyword) return;
 
-    const reason = prompt('이 열망이 중요한 이유를 입력하세요:');
+    const reason = prompt('Why is this aspiration important?:');
     if (!reason) return;
 
     setAspirations(prev => {
@@ -232,12 +232,12 @@ export default function VisionStep2() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">세션을 불러올 수 없습니다.</p>
+          <p className="text-gray-600 mb-4">Unable to load session.</p>
           <button
             onClick={() => router.push('/discover/vision')}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            처음으로 돌아가기
+            Back to Home
           </button>
         </div>
       </div>
@@ -254,10 +254,10 @@ export default function VisionStep2() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전 단계로
+            Previous Step
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 2: 핵심 열망 발견</h1>
-          <p className="text-gray-600">미래 상상에서 핵심 주제를 추출하고, '왜'라는 질문을 통해 깊이 탐구합니다.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 2: Discover Core Aspirations</h1>
+          <p className="text-gray-600">Extract core themes from your future vision and explore deeply through 'why' questions.</p>
         </div>
 
         {/* Progress */}
@@ -275,9 +275,9 @@ export default function VisionStep2() {
           {/* Middle Column - AI Chat */}
           <div className="lg:col-span-5">
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">AI와 대화하기</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chat with AI</h2>
               <p className="text-sm text-gray-600 mb-4">
-                AI가 Step 1에서 작성한 미래 상상을 분석하여 핵심 주제를 추출하고, '왜'라는 질문을 통해 깊이 탐구합니다.
+                AI analyzes your future vision from Step 1 to extract core themes and explore deeply through 'why' questions.
               </p>
 
               <AIChatBox
@@ -287,8 +287,8 @@ export default function VisionStep2() {
                   futureImagery: session.future_imagery
                 }}
                 onResponseComplete={handleAIResponse}
-                placeholder="AI에게 질문하거나 생각을 나눠보세요..."
-                initialMessage="Step 1에서 작성한 미래 상상을 바탕으로 핵심 열망을 찾아주세요."
+                placeholder="Ask AI questions or share your thoughts..."
+                initialMessage="Help me find core aspirations based on my future vision from Step 1."
               />
             </div>
           </div>
@@ -297,23 +297,23 @@ export default function VisionStep2() {
           <div className="lg:col-span-4">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">핵심 열망 목록</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Core Aspirations List</h2>
                 <button
                   onClick={addManualAspiration}
                   className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
                 >
-                  + 직접 추가
+                  + Add Manually
                 </button>
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                3-5개의 핵심 열망을 선택하세요. (현재: {selectedAspirations.size}개)
+                Select 3-5 core aspirations. (Current: {selectedAspirations.size}개)
               </p>
 
               {aspirations.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
-                  <p>AI와 대화하거나 직접 추가하여</p>
-                  <p>핵심 열망을 발견하세요.</p>
+                  <p>Chat with AI or add manually</p>
+                  <p>to discover your core aspirations.</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
@@ -365,7 +365,7 @@ export default function VisionStep2() {
             className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            저장하기
+            Save
           </button>
 
           <button
@@ -373,7 +373,7 @@ export default function VisionStep2() {
             disabled={saving || selectedAspirations.size < 3 || selectedAspirations.size > 5}
             className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            다음 단계
+            Next Step
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

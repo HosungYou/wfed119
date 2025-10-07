@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
 /**
  * POST /api/discover/vision/export-card

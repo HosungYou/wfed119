@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
 /**
  * GET /api/discover/vision/check-prerequisites
@@ -12,17 +13,28 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
 
-    // 1. 인증 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // 1. 인증 확인 (개발 모드 지원)
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
 
-    if (!session || authError) {
+    // 개발 모드에서는 선행조건 체크를 스킵하고 모두 완료로 처리
+    if (auth.isDevelopmentMode) {
+      return NextResponse.json({
+        values: true,
+        strengths: true,
+        canProceed: true,
+        message: 'Development mode - all prerequisites bypassed'
+      });
+    }
+
+    if (!requireAuth(auth)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
 
     // 2. Values Discovery 완료 여부 확인
     const { data: valuesData, error: valuesError } = await supabase

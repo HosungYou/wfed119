@@ -13,7 +13,8 @@ services:
     name: lifecraft-bot
     runtime: node
     plan: starter # Change to 'standard' for production
-    buildCommand: npm ci && npm run build:render
+    rootDir: .
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV

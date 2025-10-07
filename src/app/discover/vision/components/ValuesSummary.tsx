@@ -22,7 +22,7 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
         <p className="text-sm text-yellow-800">
-          가치 탐색 데이터를 불러올 수 없습니다. 이전 모듈을 먼저 완료해주세요.
+          Unable to load values data. Please complete the Values Discovery module first.
         </p>
       </div>
     );
@@ -35,7 +35,7 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
           <span className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">
             ✓
           </span>
-          당신의 주요 가치
+          Your Core Values
         </h3>
         <div className="flex flex-wrap gap-2">
           {values.terminal?.top3?.map((value, idx) => (
@@ -62,7 +62,7 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
   return (
     <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg">
       <h3 className="text-lg font-bold text-gray-900 mb-4">
-        당신의 Top 3 가치
+        Your Top 3 Values
       </h3>
 
       <div className="space-y-4">
@@ -70,8 +70,8 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
         {values.terminal?.top3 && values.terminal.top3.length > 0 && (
           <ValueCategory
             icon={<Heart className="w-5 h-5" />}
-            title="궁극적 가치 (Terminal Values)"
-            description="인생에서 달성하고자 하는 최종 목표"
+            title="Terminal Values"
+            description="Ultimate life goals you want to achieve"
             values={values.terminal.top3}
             color="purple"
           />
@@ -81,8 +81,8 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
         {values.instrumental?.top3 && values.instrumental.top3.length > 0 && (
           <ValueCategory
             icon={<Target className="w-5 h-5" />}
-            title="수단적 가치 (Instrumental Values)"
-            description="목표 달성을 위한 행동 방식과 태도"
+            title="Instrumental Values"
+            description="Behaviors and attitudes for achieving goals"
             values={values.instrumental.top3}
             color="blue"
           />
@@ -92,8 +92,8 @@ export default function ValuesSummary({ values, compact = false }: ValuesSummary
         {values.work?.top3 && values.work.top3.length > 0 && (
           <ValueCategory
             icon={<Briefcase className="w-5 h-5" />}
-            title="직업 가치 (Work Values)"
-            description="직장과 일에서 중요하게 여기는 요소"
+            title="Work Values"
+            description="What matters most in your career and work"
             values={values.work.top3}
             color="green"
           />

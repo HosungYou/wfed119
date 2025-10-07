@@ -67,7 +67,7 @@ export default function VisionStep4() {
 
       // Verify Step 3 is complete
       if (!sessionData.final_statement) {
-        alert('먼저 Step 3를 완료해주세요.');
+        alert('Please complete Step 3 first.');
         router.push('/discover/vision/step3');
         return;
       }
@@ -95,7 +95,7 @@ export default function VisionStep4() {
 
     } catch (error) {
       console.error('[Step4] Load error:', error);
-      alert('데이터를 불러오는데 실패했습니다.');
+      alert('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function VisionStep4() {
 
   async function validateStatement() {
     if (!finalStatement.trim()) {
-      alert('비전 문장을 입력해주세요.');
+      alert('Please enter your vision statement.');
       return;
     }
 
@@ -114,9 +114,9 @@ export default function VisionStep4() {
 
     if (isSimple && isClear && isUnique) {
       setValidationPassed(true);
-      alert('✓ 비전 문장이 검증되었습니다!');
+      alert('✓ Vision statement validated!');
     } else {
-      alert('비전 문장을 조금 더 다듬어보세요. (간결하고 명확하게)');
+      alert('Please refine your vision statement. (Keep it concise and clear)');
     }
   }
 
@@ -140,10 +140,10 @@ export default function VisionStep4() {
       link.href = dataUrl;
       link.click();
 
-      alert('비전 카드가 다운로드되었습니다!');
+      alert('Vision card downloaded successfully!');
     } catch (error) {
       console.error('[Step4] Export error:', error);
-      alert('비전 카드 내보내기에 실패했습니다.');
+      alert('Failed to export vision card.');
     } finally {
       setExporting(false);
     }
@@ -153,12 +153,12 @@ export default function VisionStep4() {
     if (!session) return;
 
     if (!validationPassed) {
-      alert('먼저 비전 문장을 검증해주세요.');
+      alert('Please validate your vision statement first.');
       return;
     }
 
     if (!selectedTemplateId) {
-      alert('비전 카드 템플릿을 선택해주세요.');
+      alert('Please select a vision card template.');
       return;
     }
 
@@ -178,13 +178,13 @@ export default function VisionStep4() {
 
       if (!response.ok) throw new Error('Save failed');
 
-      alert('🎉 Vision Statement 모듈을 완료했습니다!');
+      alert('🎉 Vision Statement module completed!');
 
       // Redirect to SWOT analysis (or dashboard)
       router.push('/dashboard'); // TODO: Change to SWOT module when ready
     } catch (error) {
       console.error('[Step4] Complete error:', error);
-      alert('완료 처리에 실패했습니다.');
+      alert('Failed to complete module.');
     } finally {
       setSaving(false);
     }
@@ -204,12 +204,12 @@ export default function VisionStep4() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">세션을 불러올 수 없습니다.</p>
+          <p className="text-gray-600 mb-4">Unable to load session.</p>
           <button
             onClick={() => router.push('/discover/vision')}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            처음으로 돌아가기
+            Back to Home
           </button>
         </div>
       </div>
@@ -226,10 +226,10 @@ export default function VisionStep4() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전 단계로
+            Previous Step
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 4: 완성 및 비전 카드</h1>
-          <p className="text-gray-600">비전 문장을 최종 검증하고, 아름다운 비전 카드로 시각화합니다.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 4: Finalize and Vision Card</h1>
+          <p className="text-gray-600">Validate your final vision statement and visualize it as a beautiful vision card.</p>
         </div>
 
         {/* Progress */}
@@ -243,7 +243,7 @@ export default function VisionStep4() {
           <div className="space-y-6">
             {/* Final Statement */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">최종 비전 문장</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Final Vision Statement</h2>
 
               <textarea
                 value={finalStatement}
@@ -253,7 +253,7 @@ export default function VisionStep4() {
                 }}
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none mb-4"
-                placeholder="최종 비전 문장을 입력하세요..."
+                placeholder="Enter your final vision statement..."
               />
 
               <div className="flex items-center gap-3 mb-4">
@@ -263,33 +263,33 @@ export default function VisionStep4() {
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" />
-                  검증하기
+                  Validate
                 </button>
 
                 {validationPassed && (
                   <span className="text-green-600 font-medium text-sm flex items-center gap-1">
                     <Check className="w-5 h-5" />
-                    검증 완료
+                    Validated
                   </span>
                 )}
               </div>
 
               <div className="bg-purple-50 p-4 rounded-lg">
-                <h3 className="font-medium text-purple-900 text-sm mb-2">검증 기준</h3>
+                <h3 className="font-medium text-purple-900 text-sm mb-2">Validation Criteria</h3>
                 <ul className="text-xs text-purple-700 space-y-1">
-                  <li>✓ 간결함: 한 문장으로 표현 (100자 이내)</li>
-                  <li>✓ 명확함: 의미가 분명하고 이해하기 쉬움</li>
-                  <li>✓ 영감: 나를 움직이게 만드는 힘이 있음</li>
-                  <li>✓ 고유함: 나만의 독특한 표현</li>
+                  <li>✓ Concise: Express in one sentence (within 100 characters)</li>
+                  <li>✓ Clear: Meaning is clear and easy to understand</li>
+                  <li>✓ Inspiring: Has the power to move me into action</li>
+                  <li>✓ Unique: My own distinctive expression</li>
                 </ul>
               </div>
             </div>
 
             {/* First Action Item */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">첫 번째 실천 항목</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">First Action Item</h2>
               <p className="text-sm text-gray-600 mb-4">
-                비전을 실현하기 위해 오늘부터 시작할 수 있는 작은 행동은 무엇인가요?
+                What small action can you start today to realize your vision?
               </p>
 
               <textarea
@@ -297,15 +297,15 @@ export default function VisionStep4() {
                 onChange={(e) => setFirstAction(e.target.value)}
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                placeholder="예: 매일 30분씩 관련 분야 공부하기"
+                placeholder="e.g., Study related field for 30 minutes daily"
               />
             </div>
 
             {/* AI Timeline Connection */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">과거-현재-미래 연결</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Past-Present-Future Connection</h2>
               <p className="text-sm text-gray-600 mb-4">
-                AI와 대화하며 비전이 당신의 과거, 현재, 미래와 어떻게 연결되는지 탐구해보세요.
+                Explore how your vision connects to your past, present, and future through AI conversation.
               </p>
 
               <AIChatBox
@@ -317,8 +317,8 @@ export default function VisionStep4() {
                   finalStatement: finalStatement
                 }}
                 onResponseComplete={(response) => console.log('[Step4] Timeline reflection:', response)}
-                placeholder="비전과 나의 이야기를 연결해보세요..."
-                initialMessage="내 비전 문장이 과거의 경험, 현재의 강점, 그리고 미래의 열망과 어떻게 연결되는지 설명해주세요."
+                placeholder="Connect your vision to your story..."
+                initialMessage="Please explain how my vision statement connects to my past experiences, present strengths, and future aspirations."
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function VisionStep4() {
           <div className="space-y-6">
             {/* Template Selection */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">비전 카드 템플릿</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Vision Card Template</h2>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {templates.map(template => (
@@ -354,7 +354,7 @@ export default function VisionStep4() {
             {/* Vision Card Preview */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">비전 카드 미리보기</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Vision Card Preview</h2>
                 <button
                   onClick={exportCard}
                   disabled={exporting || !selectedTemplateId}
@@ -363,12 +363,12 @@ export default function VisionStep4() {
                   {exporting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      내보내는 중...
+                      Exporting...
                     </>
                   ) : (
                     <>
                       <Download className="w-4 h-4" />
-                      PNG 다운로드
+                      Download PNG
                     </>
                   )}
                 </button>
@@ -400,7 +400,7 @@ export default function VisionStep4() {
                   className="text-2xl font-bold leading-relaxed max-w-lg"
                   style={{ color: selectedTemplate?.design_config.textColor || '#ffffff' }}
                 >
-                  {finalStatement || '당신의 비전 문장이 여기에 표시됩니다'}
+                  {finalStatement || 'Your vision statement will appear here'}
                 </p>
 
                 <div className="mt-8">
@@ -420,7 +420,7 @@ export default function VisionStep4() {
 
             {/* Core Aspirations Summary */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">핵심 열망</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Core Aspirations</h3>
               <div className="flex flex-wrap gap-2">
                 {session.core_aspirations?.map((aspiration, index) => (
                   <span
@@ -445,12 +445,12 @@ export default function VisionStep4() {
             {saving ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                처리 중...
+                Processing...
               </>
             ) : (
               <>
                 <Check className="w-6 h-6" />
-                Vision Statement 완성하기
+                Complete Vision Statement
               </>
             )}
           </button>

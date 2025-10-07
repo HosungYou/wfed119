@@ -130,8 +130,8 @@ export default function VisionStep1() {
   }
 
   const handleAIResponse = (response: string) => {
-    // AI 응답 완료 시 호출되는 콜백
-    // 필요한 경우 여기서 추가 처리 가능
+    // Callback when AI response completes
+    // Additional processing can be done here if needed
     console.log('[Step 1] AI response received:', response.substring(0, 100) + '...');
   };
 

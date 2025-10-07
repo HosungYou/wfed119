@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
 /**
  * GET /api/discover/vision/templates
@@ -10,24 +11,51 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
+    // Return hardcoded templates (no database required)
+    const defaultTemplates = [
+      {
+        id: 'gradient-purple',
+        name: 'Purple Gradient',
+        design_config: {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          textColor: '#ffffff',
+          accentColor: '#fbbf24',
+          fontFamily: 'inherit'
+        }
+      },
+      {
+        id: 'gradient-blue',
+        name: 'Ocean Blue',
+        design_config: {
+          background: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)',
+          textColor: '#ffffff',
+          accentColor: '#fbbf24',
+          fontFamily: 'inherit'
+        }
+      },
+      {
+        id: 'gradient-sunset',
+        name: 'Sunset',
+        design_config: {
+          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          textColor: '#ffffff',
+          accentColor: '#fbbf24',
+          fontFamily: 'inherit'
+        }
+      },
+      {
+        id: 'gradient-forest',
+        name: 'Forest Green',
+        design_config: {
+          background: 'linear-gradient(135deg, #0ba360 0%, #3cba92 100%)',
+          textColor: '#ffffff',
+          accentColor: '#fbbf24',
+          fontFamily: 'inherit'
+        }
+      }
+    ];
 
-    // 템플릿은 인증 없이도 조회 가능 (RLS로 제어)
-    const { data, error } = await supabase
-      .from('vision_card_templates')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
-
-    if (error) {
-      console.error('[Templates] Query error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch templates' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(data || []);
+    return NextResponse.json(defaultTemplates);
 
   } catch (error) {
     console.error('[Templates] Unexpected error:', error);

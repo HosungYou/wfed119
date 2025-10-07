@@ -214,7 +214,7 @@ export const HomePage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
             {/* Enneagram Module */}
             <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
               <div className="flex items-start justify-between mb-4">
@@ -358,6 +358,42 @@ export const HomePage: React.FC = () => {
 
               <div className="mt-3 text-center">
                 <span className="text-sm text-gray-700">⏱️ 10-15 minutes</span>
+              </div>
+            </div>
+
+            {/* Vision Statement Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-indigo-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Target className="w-7 h-7 text-white" />
+                </div>
+                <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-medium">AI-Powered</span>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">
+                Vision Statement
+              </h4>
+
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
+                Create your personal vision statement through AI-guided reflection. Define your 10-year future and core aspirations.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">AI Coach</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">4-Step Process</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Vision Card</span>
+              </div>
+
+              <Link
+                href="/discover/vision"
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <span>Craft Your Vision</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <div className="mt-3 text-center">
+                <span className="text-sm text-gray-700">⏱️ 15-20 minutes</span>
               </div>
             </div>
           </div>

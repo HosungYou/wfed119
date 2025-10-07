@@ -21,7 +21,7 @@ export default function AIChatBox({
   step,
   context,
   onResponseComplete,
-  placeholder = "메시지를 입력하세요...",
+  placeholder = "Type your message...",
   initialMessage
 }: AIChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -31,7 +31,7 @@ export default function AIChatBox({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 초기 메시지 설정
+  // Set initial message
   useEffect(() => {
     if (initialMessage && messages.length === 0) {
       setMessages([{
@@ -139,7 +139,7 @@ export default function AIChatBox({
         console.log('[AI Chat] Request aborted');
       } else {
         console.error('[AI Chat] Error:', error);
-        alert('AI 응답 중 오류가 발생했습니다.');
+        alert('An error occurred during AI response.');
       }
       setIsStreaming(false);
       setStreamingContent('');
@@ -161,20 +161,20 @@ export default function AIChatBox({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border-2 border-gray-200 shadow-lg">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200 rounded-t-xl">
         <Sparkles className="w-5 h-5 text-purple-600" />
-        <h3 className="font-semibold text-gray-900">AI 코치와 대화하기</h3>
+        <h3 className="font-semibold text-gray-900">Chat with AI Coach</h3>
         <span className="ml-auto text-xs text-gray-500">Step {step}</span>
       </div>
 
-      {/* 메시지 영역 */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]">
         {messages.map((message, index) => (
           <MessageBubble key={index} message={message} />
         ))}
 
-        {/* 스트리밍 중인 메시지 */}
+        {/* Streaming Message */}
         {isStreaming && streamingContent && (
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
@@ -189,18 +189,18 @@ export default function AIChatBox({
           </div>
         )}
 
-        {/* 로딩 인디케이터 */}
+        {/* Loading Indicator */}
         {isStreaming && !streamingContent && (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">AI가 생각하는 중...</span>
+            <span className="text-sm">AI is thinking...</span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 영역 */}
+      {/* Input Area */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
         <div className="flex gap-2">
           <textarea
@@ -217,7 +217,7 @@ export default function AIChatBox({
               onClick={stopStreaming}
               className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
             >
-              중지
+              Stop
             </button>
           ) : (
             <button
@@ -226,12 +226,12 @@ export default function AIChatBox({
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
-              전송
+              Send
             </button>
           )}
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Shift + Enter로 줄바꿈, Enter로 전송
+          Shift + Enter for new line, Enter to send
         </p>
       </div>
     </div>
@@ -243,7 +243,7 @@ function MessageBubble({ message }: { message: Message }) {
 
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      {/* 아바타 */}
+      {/* Avatar */}
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
           isUser
@@ -254,7 +254,7 @@ function MessageBubble({ message }: { message: Message }) {
         {isUser ? 'U' : 'AI'}
       </div>
 
-      {/* 메시지 내용 */}
+      {/* Message content */}
       <div
         className={`flex-1 max-w-[80%] rounded-2xl p-4 ${
           isUser

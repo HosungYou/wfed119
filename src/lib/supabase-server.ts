@@ -3,8 +3,8 @@ import { cookies } from 'next/headers'
 import type { Database } from './supabase'
 import { getSupabaseClientConfig } from './supabase'
 
-export const createServerSupabaseClient = () => {
-  const cookieStore = cookies()
+export const createServerSupabaseClient = async () => {
+  const cookieStore = await cookies()
   const { url, anonKey } = getSupabaseClientConfig('server')
 
   return createServerClient<Database>(
@@ -32,7 +32,7 @@ export const createServerSupabaseClient = () => {
 }
 
 export const getSession = async () => {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   try {
     const {
       data: { session },
@@ -48,7 +48,7 @@ export const getCurrentUser = async () => {
   const session = await getSession()
   if (!session?.user) return null
 
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: user } = await supabase
     .from('users')
     .select('*')

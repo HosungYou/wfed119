@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
 /**
  * GET /api/discover/vision/session
@@ -9,16 +10,17 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
-    // 1. 인증 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // 1. Authentication check with dev mode support
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
 
-    if (!session || authError) {
+    if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
 
     // 2. 기존 Vision Statement 조회
     const { data: visionData, error: visionError } = await supabase
@@ -77,16 +79,17 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
-    // 1. 인증 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // 1. Authentication check with dev mode support
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
 
-    if (!session || authError) {
+    if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
     const body = await req.json();
 
     const {

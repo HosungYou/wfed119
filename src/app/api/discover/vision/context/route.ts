@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
 /**
  * GET /api/discover/vision/context
@@ -11,16 +12,17 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
-    // 1. 인증 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // 1. Authentication check with dev mode support
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
 
-    if (!session || authError) {
+    if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
 
     // 2. Values 데이터 조회
     const { data: valuesData, error: valuesError } = await supabase
@@ -70,14 +72,14 @@ export async function GET(req: NextRequest) {
       console.error('[Vision Context] Strengths query error:', strengthsError);
     }
 
-    // 4. 응답 구성
+    // 4. Build response
     return NextResponse.json({
       values: valuesContext,
       strengths: strengthsData || [],
       user: {
         id: userId,
-        email: session.user.email,
-        name: session.user.user_metadata?.full_name || session.user.email
+        email: auth.isDevelopmentMode ? 'dev@example.com' : session?.user?.email,
+        name: auth.isDevelopmentMode ? 'Dev User' : (session?.user?.user_metadata?.full_name || session?.user?.email)
       }
     });
 

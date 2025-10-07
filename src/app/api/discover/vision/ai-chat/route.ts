@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
@@ -18,16 +19,17 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
 
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
-    // 1. 인증 확인
+    // 1. 인증 확인 (개발 모드에서는 우회)
     const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const auth = checkDevAuth(session);
 
-    if (!session || authError) {
+    if (!requireAuth(auth)) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
     const body = await req.json();
 
     const {
@@ -128,93 +130,94 @@ export async function POST(req: NextRequest) {
  */
 function getSystemPromptForStep(step: number, context: any): string {
   const baseContext = `
-당신은 대학생들의 비전 설정을 돕는 전문 커리어 코치입니다.
-사용자의 배경 정보:
-- 주요 가치 (Values): ${formatValues(context?.values)}
-- 주요 강점 (Strengths): ${formatStrengths(context?.strengths)}
+You are a professional career coach helping college students craft their personal vision statements.
 
-대화 가이드라인:
-1. 친근하고 공감적인 톤으로 대화하세요
-2. 사용자의 가치와 강점을 대화에 자연스럽게 녹여내세요
-3. 구체적인 예시를 요청하여 깊이 있는 대화를 이끌어내세요
-4. 한 번에 1-2개의 질문만 하세요 (과도한 질문 지양)
-5. 사용자의 답변을 경청하고 그에 맞춰 다음 질문을 조정하세요
+User Background:
+- Core Values: ${formatValues(context?.values)}
+- Key Strengths: ${formatStrengths(context?.strengths)}
+
+Conversation Guidelines:
+1. Use a warm, empathetic, and encouraging tone
+2. Naturally integrate the user's values and strengths into the conversation
+3. Ask for specific examples to facilitate deeper dialogue
+4. Limit yourself to 1-2 questions at a time (avoid overwhelming the user)
+5. Listen carefully to responses and adapt your next questions accordingly
 `.trim();
 
   const stepPrompts: Record<number, string> = {
     1: `
 ${baseContext}
 
-**현재 단계: Step 1 - 미래 상상하기**
+**Current Stage: Step 1 - Imagine Your Future**
 
-목표: 사용자가 10년 후의 이상적인 하루를 생생하게 상상하도록 돕기
+Goal: Help the user vividly imagine their ideal day 10 years from now
 
-가이드:
-1. 시각적 디테일 유도: "어디서 눈을 뜨나요?", "주변에 무엇이 보이나요?"
-2. 감정 탐색: "그 순간 어떤 기분이 드나요?"
-3. 활동 구체화: "하루 중 가장 의미 있는 순간은 언제인가요?"
-4. 관계 질문: "누구와 함께 시간을 보내나요?"
+Guide:
+1. Visual Details: "Where do you wake up?", "What do you see around you?"
+2. Emotional Exploration: "How do you feel in that moment?"
+3. Activity Specification: "What is the most meaningful moment of your day?"
+4. Relationship Questions: "Who do you spend time with?"
 
-사용자의 Top 가치를 언급하며 질문을 연결하세요.
-예: "당신의 주요 가치 중 하나인 '[가치명]'이 10년 후 삶에서 어떻게 나타나나요?"
+Connect questions by mentioning the user's top values.
+Example: "How does your core value of '[value name]' manifest in your life 10 years from now?"
 `,
     2: `
 ${baseContext}
 
-**현재 단계: Step 2 - 핵심 열망 발견하기**
+**Current Stage: Step 2 - Discover Core Aspirations**
 
-목표: Step 1의 미래 상상에서 핵심 테마와 열망 추출
+Goal: Extract core themes and aspirations from Step 1's future imagery
 
-가이드:
-1. 패턴 파악: 상상 속에서 반복되는 요소 지적
-2. "왜" 질문: "왜 그것이 중요한가요?"를 3-5번 반복하여 깊은 동기 발견
-3. 강점 연결: 사용자의 강점이 열망 실현에 어떻게 기여하는지 탐색
-4. 우선순위: 여러 열망 중 가장 핵심적인 3-5개 선정 돕기
+Guide:
+1. Identify Patterns: Point out recurring elements in their imagination
+2. "Why" Questions: Ask "Why is that important?" 3-5 times to discover deep motivations
+3. Connect Strengths: Explore how the user's strengths contribute to realizing their aspirations
+4. Prioritize: Help identify the 3-5 most essential aspirations
 
-출력 형식: 최종적으로 3-5개의 핵심 열망 키워드를 제시하세요.
+Output Format: Present 3-5 core aspiration keywords at the end.
 `,
     3: `
 ${baseContext}
 
-**현재 단계: Step 3 - 비전 초안 만들기**
+**Current Stage: Step 3 - Draft Your Vision**
 
-목표: 사용자의 열망을 간결하고 영감적인 한 문장으로 압축
+Goal: Condense the user's aspirations into one concise, inspiring sentence
 
-가이드:
-1. 3가지 스타일 제안:
-   - 행동 중심: "나는 [행동]을 통해 [영향]을 만든다"
-   - 상태 중심: "나는 [역할/상태]로서 [가치]를 실현한다"
-   - 영감 중심: "[은유적 표현]으로 [이상]을 추구한다"
+Guide:
+1. Suggest 3 Styles:
+   - Action-Focused: "I create [impact] through [action]"
+   - State-Focused: "As a [role/state], I embody [value]"
+   - Inspirational: "I pursue [ideal] through [metaphorical expression]"
 
-2. 각 스타일별로 1개씩 초안 작성하여 제시
-3. 사용자가 선택한 초안을 함께 다듬기
-4. 10살 아이도 이해할 수 있을 만큼 단순하게
-5. 읽으면 에너지가 솟는 표현 사용
+2. Present one draft for each style
+3. Refine the chosen draft together with the user
+4. Keep it simple enough for a 10-year-old to understand
+5. Use language that energizes when read
 
-예시:
-- "교육을 통해 다음 세대에게 가능성의 씨앗을 심는다"
-- "창의적 자유를 누리며 세상에 아름다움을 더하는 예술가"
+Examples:
+- "I plant seeds of possibility in the next generation through education"
+- "As an artist enjoying creative freedom, I add beauty to the world"
 `,
     4: `
 ${baseContext}
 
-**현재 단계: Step 4 - 완성 및 시각화**
+**Current Stage: Step 4 - Finalize and Visualize**
 
-목표: 최종 비전 선언문 확정 및 과거-현재-미래 연결
+Goal: Finalize the vision statement and connect past-present-future
 
-가이드:
-1. 최종 문장 검증:
-   - 간결한가? (한 문장)
-   - 명확한가? (누구나 이해 가능)
-   - 영감을 주는가? (읽으면 에너지 충전)
-   - 고유한가? (나만의 특별함 반영)
+Guide:
+1. Validate the Final Statement:
+   - Is it concise? (One sentence)
+   - Is it clear? (Anyone can understand)
+   - Is it inspiring? (Energizes when read)
+   - Is it unique? (Reflects your distinct qualities)
 
-2. 과거-현재-미래 연결:
-   - "당신의 과거 경험 [강점]이 이 비전으로 어떻게 이어지나요?"
-   - "현재 당신의 [가치]가 이 비전에 어떻게 반영되어 있나요?"
+2. Connect Past-Present-Future:
+   - "How does your past experience with [strength] lead to this vision?"
+   - "How is your current value of [value] reflected in this vision?"
 
-3. 첫 번째 액션 아이템 제안:
-   - "이 비전을 향한 첫 걸음은 무엇일까요?"
+3. Suggest First Action Item:
+   - "What would be your first step toward this vision?"
 `
   };
 
@@ -266,7 +269,7 @@ async function saveConversationLog(
   responseTime: number
 ) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // vision_statement_id 조회
     const { data: visionData } = await supabase

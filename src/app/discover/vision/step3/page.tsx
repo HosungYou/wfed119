@@ -31,19 +31,19 @@ type VisionStyle = 'action' | 'state' | 'inspirational';
 
 const STYLE_INFO: Record<VisionStyle, { label: string; description: string; example: string }> = {
   action: {
-    label: '행동 지향형',
-    description: '구체적인 행동과 영향에 초점',
-    example: '나는 [행동]을 통해 [영향]을 만든다'
+    label: 'Action-Oriented',
+    description: 'Focus on concrete actions and impact',
+    example: 'I create [impact] through [action]'
   },
   state: {
-    label: '상태 지향형',
-    description: '되고자 하는 역할이나 상태에 초점',
-    example: '나는 [역할/상태]로서 [가치]를 실현한다'
+    label: 'State-Oriented',
+    description: 'Focus on desired role or state',
+    example: 'As [role/state], I realize [value]'
   },
   inspirational: {
-    label: '영감형',
-    description: '은유적 표현과 이상에 초점',
-    example: '[은유적 표현]으로 [이상]을 추구한다'
+    label: 'Inspirational',
+    description: 'Focus on metaphors and ideals',
+    example: 'Pursue [ideal] as [metaphor]'
   }
 };
 
@@ -78,7 +78,7 @@ export default function VisionStep3() {
 
       // Verify Step 2 is complete
       if (!sessionData.core_aspirations || sessionData.core_aspirations.length < 3) {
-        alert('먼저 Step 2를 완료해주세요.');
+        alert('Please complete Step 2 first.');
         router.push('/discover/vision/step2');
         return;
       }
@@ -106,7 +106,7 @@ export default function VisionStep3() {
 
     } catch (error) {
       console.error('[Step3] Load error:', error);
-      alert('데이터를 불러오는데 실패했습니다.');
+      alert('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ export default function VisionStep3() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           step: 3,
-          userMessage: '앞서 발견한 핵심 열망을 바탕으로 세 가지 스타일의 비전 문장을 생성해주세요.',
+          userMessage: 'Based on the core aspirations discovered, please generate vision statements in three styles.',
           conversationHistory: [],
           context: {
             ...context,
@@ -163,7 +163,7 @@ export default function VisionStep3() {
 
     } catch (error) {
       console.error('[Step3] Generate error:', error);
-      alert('비전 문장 생성에 실패했습니다.');
+      alert('Failed to generate vision statements.');
     } finally {
       setGenerating(false);
     }
@@ -176,10 +176,10 @@ export default function VisionStep3() {
       inspirational: ''
     };
 
-    // Simple parsing: look for patterns like "1. 행동 지향형:" or "**행동 지향형**"
-    const actionMatch = response.match(/(?:1\.|행동\s*지향형|Action)[:\s]*([^\n]+)/i);
-    const stateMatch = response.match(/(?:2\.|상태\s*지향형|State)[:\s]*([^\n]+)/i);
-    const inspirationalMatch = response.match(/(?:3\.|영감형|Inspirational)[:\s]*([^\n]+)/i);
+    // Simple parsing: look for patterns like "1. Action-Oriented:" or "**Action-Oriented**"
+    const actionMatch = response.match(/(?:1\.|Action)[:\s]*([^\n]+)/i);
+    const stateMatch = response.match(/(?:2\.|State)[:\s]*([^\n]+)/i);
+    const inspirationalMatch = response.match(/(?:3\.|Inspirational|Inspirational)[:\s]*([^\n]+)/i);
 
     if (actionMatch) drafts.action = actionMatch[1].trim();
     if (stateMatch) drafts.state = stateMatch[1].trim();
@@ -195,7 +195,7 @@ export default function VisionStep3() {
 
   function saveDraftVersion() {
     if (!customStatement.trim()) {
-      alert('비전 문장을 입력해주세요.');
+      alert('Please enter your vision statement.');
       return;
     }
 
@@ -206,7 +206,7 @@ export default function VisionStep3() {
     };
 
     setDraftVersions(prev => [...prev, newDraft]);
-    alert('초안이 저장되었습니다.');
+    alert('Draft saved successfully.');
   }
 
   async function saveProgress() {
@@ -228,10 +228,10 @@ export default function VisionStep3() {
 
       if (!response.ok) throw new Error('Save failed');
 
-      alert('저장되었습니다.');
+      alert('Saved successfully!');
     } catch (error) {
       console.error('[Step3] Save error:', error);
-      alert('저장에 실패했습니다.');
+      alert('Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -241,7 +241,7 @@ export default function VisionStep3() {
     if (!session) return;
 
     if (!customStatement.trim()) {
-      alert('비전 문장을 작성해주세요.');
+      alert('Please write your vision statement.');
       return;
     }
 
@@ -264,7 +264,7 @@ export default function VisionStep3() {
       router.push('/discover/vision/step4');
     } catch (error) {
       console.error('[Step3] Next step error:', error);
-      alert('다음 단계로 이동하는데 실패했습니다.');
+      alert('Failed to proceed to next step.');
     } finally {
       setSaving(false);
     }
@@ -282,12 +282,12 @@ export default function VisionStep3() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">세션을 불러올 수 없습니다.</p>
+          <p className="text-gray-600 mb-4">Unable to load session.</p>
           <button
             onClick={() => router.push('/discover/vision')}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            처음으로 돌아가기
+            Back to Home
           </button>
         </div>
       </div>
@@ -304,10 +304,10 @@ export default function VisionStep3() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전 단계로
+            Previous Step
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 3: 비전 초안 작성</h1>
-          <p className="text-gray-600">세 가지 스타일의 비전 문장을 생성하고, AI와 협력하여 다듬어봅니다.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 3: Draft Vision Statement</h1>
+          <p className="text-gray-600">Generate vision statements in three styles and refine them with AI.</p>
         </div>
 
         {/* Progress */}
@@ -320,7 +320,7 @@ export default function VisionStep3() {
           {/* Left Column - Core Aspirations Summary */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">핵심 열망</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Core Aspirations</h2>
               <div className="space-y-3">
                 {session.core_aspirations?.map((aspiration, index) => (
                   <div key={index} className="p-3 bg-purple-50 rounded-lg">
@@ -338,7 +338,7 @@ export default function VisionStep3() {
           <div className="lg:col-span-6">
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">비전 문장 생성</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Generate Vision Statement</h2>
                 <button
                   onClick={generateDrafts}
                   disabled={generating}
@@ -347,12 +347,12 @@ export default function VisionStep3() {
                   {generating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      생성 중...
+                      Generating...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      AI 생성
+                      AI Generate
                     </>
                   )}
                 </button>
@@ -376,7 +376,7 @@ export default function VisionStep3() {
                         <p className="text-xs text-gray-500">{STYLE_INFO[style].description}</p>
                       </div>
                       {selectedStyle === style && (
-                        <span className="text-purple-600 text-sm font-medium">✓ 선택됨</span>
+                        <span className="text-purple-600 text-sm font-medium">✓ Selected</span>
                       )}
                     </div>
                     {generatedDrafts[style] ? (
@@ -391,17 +391,17 @@ export default function VisionStep3() {
               {/* Custom Editing Area */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  비전 문장 수정 및 작성
+                  Edit and Write Vision Statement
                 </label>
                 <textarea
                   value={customStatement}
                   onChange={(e) => setCustomStatement(e.target.value)}
-                  placeholder="AI가 생성한 문장을 선택하거나 직접 작성해보세요..."
+                  placeholder="Select an AI-generated statement or write your own..."
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  간결하고 명확하며 영감을 주는 한 문장으로 작성하세요.
+                  Write a concise, clear, and inspiring sentence.
                 </p>
               </div>
 
@@ -410,15 +410,15 @@ export default function VisionStep3() {
                 disabled={!customStatement.trim()}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
-                현재 버전 저장
+                Save Current Version
               </button>
             </div>
 
             {/* AI Chat for Refinement */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">AI와 다듬기</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Refine with AI</h2>
               <p className="text-sm text-gray-600 mb-4">
-                작성한 비전 문장에 대해 AI와 대화하며 더 나은 표현을 찾아보세요.
+                Chat with AI to refine your vision statement and find better expressions.
               </p>
 
               <AIChatBox
@@ -430,7 +430,7 @@ export default function VisionStep3() {
                   currentDraft: customStatement
                 }}
                 onResponseComplete={(response) => console.log('[Step3] AI refinement:', response)}
-                placeholder="비전 문장에 대한 피드백을 요청하세요..."
+                placeholder="Ask for feedback on your vision statement..."
               />
             </div>
           </div>
@@ -438,11 +438,11 @@ export default function VisionStep3() {
           {/* Right Column - Draft History */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">저장된 초안</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Saved Drafts</h2>
 
               {draftVersions.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
-                  <p>아직 저장된 초안이 없습니다.</p>
+                  <p>No saved drafts yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -454,7 +454,7 @@ export default function VisionStep3() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-purple-600">
-                          {STYLE_INFO[draft.style as VisionStyle]?.label || '커스텀'}
+                          {STYLE_INFO[draft.style as VisionStyle]?.label || 'Custom'}
                         </span>
                         <span className="text-xs text-gray-400">
                           {new Date(draft.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
@@ -477,7 +477,7 @@ export default function VisionStep3() {
             className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            저장하기
+            Save
           </button>
 
           <button
@@ -485,7 +485,7 @@ export default function VisionStep3() {
             disabled={saving || !customStatement.trim()}
             className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            다음 단계
+            Next Step
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

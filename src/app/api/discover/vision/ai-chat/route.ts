@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
 
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -266,7 +266,7 @@ async function saveConversationLog(
   responseTime: number
 ) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // vision_statement_id 조회
     const { data: visionData } = await supabase

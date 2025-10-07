@@ -10,7 +10,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 템플릿은 인증 없이도 조회 가능 (RLS로 제어)
     const { data, error } = await supabase
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 인증 확인
     const { data: { session }, error: authError } = await supabase.auth.getSession();

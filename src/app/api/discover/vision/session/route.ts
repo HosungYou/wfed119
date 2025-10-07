@@ -9,7 +9,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인
     const { data: { session }, error: authError } = await supabase.auth.getSession();

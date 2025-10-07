@@ -30,17 +30,96 @@ export default function AIChatBox({
   const [streamingContent, setStreamingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const initialMessageSentRef = useRef(false);
 
-  // Set initial message
+  // Auto-send initial message and get AI response
   useEffect(() => {
-    if (initialMessage && messages.length === 0) {
-      setMessages([{
-        role: 'assistant',
+    if (initialMessage && messages.length === 0 && !initialMessageSentRef.current) {
+      initialMessageSentRef.current = true;
+
+      // Add user's initial message
+      const userMessage: Message = {
+        role: 'user',
         content: initialMessage,
         timestamp: new Date()
-      }]);
+      };
+
+      setMessages([userMessage]);
+      setIsStreaming(true);
+      setStreamingContent('');
+
+      // Auto-send to AI
+      const sendInitialMessage = async () => {
+        try {
+          abortControllerRef.current = new AbortController();
+
+          const response = await fetch('/api/discover/vision/ai-chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              step,
+              userMessage: initialMessage,
+              conversationHistory: [],
+              context
+            }),
+            signal: abortControllerRef.current.signal
+          });
+
+          if (!response.ok) throw new Error('AI response failed');
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let accumulatedContent = '';
+
+          while (true) {
+            const { done, value } = await reader!.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.type === 'text') {
+                    accumulatedContent += data.content;
+                    setStreamingContent(accumulatedContent);
+                  }
+                } catch (e) {
+                  // Skip invalid JSON
+                }
+              }
+            }
+          }
+
+          // Finalize AI response
+          if (accumulatedContent) {
+            const aiMessage: Message = {
+              role: 'assistant',
+              content: accumulatedContent,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, aiMessage]);
+            onResponseComplete?.(accumulatedContent);
+          }
+
+          setIsStreaming(false);
+          setStreamingContent('');
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error('[AI Chat] Auto-send error:', error);
+          }
+          setIsStreaming(false);
+          setStreamingContent('');
+        }
+      };
+
+      sendInitialMessage();
     }
-  }, [initialMessage]);
+  }, [initialMessage, step, context, onResponseComplete]);
 
   // 자동 스크롤
   useEffect(() => {
@@ -160,7 +239,7 @@ export default function AIChatBox({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border-2 border-gray-200 shadow-lg">
+    <div className="flex flex-col bg-white rounded-xl border-2 border-gray-200 shadow-lg">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200 rounded-t-xl">
         <Sparkles className="w-5 h-5 text-purple-600" />
@@ -169,7 +248,7 @@ export default function AIChatBox({
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[600px]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
         {messages.map((message, index) => (
           <MessageBubble key={index} message={message} />
         ))}

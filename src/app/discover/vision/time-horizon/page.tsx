@@ -18,6 +18,17 @@ export default function TimeHorizonSelection() {
     try {
       const timeHorizon = horizonType === 'years_from_now' ? yearsFromNow : specificAge;
 
+      // First, ensure session exists by calling GET
+      const getResponse = await fetch('/api/discover/vision/session');
+      if (!getResponse.ok) {
+        console.error('[Time Horizon] Failed to load session');
+        throw new Error('Failed to load session');
+      }
+
+      const sessionData = await getResponse.json();
+      console.log('[Time Horizon] Session loaded:', sessionData);
+
+      // Then update with time horizon
       const response = await fetch('/api/discover/vision/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -29,13 +40,18 @@ export default function TimeHorizonSelection() {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[Time Horizon] Update error:', errorData);
         throw new Error('Failed to save time horizon');
       }
+
+      const updatedData = await response.json();
+      console.log('[Time Horizon] Updated successfully:', updatedData);
 
       router.push('/discover/vision/step1');
     } catch (error) {
       console.error('[Time Horizon] Error:', error);
-      alert('Failed to save. Please try again.');
+      alert(`Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setSaving(false);
     }

@@ -45,8 +45,10 @@ export async function GET(req: NextRequest) {
         .insert({
           user_id: userId,
           values_result_id: valuesData?.id || null,
-          current_step: 1,
-          is_completed: false
+          current_step: 0,
+          is_completed: false,
+          time_horizon: null,
+          time_horizon_type: null
         })
         .select()
         .single();

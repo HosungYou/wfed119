@@ -44,10 +44,16 @@ export default function VisionStep1() {
       const sessionData = await sessionRes.json();
 
       // Check if time horizon is set, if not redirect to time-horizon page
-      if (!sessionData.time_horizon || !sessionData.time_horizon_type) {
+      if (!sessionData.time_horizon || !sessionData.time_horizon_type || sessionData.current_step === 0) {
+        console.log('[Step 1] Time horizon not set, redirecting...');
         router.push('/discover/vision/time-horizon');
         return;
       }
+
+      console.log('[Step 1] Time horizon found:', {
+        horizon: sessionData.time_horizon,
+        type: sessionData.time_horizon_type
+      });
 
       setSession(sessionData);
       setFutureImagery(sessionData.future_imagery || '');

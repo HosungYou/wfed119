@@ -63,6 +63,11 @@ export default function VisionStep3() {
     inspirational: ''
   });
 
+  // NEW: Choose Only ONE aspiration
+  const [primaryAspiration, setPrimaryAspiration] = useState<string | null>(null);
+  const [showMagnitudeQuestions, setShowMagnitudeQuestions] = useState(false);
+  const [magnitudeOfImpact, setMagnitudeOfImpact] = useState('');
+
   useEffect(() => {
     loadData();
   }, []);
@@ -222,7 +227,9 @@ export default function VisionStep3() {
           current_step: 3,
           draft_versions: draftVersions,
           final_statement: customStatement.trim() || null,
-          statement_style: selectedStyle
+          statement_style: selectedStyle,
+          primary_aspiration: primaryAspiration,
+          magnitude_of_impact: magnitudeOfImpact
         })
       });
 
@@ -240,6 +247,11 @@ export default function VisionStep3() {
   async function goToNextStep() {
     if (!session) return;
 
+    if (!primaryAspiration) {
+      alert('Please choose your primary aspiration first.');
+      return;
+    }
+
     if (!customStatement.trim()) {
       alert('Please write your vision statement.');
       return;
@@ -255,7 +267,9 @@ export default function VisionStep3() {
           current_step: 4,
           draft_versions: draftVersions,
           final_statement: customStatement.trim(),
-          statement_style: selectedStyle
+          statement_style: selectedStyle,
+          primary_aspiration: primaryAspiration,
+          magnitude_of_impact: magnitudeOfImpact
         })
       });
 
@@ -315,24 +329,146 @@ export default function VisionStep3() {
           <StepProgress currentStep={3} />
         </div>
 
-        {/* Main Content - 3 Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-          {/* Left Column - Core Aspirations Summary */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Core Aspirations</h2>
-              <div className="space-y-3">
-                {session.core_aspirations?.map((aspiration, index) => (
-                  <div key={index} className="p-3 bg-purple-50 rounded-lg">
-                    <h3 className="font-medium text-purple-900 text-sm">{aspiration.keyword}</h3>
-                    <p className="text-xs text-purple-600 mt-1">{aspiration.reason}</p>
-                  </div>
-                ))}
+        {/* STEP 3A: Choose Only ONE Aspiration */}
+        {!primaryAspiration && (
+          <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-4 border-yellow-400 rounded-2xl p-8 shadow-xl">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  The Most Important Question
+                </h2>
+                <p className="text-lg text-gray-800 mb-4">
+                  You've identified {session.core_aspirations?.length} core aspirations from your future vision.
+                </p>
+                <p className="text-xl font-semibold text-gray-900 mb-6">
+                  <strong>If you had to choose ONLY ONE that represents the essence of your future, which would it be?</strong>
+                </p>
               </div>
             </div>
 
-            <ValuesSummary values={context.values} mode="compact" />
+            <div className="space-y-4">
+              {session.core_aspirations?.map((aspiration, index) => (
+                <label
+                  key={index}
+                  className={`flex items-start gap-4 p-6 border-2 rounded-xl cursor-pointer transition-all ${
+                    primaryAspiration === aspiration.keyword
+                      ? 'border-yellow-500 bg-yellow-100 shadow-md'
+                      : 'border-gray-300 bg-white hover:border-yellow-300 hover:bg-yellow-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="primary"
+                    checked={primaryAspiration === aspiration.keyword}
+                    onChange={() => setPrimaryAspiration(aspiration.keyword)}
+                    className="mt-1 w-5 h-5 text-yellow-600"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">{aspiration.keyword}</h3>
+                    <p className="text-gray-700">{aspiration.reason}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowMagnitudeQuestions(true)}
+              disabled={!primaryAspiration}
+              className="mt-6 w-full px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue with "{primaryAspiration || 'your choice'}"
+            </button>
           </div>
+        )}
+
+        {/* STEP 3B: Magnitude Questions (shown after selecting ONE) */}
+        {primaryAspiration && !showMagnitudeQuestions && (
+          <div className="mb-8 bg-blue-50 border-2 border-blue-300 rounded-xl p-6">
+            <h3 className="font-bold text-lg mb-4">✨ You selected: {primaryAspiration}</h3>
+            <button
+              onClick={() => setShowMagnitudeQuestions(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Continue to Next Step
+            </button>
+          </div>
+        )}
+
+        {/* Main Content - Only show after primary aspiration is selected */}
+        {primaryAspiration && showMagnitudeQuestions && (
+          <>
+            {/* Magnitude of Impact Questions */}
+            <div className="mb-8 bg-white rounded-xl shadow-xl p-8 border-2 border-blue-300">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                📊 Let's explore the scale of your vision
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Help us understand the magnitude and reach of your aspiration: <strong>{primaryAspiration}</strong>
+              </p>
+
+              <AIChatBox
+                step={3}
+                context={{
+                  ...context,
+                  futureImagery: session.future_imagery,
+                  coreAspirations: session.core_aspirations,
+                  primaryAspiration
+                }}
+                onResponseComplete={(response) => {
+                  console.log('[Step3] Magnitude response:', response);
+                  setMagnitudeOfImpact(prev => prev + '\n' + response);
+                }}
+                placeholder="Tell me about the scale and impact of your vision..."
+                initialMessage={`You chose "${primaryAspiration}" as your core aspiration. Let's explore this deeper:
+
+**Magnitude Questions:**
+1. What SCALE of impact do you envision?
+   - Community level?
+   - National level?
+   - International/Global level?
+
+2. How many people do you hope to impact through your work?
+
+3. What would be the most SYMBOLIC moment that represents achieving this vision?
+
+4. What timeframe do you see for making this impact?
+
+Share your thoughts freely!`}
+              />
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Summary of Your Impact Vision
+                </label>
+                <textarea
+                  value={magnitudeOfImpact}
+                  onChange={(e) => setMagnitudeOfImpact(e.target.value)}
+                  placeholder="Summarize the scale and reach of your intended impact..."
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Main Content - 3 Column Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+              {/* Left Column - Primary Aspiration Summary */}
+              <div className="lg:col-span-3">
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Core Focus</h2>
+                  <div className="p-4 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-lg border-2 border-yellow-400">
+                    <h3 className="font-bold text-yellow-900 text-lg mb-2">{primaryAspiration}</h3>
+                    <p className="text-sm text-yellow-800">
+                      {session.core_aspirations?.find(a => a.keyword === primaryAspiration)?.reason}
+                    </p>
+                  </div>
+                </div>
+
+                <ValuesSummary values={context.values} mode="compact" />
+              </div>
 
           {/* Middle Column - Draft Generation & Editing */}
           <div className="lg:col-span-6">
@@ -467,7 +603,9 @@ export default function VisionStep3() {
               )}
             </div>
           </div>
-        </div>
+            </div>
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center">

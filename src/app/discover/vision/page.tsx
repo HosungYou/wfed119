@@ -287,7 +287,7 @@ export default function VisionModuleLanding() {
             onClick={() => router.push(
               hasStartedVision
                 ? `/discover/vision/step${moduleProgress?.vision.currentStep}`
-                : '/discover/vision/step1'
+                : '/discover/vision/time-horizon'
             )}
             className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
           >

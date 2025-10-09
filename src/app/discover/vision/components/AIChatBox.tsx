@@ -13,7 +13,6 @@ interface AIChatBoxProps {
   step: number;
   context: any;
   onResponseComplete?: (response: string) => void;
-  onDraftSuggested?: (draft: string) => void;
   placeholder?: string;
   initialMessage?: string;
 }
@@ -22,7 +21,6 @@ export default function AIChatBox({
   step,
   context,
   onResponseComplete,
-  onDraftSuggested,
   placeholder = "Type your message...",
   initialMessage
 }: AIChatBoxProps) {
@@ -30,137 +28,30 @@ export default function AIChatBox({
   const [inputValue, setInputValue] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
-  const [currentDraft, setCurrentDraft] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const initialMessageSentRef = useRef(false);
 
-  // Auto-send initial message and get AI response
+  // Display initial message (but don't auto-send to AI)
   useEffect(() => {
     if (initialMessage && messages.length === 0 && !initialMessageSentRef.current) {
       initialMessageSentRef.current = true;
 
-      // Add user's initial message
-      const userMessage: Message = {
-        role: 'user',
+      // Add AI's initial greeting message (not user message)
+      const aiMessage: Message = {
+        role: 'assistant',
         content: initialMessage,
         timestamp: new Date()
       };
 
-      setMessages([userMessage]);
-      setIsStreaming(true);
-      setStreamingContent('');
-
-      // Auto-send to AI
-      const sendInitialMessage = async () => {
-        try {
-          abortControllerRef.current = new AbortController();
-
-          const response = await fetch('/api/discover/vision/ai-chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              step,
-              userMessage: initialMessage,
-              conversationHistory: [],
-              context
-            }),
-            signal: abortControllerRef.current.signal
-          });
-
-          if (!response.ok) throw new Error('AI response failed');
-
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-          let accumulatedContent = '';
-
-          while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.type === 'text') {
-                    accumulatedContent += data.content;
-                    setStreamingContent(accumulatedContent);
-                  }
-                } catch (e) {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-
-          // Finalize AI response
-          if (accumulatedContent) {
-            const aiMessage: Message = {
-              role: 'assistant',
-              content: accumulatedContent,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMessage]);
-
-            // Draft 감지
-            const draft = extractDraft(accumulatedContent);
-            if (draft) {
-              setCurrentDraft(draft);
-            }
-
-            onResponseComplete?.(accumulatedContent);
-          }
-
-          setIsStreaming(false);
-          setStreamingContent('');
-        } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.error('[AI Chat] Auto-send error:', error);
-          }
-          setIsStreaming(false);
-          setStreamingContent('');
-        }
-      };
-
-      sendInitialMessage();
+      setMessages([aiMessage]);
     }
-  }, [initialMessage, step, context, onResponseComplete]);
+  }, [initialMessage]);
 
   // 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
-
-  // Draft 추출 함수
-  const extractDraft = (content: string): string | null => {
-    const draftStartMarker = '📝 DRAFT_START';
-    const draftEndMarker = 'DRAFT_END';
-
-    const startIndex = content.indexOf(draftStartMarker);
-    const endIndex = content.indexOf(draftEndMarker);
-
-    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-      const draft = content
-        .substring(startIndex + draftStartMarker.length, endIndex)
-        .trim();
-      return draft;
-    }
-
-    return null;
-  };
-
-  // Draft 수락 핸들러
-  const acceptDraft = () => {
-    if (currentDraft && onDraftSuggested) {
-      onDraftSuggested(currentDraft);
-      alert('✓ Draft has been added to Free Writing Area!');
-    }
-  };
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isStreaming) return;
@@ -229,12 +120,6 @@ export default function AIChatBox({
                 setMessages(prev => [...prev, assistantMessage]);
                 setStreamingContent('');
                 setIsStreaming(false);
-
-                // Draft 감지
-                const draft = extractDraft(fullResponse);
-                if (draft) {
-                  setCurrentDraft(draft);
-                }
 
                 // 콜백 호출
                 if (onResponseComplete) {
@@ -321,31 +206,6 @@ export default function AIChatBox({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Draft Acceptance Banner */}
-      {currentDraft && (
-        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <h4 className="font-semibold text-green-900 mb-2">
-                📝 AI has prepared a draft for you!
-              </h4>
-              <p className="text-sm text-green-700 mb-3">
-                Click "Accept Draft" to add it to your Free Writing Area below. You can edit it afterwards.
-              </p>
-              <div className="bg-white p-3 rounded-lg border border-green-200 text-sm text-gray-700 mb-3">
-                {currentDraft}
-              </div>
-              <button
-                onClick={acceptDraft}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-              >
-                ✓ Accept Draft
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Input Area */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
         <div className="flex gap-2">
@@ -412,9 +272,10 @@ function MessageBubble({ message }: { message: Message }) {
           {message.content}
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          {message.timestamp.toLocaleTimeString('ko-KR', {
+          {message.timestamp.toLocaleTimeString('en-US', {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: true
           })}
         </div>
       </div>

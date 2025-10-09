@@ -13,8 +13,10 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    const { data: { session } } = await supabase.auth.getSession();
-    const auth = checkDevAuth(session);
+    // Use getUser() for better security instead of getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -31,22 +33,24 @@ export async function GET(req: NextRequest) {
 
     // 3. 없으면 새로 생성
     if (visionError && visionError.code === 'PGRST116') {
-      // 선행 조건 데이터 가져오기
+      // 선행 조건 데이터 가져오기 (올바른 테이블 이름 사용)
       const { data: valuesData } = await supabase
-        .from('value_assessment_results')
-        .select('id, layout, insights')
+        .from('value_results')
+        .select('id, layout')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const { data: newVision, error: createError } = await supabase
         .from('vision_statements')
         .insert({
           user_id: userId,
           values_result_id: valuesData?.id || null,
-          current_step: 1,
-          is_completed: false
+          current_step: 0,
+          is_completed: false,
+          time_horizon: null,
+          time_horizon_type: null
         })
         .select()
         .single();
@@ -82,8 +86,9 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    const { data: { session } } = await supabase.auth.getSession();
-    const auth = checkDevAuth(session);
+    // Use getUser() for better security
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -101,7 +106,12 @@ export async function PATCH(req: NextRequest) {
       final_statement,
       statement_style,
       selected_template_id,
-      is_completed
+      is_completed,
+      time_horizon,
+      time_horizon_type,
+      primary_aspiration,
+      magnitude_of_impact,
+      professional_focus_validated
     } = body;
 
     // 2. 업데이트할 필드 준비
@@ -117,6 +127,11 @@ export async function PATCH(req: NextRequest) {
     if (final_statement !== undefined) updateData.final_statement = final_statement;
     if (statement_style !== undefined) updateData.statement_style = statement_style;
     if (selected_template_id !== undefined) updateData.selected_template_id = selected_template_id;
+    if (time_horizon !== undefined) updateData.time_horizon = time_horizon;
+    if (time_horizon_type !== undefined) updateData.time_horizon_type = time_horizon_type;
+    if (primary_aspiration !== undefined) updateData.primary_aspiration = primary_aspiration;
+    if (magnitude_of_impact !== undefined) updateData.magnitude_of_impact = magnitude_of_impact;
+    if (professional_focus_validated !== undefined) updateData.professional_focus_validated = professional_focus_validated;
     if (is_completed !== undefined) {
       updateData.is_completed = is_completed;
       if (is_completed) {

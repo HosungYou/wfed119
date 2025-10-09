@@ -12,6 +12,8 @@ interface VisionSession {
   current_step: number;
   future_imagery?: string;
   future_imagery_analysis?: any;
+  time_horizon?: number;
+  time_horizon_type?: 'years_from_now' | 'specific_age';
 }
 
 interface Context {
@@ -40,6 +42,19 @@ export default function VisionStep1() {
       // 1. Session retrieval/creation
       const sessionRes = await fetch('/api/discover/vision/session');
       const sessionData = await sessionRes.json();
+
+      // Check if time horizon is set, if not redirect to time-horizon page
+      if (!sessionData.time_horizon || !sessionData.time_horizon_type || sessionData.current_step === 0) {
+        console.log('[Step 1] Time horizon not set, redirecting...');
+        router.push('/discover/vision/time-horizon');
+        return;
+      }
+
+      console.log('[Step 1] Time horizon found:', {
+        horizon: sessionData.time_horizon,
+        type: sessionData.time_horizon_type
+      });
+
       setSession(sessionData);
       setFutureImagery(sessionData.future_imagery || '');
 
@@ -154,6 +169,19 @@ export default function VisionStep1() {
 
   const hasPrerequisites = context?.hasValues || context?.hasStrengths;
 
+  // Generate time horizon text
+  const getTimeHorizonText = () => {
+    if (!session?.time_horizon || !session?.time_horizon_type) return '10 years from now';
+
+    if (session.time_horizon_type === 'years_from_now') {
+      return `${session.time_horizon} years from now`;
+    } else {
+      return `at age ${session.time_horizon}`;
+    }
+  };
+
+  const timeHorizonText = getTimeHorizonText();
+
   const initialMessage = hasPrerequisites
     ? `Hello! 👋
 
@@ -165,12 +193,17 @@ ${formatTopValues(context?.values)}
 ${context?.hasStrengths ? `And your top strengths:
 ${formatTopStrengths(context?.strengths)}` : ''}
 
-Now, let's imagine your life 10 years from now.
+Now, let's imagine your PROFESSIONAL LIFE ${timeHorizonText}.
 
-**Close your eyes and envision:**
-- Where do you wake up in the morning?
-- What do you see around you?
-- What's the most meaningful moment of that day?
+⚠️ **Important:** This vision focuses on your PROFESSIONAL SELF as the anchor.
+
+**Close your eyes and envision a day in your work life:**
+- What professional role or work are you doing?
+- What impact is your work making?
+- Who are you helping through your career?
+- How does your work align with your values?
+
+(Personal life matters too, but let's focus on your career vision here.)
 
 Share freely what comes to mind. Let's bring it to life together.`
     : `Hello! 👋
@@ -179,10 +212,14 @@ I'm your AI coach for this vision discovery journey.
 
 **Note:** You haven't completed the Values and Strengths modules yet. While you can continue, completing those first will help me provide more personalized guidance based on your core values and unique strengths.
 
-For now, let's imagine your ideal future 10 years from now:
-- Where do you wake up in the morning?
-- What do you see around you?
-- What's the most meaningful moment of that day?
+For now, let's imagine your PROFESSIONAL LIFE ${timeHorizonText}:
+
+⚠️ **Important:** Focus on your PROFESSIONAL SELF.
+
+**Envision a day in your work life:**
+- What professional role or work are you doing?
+- What impact is your work making?
+- Who are you helping through your career?
 
 Share freely what comes to mind!`;
 
@@ -195,10 +232,10 @@ Share freely what comes to mind!`;
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Step 1: Imagine Your Future
+            Step 1: Imagine Your Professional Future
           </h1>
           <p className="text-gray-600">
-            Freely envision your ideal day 10 years from now.
+            Envision your ideal professional life {timeHorizonText}.
           </p>
         </div>
 
@@ -273,9 +310,9 @@ Share freely what comes to mind!`;
               <h3 className="font-semibold text-blue-900 mb-2">💡 Guide</h3>
               <ul className="text-sm text-blue-800 space-y-2">
                 <li>• Chat with AI to refine your future vision</li>
-                <li>• Focus on visual details</li>
-                <li>• Think about "why it matters"</li>
-                <li>• No need to be perfect. Be free!</li>
+                <li>• Focus on your professional career and work</li>
+                <li>• Think about impact and meaning</li>
+                <li>• Be specific about your role and contributions</li>
               </ul>
             </div>
 
@@ -304,12 +341,12 @@ Share freely what comes to mind!`;
                 📝 Free Writing Area
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Organize your thoughts inspired by the AI conversation. (Recommended: 300+ characters)
+                Organize your thoughts inspired by the AI conversation. Focus on your professional future. (Recommended: 300+ characters)
               </p>
               <textarea
                 value={futureImagery}
                 onChange={(e) => setFutureImagery(e.target.value)}
-                placeholder="In 10 years, I will be..."
+                placeholder={`${timeHorizonText}, in my professional life I will be...`}
                 className="w-full h-64 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               <div className="flex items-center justify-between mt-3">

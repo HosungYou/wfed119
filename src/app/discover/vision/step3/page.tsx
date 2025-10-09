@@ -199,8 +199,14 @@ export default function VisionStep3() {
   async function completeModule() {
     if (!session) return;
 
-    if (!validationPassed) {
-      alert('Please validate your vision statement first.');
+    // Validate word count
+    if (wordCount > 6) {
+      alert('Please reduce your vision statement to 6 words or less.');
+      return;
+    }
+
+    if (!finalStatement.trim()) {
+      alert('Please enter your vision statement.');
       return;
     }
 
@@ -405,12 +411,12 @@ export default function VisionStep3() {
                   {validating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Validating...
+                      Reviewing...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      AI Validate
+                      AI Review (Optional)
                     </>
                   )}
                 </button>
@@ -577,20 +583,7 @@ export default function VisionStep3() {
               </div>
             </div>
 
-            {/* Core Aspirations Summary */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Core Aspirations</h3>
-              <div className="flex flex-wrap gap-2">
-                {session.core_aspirations?.map((aspiration, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
-                  >
-                    {aspiration.keyword}
-                  </span>
-                ))}
-              </div>
-            </div>
+
           </div>
         </div>
 
@@ -598,7 +591,7 @@ export default function VisionStep3() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={completeModule}
-            disabled={saving || !validationPassed || !selectedTemplateId}
+            disabled={saving || !finalStatement.trim() || wordCount > 6 || !selectedTemplateId}
             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {saving ? (

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowRight, Calendar, Clock } from 'lucide-react';
+import { checkAuthStatus } from '@/lib/supabase-client-auth';
+import { getVisionSession, updateVisionSession } from '../utils/session-helpers';
 
 export default function TimeHorizonSelection() {
   const router = useRouter();
@@ -18,17 +20,12 @@ export default function TimeHorizonSelection() {
 
   async function checkAuth() {
     try {
-      // Test if we can access the API
-      const response = await fetch('/api/discover/vision/session');
+      const { isAuthenticated } = await checkAuthStatus();
 
-      if (response.status === 401) {
+      if (!isAuthenticated) {
         console.log('[Time Horizon] Not authenticated, redirecting to login...');
         router.push('/login');
         return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to check authentication');
       }
 
       console.log('[Time Horizon] Authentication check passed');
@@ -46,40 +43,27 @@ export default function TimeHorizonSelection() {
     try {
       const timeHorizon = horizonType === 'years_from_now' ? yearsFromNow : specificAge;
 
-      // First, ensure session exists by calling GET
-      const getResponse = await fetch('/api/discover/vision/session');
-      if (!getResponse.ok) {
-        console.error('[Time Horizon] Failed to load session');
-        throw new Error('Failed to load session');
-      }
-
-      const sessionData = await getResponse.json();
+      // First, ensure session exists
+      const sessionData = await getVisionSession();
       console.log('[Time Horizon] Session loaded:', sessionData);
 
-      // Then update with time horizon
-      const response = await fetch('/api/discover/vision/session', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          time_horizon: timeHorizon,
-          time_horizon_type: horizonType,
-          current_step: 1
-        })
+      // Update with time horizon
+      const updatedData = await updateVisionSession({
+        time_horizon: timeHorizon,
+        time_horizon_type: horizonType,
+        current_step: 1
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('[Time Horizon] Update error:', errorData);
-        throw new Error('Failed to save time horizon');
-      }
-
-      const updatedData = await response.json();
       console.log('[Time Horizon] Updated successfully:', updatedData);
 
       router.push('/discover/vision/step1');
     } catch (error) {
       console.error('[Time Horizon] Error:', error);
-      alert(`Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      if (error instanceof Error && error.message === 'Not authenticated') {
+        router.push('/login');
+      } else {
+        alert(`Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      }
     } finally {
       setSaving(false);
     }

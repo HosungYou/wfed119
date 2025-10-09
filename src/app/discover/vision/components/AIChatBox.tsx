@@ -13,6 +13,7 @@ interface AIChatBoxProps {
   step: number;
   context: any;
   onResponseComplete?: (response: string) => void;
+  onDraftSuggested?: (draft: string) => void;
   placeholder?: string;
   initialMessage?: string;
 }
@@ -21,6 +22,7 @@ export default function AIChatBox({
   step,
   context,
   onResponseComplete,
+  onDraftSuggested,
   placeholder = "Type your message...",
   initialMessage
 }: AIChatBoxProps) {
@@ -120,6 +122,14 @@ export default function AIChatBox({
                 setMessages(prev => [...prev, assistantMessage]);
                 setStreamingContent('');
                 setIsStreaming(false);
+
+                // Draft 추출 로직 (Step 1 only)
+                const draftMatch = fullResponse.match(/📝 DRAFT_START\s*([\s\S]*?)\s*DRAFT_END/);
+                if (draftMatch && onDraftSuggested) {
+                  const draftText = draftMatch[1].trim();
+                  console.log('[AI Chat] Draft extracted:', draftText.substring(0, 100) + '...');
+                  onDraftSuggested(draftText);
+                }
 
                 // 콜백 호출
                 if (onResponseComplete) {

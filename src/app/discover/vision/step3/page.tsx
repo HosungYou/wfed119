@@ -222,7 +222,7 @@ export default function VisionStep3() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          current_step: 4,
+          current_step: 3,
           final_statement: finalStatement.trim(),
           selected_template_id: selectedTemplateId,
           is_completed: true
@@ -257,7 +257,7 @@ export default function VisionStep3() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            current_step: 4,
+            current_step: 3,
             final_statement: finalStatement.trim(),
             selected_template_id: selectedTemplateId,
             is_completed: true

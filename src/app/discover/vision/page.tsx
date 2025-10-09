@@ -60,7 +60,7 @@ export default function VisionModuleLanding() {
         },
         vision: {
           completed: sessionData.is_completed || false,
-          progress: ((sessionData.current_step || 0) / 4) * 100,
+          progress: ((sessionData.current_step || 0) / 3) * 100,
           currentStep: sessionData.current_step || 0,
         }
       });
@@ -117,7 +117,7 @@ export default function VisionModuleLanding() {
             Vision Statement Module
           </h1>
           <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">
-            Craft your personal vision statement through a guided 4-step process with AI assistance.
+            Craft your personal vision statement through a guided 3-step process with AI assistance.
           </p>
         </div>
 
@@ -227,7 +227,7 @@ export default function VisionModuleLanding() {
                 <p className="text-xs text-purple-700">✓ Vision complete</p>
               ) : moduleProgress?.vision.currentStep > 0 ? (
                 <div>
-                  <p className="text-xs text-blue-700 mb-2">Step {moduleProgress.vision.currentStep}/4</p>
+                  <p className="text-xs text-blue-700 mb-2">Step {moduleProgress.vision.currentStep}/3</p>
                   <div className="bg-blue-200 rounded-full h-1.5 overflow-hidden">
                     <div
                       className="bg-blue-600 h-full transition-all"

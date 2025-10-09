@@ -380,7 +380,7 @@ export const HomePage: React.FC = () => {
 
               <div className="flex flex-wrap gap-2 mb-6">
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">AI Coach</span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">4-Step Process</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">3-Step Process</span>
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Vision Card</span>
               </div>
 

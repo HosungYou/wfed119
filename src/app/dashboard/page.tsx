@@ -113,7 +113,7 @@ export default function DashboardPage() {
     if (visionResult) {
       setVisionData(visionResult);
       const progress = visionResult.is_completed ? 100 :
-        (visionResult.current_step || 0) / 4 * 100;
+        (visionResult.current_step || 0) / 3 * 100;
 
       setModules(prev => ({
         ...prev,

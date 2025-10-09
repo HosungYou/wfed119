@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Save, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Check, Sparkles, RefreshCw } from 'lucide-react';
 import StepProgress from '../components/StepProgress';
-import ValuesSummary from '../components/ValuesSummary';
 import AIChatBox from '../components/AIChatBox';
 
 interface VisionSession {
@@ -12,9 +11,10 @@ interface VisionSession {
   user_id: string;
   future_imagery: string | null;
   core_aspirations: { keyword: string; reason: string }[] | null;
-  draft_versions: { style: string; text: string; timestamp: string }[] | null;
   final_statement: string | null;
   statement_style: string | null;
+  selected_template_id: string | null;
+  is_completed: boolean;
   current_step: number;
 }
 
@@ -27,41 +27,44 @@ interface Context {
   strengths: { rank: number; strength: string; description: string }[];
 }
 
-type VisionStyle = 'action' | 'state' | 'inspirational';
-
-const STYLE_INFO: Record<VisionStyle, { label: string; description: string; example: string }> = {
-  action: {
-    label: 'Action-Oriented',
-    description: 'Focus on concrete actions and impact',
-    example: 'I create [impact] through [action]'
-  },
-  state: {
-    label: 'State-Oriented',
-    description: 'Focus on desired role or state',
-    example: 'As [role/state], I realize [value]'
-  },
-  inspirational: {
-    label: 'Inspirational',
-    description: 'Focus on metaphors and ideals',
-    example: 'Pursue [ideal] as [metaphor]'
-  }
-};
+interface VisionCardTemplate {
+  id: string;
+  name: string;
+  design_config: {
+    background: string;
+    textColor: string;
+    accentColor: string;
+    fontFamily: string;
+  };
+}
 
 export default function VisionStep3() {
   const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisionSession | null>(null);
   const [context, setContext] = useState<Context | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState<VisionStyle | null>(null);
-  const [customStatement, setCustomStatement] = useState('');
-  const [draftVersions, setDraftVersions] = useState<{ style: string; text: string; timestamp: string }[]>([]);
-  const [generatedDrafts, setGeneratedDrafts] = useState<Record<VisionStyle, string>>({
-    action: '',
-    state: '',
-    inspirational: ''
-  });
+  const [exporting, setExporting] = useState(false);
+  const [templates, setTemplates] = useState<VisionCardTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [finalStatement, setFinalStatement] = useState('');
+  const [firstAction, setFirstAction] = useState('');
+  const [validationPassed, setValidationPassed] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [aiValidationResult, setAiValidationResult] = useState<{
+    passed: boolean;
+    feedback: string;
+    suggestions?: string[];
+  } | null>(null);
+
+  // Word count utility
+  const countWords = (text: string): number => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  const wordCount = countWords(finalStatement);
+  const isWithinWordLimit = wordCount > 0 && wordCount <= 6;
 
   useEffect(() => {
     loadData();
@@ -76,27 +79,16 @@ export default function VisionStep3() {
       if (!sessionRes.ok) throw new Error('Failed to load session');
       const sessionData = await sessionRes.json();
 
-      // Verify Step 2 is complete
-      if (!sessionData.core_aspirations || sessionData.core_aspirations.length < 3) {
-        alert('Please complete Step 2 first.');
-        router.push('/discover/vision/step2');
+      // Verify Step 3 is complete
+      if (!sessionData.final_statement) {
+        alert('Please complete Step 3 first.');
+        router.push('/discover/vision/step3');
         return;
       }
 
       setSession(sessionData);
-
-      // Load existing drafts if any
-      if (sessionData.draft_versions && Array.isArray(sessionData.draft_versions)) {
-        setDraftVersions(sessionData.draft_versions);
-      }
-
-      if (sessionData.final_statement) {
-        setCustomStatement(sessionData.final_statement);
-      }
-
-      if (sessionData.statement_style) {
-        setSelectedStyle(sessionData.statement_style as VisionStyle);
-      }
+      setFinalStatement(sessionData.final_statement);
+      setSelectedTemplateId(sessionData.selected_template_id);
 
       // Load context
       const contextRes = await fetch('/api/discover/vision/context');
@@ -104,144 +96,116 @@ export default function VisionStep3() {
       const contextData = await contextRes.json();
       setContext(contextData);
 
+      // Load templates
+      const templatesRes = await fetch('/api/discover/vision/templates');
+      if (!templatesRes.ok) throw new Error('Failed to load templates');
+      const templatesData = await templatesRes.json();
+      setTemplates(templatesData);
+
+      // Select first template if none selected
+      if (!sessionData.selected_template_id && templatesData.length > 0) {
+        setSelectedTemplateId(templatesData[0].id);
+      }
+
     } catch (error) {
-      console.error('[Step3] Load error:', error);
+      console.error('[Step4] Load error:', error);
       alert('Failed to load data.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function generateDrafts() {
-    if (!session || !context) return;
-
-    try {
-      setGenerating(true);
-
-      // Call AI to generate 3 style drafts
-      const response = await fetch('/api/discover/vision/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          step: 3,
-          userMessage: 'Based on the core aspirations discovered, please generate vision statements in three styles.',
-          conversationHistory: [],
-          context: {
-            ...context,
-            futureImagery: session.future_imagery,
-            coreAspirations: session.core_aspirations
-          }
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to generate drafts');
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'text') {
-              fullResponse += data.content;
-            }
-          }
-        }
-      }
-
-      // Parse the three drafts from AI response
-      const parsedDrafts = parseDraftsFromAI(fullResponse);
-      setGeneratedDrafts(parsedDrafts);
-
-    } catch (error) {
-      console.error('[Step3] Generate error:', error);
-      alert('Failed to generate vision statements.');
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  function parseDraftsFromAI(response: string): Record<VisionStyle, string> {
-    const drafts: Record<VisionStyle, string> = {
-      action: '',
-      state: '',
-      inspirational: ''
-    };
-
-    // Simple parsing: look for patterns like "1. Action-Oriented:" or "**Action-Oriented**"
-    const actionMatch = response.match(/(?:1\.|Action)[:\s]*([^\n]+)/i);
-    const stateMatch = response.match(/(?:2\.|State)[:\s]*([^\n]+)/i);
-    const inspirationalMatch = response.match(/(?:3\.|Inspirational|Inspirational)[:\s]*([^\n]+)/i);
-
-    if (actionMatch) drafts.action = actionMatch[1].trim();
-    if (stateMatch) drafts.state = stateMatch[1].trim();
-    if (inspirationalMatch) drafts.inspirational = inspirationalMatch[1].trim();
-
-    return drafts;
-  }
-
-  function selectDraft(style: VisionStyle, text: string) {
-    setSelectedStyle(style);
-    setCustomStatement(text);
-  }
-
-  function saveDraftVersion() {
-    if (!customStatement.trim()) {
+  async function validateStatement() {
+    if (!finalStatement.trim()) {
       alert('Please enter your vision statement.');
       return;
     }
 
-    const newDraft = {
-      style: selectedStyle || 'custom',
-      text: customStatement.trim(),
-      timestamp: new Date().toISOString()
-    };
-
-    setDraftVersions(prev => [...prev, newDraft]);
-    alert('Draft saved successfully.');
-  }
-
-  async function saveProgress() {
-    if (!session) return;
-
     try {
-      setSaving(true);
+      setValidating(true);
+      setAiValidationResult(null);
 
-      const response = await fetch('/api/discover/vision/session', {
-        method: 'PATCH',
+      const response = await fetch('/api/discover/vision/validate', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          current_step: 3,
-          draft_versions: draftVersions,
-          final_statement: customStatement.trim() || null,
-          statement_style: selectedStyle
+          statement: finalStatement,
+          context: {
+            values: context?.values,
+            strengths: context?.strengths,
+            futureImagery: session?.future_imagery,
+            coreAspirations: session?.core_aspirations
+          }
         })
       });
 
-      if (!response.ok) throw new Error('Save failed');
+      if (!response.ok) throw new Error('Validation failed');
 
-      alert('Saved successfully!');
+      const result = await response.json();
+      setAiValidationResult(result);
+
+      // Show validation result in alert
+      if (result.passed) {
+        alert(`✓ AI Validation Passed!\n\n${result.feedback}\n\nDo you agree with this assessment? If yes, your statement is validated.`);
+      } else {
+        alert(`Please refine your vision statement.\n\n${result.feedback}\n\n${result.suggestions ? 'Suggestions:\n' + result.suggestions.join('\n') : ''}`);
+      }
     } catch (error) {
-      console.error('[Step3] Save error:', error);
-      alert('Failed to save.');
+      console.error('[Step4] Validation error:', error);
+      alert('Failed to validate statement. Please try again.');
     } finally {
-      setSaving(false);
+      setValidating(false);
     }
   }
 
-  async function goToNextStep() {
+  function userConfirmValidation() {
+    if (aiValidationResult?.passed) {
+      setValidationPassed(true);
+      alert('✓ Vision statement validated successfully!');
+    } else {
+      alert('Please validate with AI first.');
+    }
+  }
+
+  async function exportCard() {
+    if (!cardRef.current) return;
+
+    try {
+      setExporting(true);
+
+      // Dynamic import to reduce bundle size
+      const htmlToImage = await import('html-to-image');
+
+      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+        quality: 1.0,
+        pixelRatio: 2
+      });
+
+      // Download
+      const link = document.createElement('a');
+      link.download = `vision-card-${new Date().getTime()}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      alert('Vision card downloaded successfully!');
+    } catch (error) {
+      console.error('[Step4] Export error:', error);
+      alert('Failed to export vision card.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function completeModule() {
     if (!session) return;
 
-    if (!customStatement.trim()) {
-      alert('Please write your vision statement.');
+    if (!validationPassed) {
+      alert('Please validate your vision statement first.');
+      return;
+    }
+
+    if (!selectedTemplateId) {
+      alert('Please select a vision card template.');
       return;
     }
 
@@ -253,22 +217,66 @@ export default function VisionStep3() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_step: 4,
-          draft_versions: draftVersions,
-          final_statement: customStatement.trim(),
-          statement_style: selectedStyle
+          final_statement: finalStatement.trim(),
+          selected_template_id: selectedTemplateId,
+          is_completed: true
         })
       });
 
       if (!response.ok) throw new Error('Save failed');
 
-      router.push('/discover/vision/step4');
+      alert('🎉 Vision Statement module completed!');
+
+      // Redirect to SWOT analysis (or dashboard)
+      router.push('/dashboard'); // TODO: Change to SWOT module when ready
     } catch (error) {
-      console.error('[Step3] Next step error:', error);
-      alert('Failed to proceed to next step.');
+      console.error('[Step4] Complete error:', error);
+      alert('Failed to complete module.');
     } finally {
       setSaving(false);
     }
   }
+
+  async function startNewSession() {
+    if (!confirm('Are you sure you want to start a new vision statement? Your current work will be saved as a completed session.')) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // First, complete current session if not already completed
+      if (!session?.is_completed) {
+        await fetch('/api/discover/vision/session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            current_step: 4,
+            final_statement: finalStatement.trim(),
+            selected_template_id: selectedTemplateId,
+            is_completed: true
+          })
+        });
+      }
+
+      // Create new session by resetting to step 1
+      const response = await fetch('/api/discover/vision/session', {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to reset session');
+
+      alert('✓ New session started! Redirecting to Step 1...');
+      router.push('/discover/vision/step1');
+    } catch (error) {
+      console.error('[Step4] New session error:', error);
+      alert('Failed to start new session.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
   if (loading) {
     return (
@@ -300,14 +308,14 @@ export default function VisionStep3() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/discover/vision/step2')}
+            onClick={() => router.push('/discover/vision/step3')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
             Previous Step
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 3: Draft Vision Statement</h1>
-          <p className="text-gray-600">Generate vision statements in three styles and refine them with AI.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Step 3: Compose & Visualize</h1>
+          <p className="text-gray-600">Finalize your 6-word vision statement and create your vision card.</p>
         </div>
 
         {/* Progress */}
@@ -315,178 +323,287 @@ export default function VisionStep3() {
           <StepProgress currentStep={3} />
         </div>
 
-        {/* Main Content - 3 Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-          {/* Left Column - Core Aspirations Summary */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Core Aspirations</h2>
-              <div className="space-y-3">
-                {session.core_aspirations?.map((aspiration, index) => (
-                  <div key={index} className="p-3 bg-purple-50 rounded-lg">
-                    <h3 className="font-medium text-purple-900 text-sm">{aspiration.keyword}</h3>
-                    <p className="text-xs text-purple-600 mt-1">{aspiration.reason}</p>
+        {/* Main Content - 2 Column Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Column - Validation & First Action */}
+          <div className="space-y-6">
+            {/* Final Statement */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Final Vision Statement</h2>
+
+              <textarea
+                value={finalStatement}
+                onChange={(e) => {
+                  setFinalStatement(e.target.value);
+                  setValidationPassed(false); // Reset validation
+                  setAiValidationResult(null); // Reset AI result
+                }}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                placeholder="Enter your final vision statement..."
+              />
+
+              {/* Word Counter */}
+              <div className="flex items-center justify-between mt-2 mb-4">
+                <span className={`text-sm font-medium ${isWithinWordLimit ? 'text-gray-600' : 'text-red-600'}`}>
+                  {wordCount} / 6 words
+                </span>
+                {wordCount > 6 && (
+                  <span className="text-red-600 text-sm font-medium">
+                    ⚠ Please reduce to 6 words or less
+                  </span>
+                )}
+                {wordCount > 0 && isWithinWordLimit && (
+                  <span className="text-green-600 text-sm font-medium">
+                    ✓ Within word limit
+                  </span>
+                )}
+              </div>
+
+              {/* AI Validation Result */}
+              {aiValidationResult && (
+                <div className={`mb-4 p-4 rounded-lg ${aiValidationResult.passed ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                  <h4 className={`font-semibold text-sm mb-2 ${aiValidationResult.passed ? 'text-green-900' : 'text-yellow-900'}`}>
+                    {aiValidationResult.passed ? '✓ AI Validation Passed' : '⚠ AI Suggestions'}
+                  </h4>
+                  <p className={`text-sm mb-2 ${aiValidationResult.passed ? 'text-green-700' : 'text-yellow-700'}`}>
+                    {aiValidationResult.feedback}
+                  </p>
+                  {aiValidationResult.suggestions && aiValidationResult.suggestions.length > 0 && (
+                    <ul className="text-sm text-yellow-700 space-y-1 mt-2">
+                      {aiValidationResult.suggestions.map((suggestion, index) => (
+                        <li key={index}>• {suggestion}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={validateStatement}
+                  disabled={!finalStatement.trim() || validating}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {validating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      AI Validate
+                    </>
+                  )}
+                </button>
+
+                {aiValidationResult?.passed && !validationPassed && (
+                  <button
+                    onClick={userConfirmValidation}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <Check className="w-4 h-4" />
+                    Confirm & Accept
+                  </button>
+                )}
+
+                {validationPassed && (
+                  <span className="text-green-600 font-medium text-sm flex items-center gap-1">
+                    <Check className="w-5 h-5" />
+                    Validated
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-medium text-purple-900 text-sm mb-2">Validation Criteria</h3>
+                <ul className="text-xs text-purple-700 space-y-1">
+                  <li>✓ Concise: 6 words or less</li>
+                  <li>✓ Clear: Meaning is clear and easy to understand</li>
+                  <li>✓ Inspiring: Has the power to move me into action</li>
+                  <li>✓ Unique: My own distinctive expression</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* First Action Item */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">First Action Item</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                What small action can you start today to realize your vision?
+              </p>
+
+              <textarea
+                value={firstAction}
+                onChange={(e) => setFirstAction(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                placeholder="e.g., Study related field for 30 minutes daily"
+              />
+            </div>
+
+            {/* AI Timeline Connection */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Past-Present-Future Connection</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Explore how your vision connects to your past, present, and future through AI conversation.
+              </p>
+
+              <AIChatBox
+                step={4}
+                context={{
+                  ...context,
+                  futureImagery: session.future_imagery,
+                  coreAspirations: session.core_aspirations,
+                  finalStatement: finalStatement
+                }}
+                onResponseComplete={(response) => console.log('[Step4] Timeline reflection:', response)}
+                placeholder="Connect your vision to your story..."
+                initialMessage="Please explain how my vision statement connects to my past experiences, present strengths, and future aspirations."
+              />
+            </div>
+          </div>
+
+          {/* Right Column - Vision Card */}
+          <div className="space-y-6">
+            {/* Template Selection */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Vision Card Template</h2>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {templates.map(template => (
+                  <div
+                    key={template.id}
+                    onClick={() => setSelectedTemplateId(template.id)}
+                    className={`p-4 rounded-lg cursor-pointer transition-all border-2 ${
+                      selectedTemplateId === template.id
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={{
+                      background: template.design_config.background
+                    }}
+                  >
+                    <p className="text-sm font-medium" style={{ color: template.design_config.textColor }}>
+                      {template.name}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <ValuesSummary values={context.values} mode="compact" />
-          </div>
-
-          {/* Middle Column - Draft Generation & Editing */}
-          <div className="lg:col-span-6">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            {/* Vision Card Preview */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Generate Vision Statement</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Vision Card Preview</h2>
                 <button
-                  onClick={generateDrafts}
-                  disabled={generating}
+                  onClick={exportCard}
+                  disabled={exporting || !selectedTemplateId}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {generating ? (
+                  {exporting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
+                      Exporting...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4" />
-                      AI Generate
+                      <Download className="w-4 h-4" />
+                      Download PNG
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Three Style Drafts */}
-              <div className="space-y-4 mb-6">
-                {(Object.keys(STYLE_INFO) as VisionStyle[]).map(style => (
-                  <div
-                    key={style}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedStyle === style
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => generatedDrafts[style] && selectDraft(style, generatedDrafts[style])}
+              {/* Card */}
+              <div
+                ref={cardRef}
+                className="w-full aspect-[4/3] rounded-xl shadow-2xl flex flex-col items-center justify-center p-8 text-center"
+                style={{
+                  background: selectedTemplate?.design_config.background || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  fontFamily: selectedTemplate?.design_config.fontFamily || 'inherit'
+                }}
+              >
+                <div className="mb-6">
+                  <Sparkles
+                    className="w-12 h-12 mx-auto mb-4"
+                    style={{ color: selectedTemplate?.design_config.accentColor || '#fbbf24' }}
+                  />
+                  <h3
+                    className="text-sm font-medium tracking-wider uppercase mb-2"
+                    style={{ color: selectedTemplate?.design_config.textColor || '#ffffff' }}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{STYLE_INFO[style].label}</h3>
-                        <p className="text-xs text-gray-500">{STYLE_INFO[style].description}</p>
-                      </div>
-                      {selectedStyle === style && (
-                        <span className="text-purple-600 text-sm font-medium">✓ Selected</span>
-                      )}
-                    </div>
-                    {generatedDrafts[style] ? (
-                      <p className="text-sm text-gray-700 italic mt-2">"{generatedDrafts[style]}"</p>
-                    ) : (
-                      <p className="text-xs text-gray-400 mt-2">{STYLE_INFO[style].example}</p>
-                    )}
-                  </div>
+                    My Vision
+                  </h3>
+                </div>
+
+                <p
+                  className="text-2xl font-bold leading-relaxed max-w-lg"
+                  style={{ color: selectedTemplate?.design_config.textColor || '#ffffff' }}
+                >
+                  {finalStatement || 'Your vision statement will appear here'}
+                </p>
+
+                <div className="mt-8">
+                  <div
+                    className="h-1 w-16 mx-auto rounded-full mb-4"
+                    style={{ background: selectedTemplate?.design_config.accentColor || '#fbbf24' }}
+                  />
+                  <p
+                    className="text-sm opacity-90"
+                    style={{ color: selectedTemplate?.design_config.textColor || '#ffffff' }}
+                  >
+                    {new Date().getFullYear()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Core Aspirations Summary */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Core Aspirations</h3>
+              <div className="flex flex-wrap gap-2">
+                {session.core_aspirations?.map((aspiration, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                  >
+                    {aspiration.keyword}
+                  </span>
                 ))}
               </div>
-
-              {/* Custom Editing Area */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Edit and Write Vision Statement
-                </label>
-                <textarea
-                  value={customStatement}
-                  onChange={(e) => setCustomStatement(e.target.value)}
-                  placeholder="Select an AI-generated statement or write your own..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Write a concise, clear, and inspiring sentence.
-                </p>
-              </div>
-
-              <button
-                onClick={saveDraftVersion}
-                disabled={!customStatement.trim()}
-                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
-              >
-                Save Current Version
-              </button>
-            </div>
-
-            {/* AI Chat for Refinement */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Refine with AI</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Chat with AI to refine your vision statement and find better expressions.
-              </p>
-
-              <AIChatBox
-                step={3}
-                context={{
-                  ...context,
-                  futureImagery: session.future_imagery,
-                  coreAspirations: session.core_aspirations,
-                  currentDraft: customStatement
-                }}
-                onResponseComplete={(response) => console.log('[Step3] AI refinement:', response)}
-                placeholder="Ask for feedback on your vision statement..."
-              />
-            </div>
-          </div>
-
-          {/* Right Column - Draft History */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Saved Drafts</h2>
-
-              {draftVersions.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  <p>No saved drafts yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {draftVersions.map((draft, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
-                      onClick={() => setCustomStatement(draft.text)}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-purple-600">
-                          {STYLE_INFO[draft.style as VisionStyle]?.label || 'Custom'}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(draft.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 italic">"{draft.text}"</p>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
-            onClick={saveProgress}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            onClick={completeModule}
+            disabled={saving || !validationPassed || !selectedTemplateId}
+            className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            Save
+            {saving ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Check className="w-6 h-6" />
+                Complete Vision Statement
+              </>
+            )}
           </button>
 
           <button
-            onClick={goToNextStep}
-            disabled={saving || !customStatement.trim()}
-            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={startNewSession}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-4 bg-white text-purple-600 text-lg font-semibold rounded-xl hover:bg-purple-50 border-2 border-purple-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            Next Step
-            <ArrowRight className="w-5 h-5" />
+            <RefreshCw className="w-5 h-5" />
+            Start New Session
           </button>
         </div>
       </div>

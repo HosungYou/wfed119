@@ -13,6 +13,7 @@ interface AIChatBoxProps {
   step: number;
   context: any;
   onResponseComplete?: (response: string) => void;
+  onDraftSuggested?: (draft: string) => void;
   placeholder?: string;
   initialMessage?: string;
 }
@@ -21,6 +22,7 @@ export default function AIChatBox({
   step,
   context,
   onResponseComplete,
+  onDraftSuggested,
   placeholder = "Type your message...",
   initialMessage
 }: AIChatBoxProps) {
@@ -28,6 +30,7 @@ export default function AIChatBox({
   const [inputValue, setInputValue] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [currentDraft, setCurrentDraft] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const initialMessageSentRef = useRef(false);
@@ -103,6 +106,13 @@ export default function AIChatBox({
               timestamp: new Date()
             };
             setMessages(prev => [...prev, aiMessage]);
+
+            // Draft 감지
+            const draft = extractDraft(accumulatedContent);
+            if (draft) {
+              setCurrentDraft(draft);
+            }
+
             onResponseComplete?.(accumulatedContent);
           }
 
@@ -125,6 +135,32 @@ export default function AIChatBox({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
+
+  // Draft 추출 함수
+  const extractDraft = (content: string): string | null => {
+    const draftStartMarker = '📝 DRAFT_START';
+    const draftEndMarker = 'DRAFT_END';
+
+    const startIndex = content.indexOf(draftStartMarker);
+    const endIndex = content.indexOf(draftEndMarker);
+
+    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+      const draft = content
+        .substring(startIndex + draftStartMarker.length, endIndex)
+        .trim();
+      return draft;
+    }
+
+    return null;
+  };
+
+  // Draft 수락 핸들러
+  const acceptDraft = () => {
+    if (currentDraft && onDraftSuggested) {
+      onDraftSuggested(currentDraft);
+      alert('✓ Draft has been added to Free Writing Area!');
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isStreaming) return;
@@ -193,6 +229,12 @@ export default function AIChatBox({
                 setMessages(prev => [...prev, assistantMessage]);
                 setStreamingContent('');
                 setIsStreaming(false);
+
+                // Draft 감지
+                const draft = extractDraft(fullResponse);
+                if (draft) {
+                  setCurrentDraft(draft);
+                }
 
                 // 콜백 호출
                 if (onResponseComplete) {
@@ -278,6 +320,31 @@ export default function AIChatBox({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Draft Acceptance Banner */}
+      {currentDraft && (
+        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <h4 className="font-semibold text-green-900 mb-2">
+                📝 AI has prepared a draft for you!
+              </h4>
+              <p className="text-sm text-green-700 mb-3">
+                Click "Accept Draft" to add it to your Free Writing Area below. You can edit it afterwards.
+              </p>
+              <div className="bg-white p-3 rounded-lg border border-green-200 text-sm text-gray-700 mb-3">
+                {currentDraft}
+              </div>
+              <button
+                onClick={acceptDraft}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                ✓ Accept Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">

@@ -135,6 +135,12 @@ export default function VisionStep1() {
     console.log('[Step 1] AI response received:', response.substring(0, 100) + '...');
   };
 
+  const handleDraftSuggested = (draft: string) => {
+    // Draft를 Free Writing Area에 입력
+    setFutureImagery(draft);
+    console.log('[Step 1] Draft accepted:', draft);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -287,6 +293,7 @@ Share freely what comes to mind!`;
               step={1}
               context={context}
               onResponseComplete={handleAIResponse}
+              onDraftSuggested={handleDraftSuggested}
               placeholder="Chat with AI to imagine your future..."
               initialMessage={initialMessage}
             />

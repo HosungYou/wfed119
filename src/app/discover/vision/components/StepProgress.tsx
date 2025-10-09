@@ -20,21 +20,15 @@ const STEPS: Step[] = [
   },
   {
     number: 2,
-    title: 'Core Aspirations',
-    description: 'Discover what you truly want',
+    title: 'Brainstorm Vision',
+    description: 'Create 6-word vision statements',
     path: '/discover/vision/step2'
   },
   {
     number: 3,
-    title: 'Draft Vision',
-    description: 'Craft your one-sentence vision',
+    title: 'Compose & Visualize',
+    description: 'Finalize and create vision card',
     path: '/discover/vision/step3'
-  },
-  {
-    number: 4,
-    title: 'Finalize & Visualize',
-    description: 'Create your vision card',
-    path: '/discover/vision/step4'
   }
 ];
 

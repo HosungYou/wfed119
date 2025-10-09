@@ -101,7 +101,12 @@ export async function PATCH(req: NextRequest) {
       final_statement,
       statement_style,
       selected_template_id,
-      is_completed
+      is_completed,
+      time_horizon,
+      time_horizon_type,
+      primary_aspiration,
+      magnitude_of_impact,
+      professional_focus_validated
     } = body;
 
     // 2. 업데이트할 필드 준비
@@ -117,6 +122,11 @@ export async function PATCH(req: NextRequest) {
     if (final_statement !== undefined) updateData.final_statement = final_statement;
     if (statement_style !== undefined) updateData.statement_style = statement_style;
     if (selected_template_id !== undefined) updateData.selected_template_id = selected_template_id;
+    if (time_horizon !== undefined) updateData.time_horizon = time_horizon;
+    if (time_horizon_type !== undefined) updateData.time_horizon_type = time_horizon_type;
+    if (primary_aspiration !== undefined) updateData.primary_aspiration = primary_aspiration;
+    if (magnitude_of_impact !== undefined) updateData.magnitude_of_impact = magnitude_of_impact;
+    if (professional_focus_validated !== undefined) updateData.professional_focus_validated = professional_focus_validated;
     if (is_completed !== undefined) {
       updateData.is_completed = is_completed;
       if (is_completed) {

@@ -307,7 +307,7 @@ export default function VisionStep2() {
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Select 3-5 core aspirations. (Current: {selectedAspirations.size}개)
+                Select 3-5 core aspirations. (Current: {selectedAspirations.size})
               </p>
 
               {aspirations.length === 0 ? (

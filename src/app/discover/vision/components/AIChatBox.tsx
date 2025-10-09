@@ -32,94 +32,21 @@ export default function AIChatBox({
   const abortControllerRef = useRef<AbortController | null>(null);
   const initialMessageSentRef = useRef(false);
 
-  // Auto-send initial message and get AI response
+  // Display initial message (but don't auto-send to AI)
   useEffect(() => {
     if (initialMessage && messages.length === 0 && !initialMessageSentRef.current) {
       initialMessageSentRef.current = true;
 
-      // Add user's initial message
-      const userMessage: Message = {
-        role: 'user',
+      // Add AI's initial greeting message (not user message)
+      const aiMessage: Message = {
+        role: 'assistant',
         content: initialMessage,
         timestamp: new Date()
       };
 
-      setMessages([userMessage]);
-      setIsStreaming(true);
-      setStreamingContent('');
-
-      // Auto-send to AI
-      const sendInitialMessage = async () => {
-        try {
-          abortControllerRef.current = new AbortController();
-
-          const response = await fetch('/api/discover/vision/ai-chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              step,
-              userMessage: initialMessage,
-              conversationHistory: [],
-              context
-            }),
-            signal: abortControllerRef.current.signal
-          });
-
-          if (!response.ok) throw new Error('AI response failed');
-
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-          let accumulatedContent = '';
-
-          while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.type === 'text') {
-                    accumulatedContent += data.content;
-                    setStreamingContent(accumulatedContent);
-                  }
-                } catch (e) {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-
-          // Finalize AI response
-          if (accumulatedContent) {
-            const aiMessage: Message = {
-              role: 'assistant',
-              content: accumulatedContent,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMessage]);
-            onResponseComplete?.(accumulatedContent);
-          }
-
-          setIsStreaming(false);
-          setStreamingContent('');
-        } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.error('[AI Chat] Auto-send error:', error);
-          }
-          setIsStreaming(false);
-          setStreamingContent('');
-        }
-      };
-
-      sendInitialMessage();
+      setMessages([aiMessage]);
     }
-  }, [initialMessage, step, context, onResponseComplete]);
+  }, [initialMessage]);
 
   // 자동 스크롤
   useEffect(() => {
@@ -345,9 +272,10 @@ function MessageBubble({ message }: { message: Message }) {
           {message.content}
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          {message.timestamp.toLocaleTimeString('ko-KR', {
+          {message.timestamp.toLocaleTimeString('en-US', {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: true
           })}
         </div>
       </div>

@@ -237,24 +237,7 @@ export default function VisionStep2() {
               context={context}
               onResponseComplete={handleAIResponse}
               placeholder="Ask AI to generate 6-word vision options..."
-              initialMessage={`I've read your future vision story! Let me help you create a powerful 6-word vision statement.
-
-Looking at your vision, I can see some great elements. Now let me ask a few clarifying questions:
-
-1. **Impact Magnitude**: I see you mentioned impact on people/communities. Can you be more specific about the scale? For example:
-   - How many people? (e.g., "10,000", "1 million", "10 million")
-   - Or use descriptors like "thousands", "millions", "global communities"
-
-2. **Scope**: Is this impact:
-   - Global (worldwide)
-   - National (specific country)
-   - Local/Regional (specific area)
-   - Or focused on specific groups (e.g., "underserved communities", "youth", "educators")
-
-3. **Core Action**: What's the primary verb that describes what you do?
-   - Transform, Empower, Create, Inspire, Connect, Build, Enable, Lead?
-
-Please share your thoughts on these, and I'll generate 3-5 powerful 6-word vision options for you!`}
+              initialMessage="I've read your future vision story from Step 1! Based on what you wrote, I'll help you distill it into a powerful 6-word vision statement. Let me analyze your story and create some options for you. Just say 'ready' when you want me to generate the vision statements!"
             />
           </div>
 

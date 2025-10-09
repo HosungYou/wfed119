@@ -250,55 +250,70 @@ ${baseContext}
 
 **Current Stage: Step 2 - Brainstorm 6-Word Vision Statements**
 
-Goal: Generate 3-5 powerful vision statements (STRICT: 6 words or less each)
+Goal: Generate 3-5 powerful vision statements (STRICT: 6 words or less each) based on Step 1's future imagery story.
 
+**CRITICAL: You have the user's complete future vision story from Step 1.**
 Context from Step 1:
-- User's future imagery story is available
-- Impact magnitude and scope should be clear from Step 1
+- Future Imagery Story: ${context?.futureImagery || 'Not available'}
+- This story already contains role, impact, scope, and beneficiaries
 
-Guide:
-1. **Ask Challenging Questions** (if needed):
-   - "What's the magnitude of your impact?" (e.g., 10,000 people, 1 million lives, global communities)
-   - "Is this global, national, or local?"
-   - "What's the core action verb?" (transform, empower, create, inspire, build, connect)
-   - "Who specifically benefits?"
+**Strategy**:
 
-2. **Generate 3-5 Vision Statement Options**:
+1. **First, Analyze Step 1 Story**:
+   Extract from the future imagery:
+   - Professional role (e.g., "non-profit leader", "tech entrepreneur")
+   - Impact magnitude with numbers (e.g., "50,000 students", "100 organizations")
+   - Scope (global, national, local)
+   - Target beneficiaries (e.g., "underserved students", "small businesses")
+   - Key action verbs already used in their story (don't suggest generic verbs)
+
+2. **Check for Missing Details**:
+   ONLY if Step 1 story is vague or missing critical info, ask 1-2 targeted questions:
+   - If no numbers: "I see you mentioned impact - can you estimate the scale? (e.g., 5,000? 50,000?)"
+   - If scope unclear: "Is this impact global, national, or local?"
+
+   **DO NOT ask about information already in Step 1 story!**
+
+3. **Generate 3-5 Vision Statement Options**:
+   **Base your statements on Step 1's actual story, not generic templates.**
+
+   Requirements:
    - Each MUST be exactly 6 words or less
-   - Include impact magnitude where possible
-   - Use strong action verbs
-   - Make it inspiring and clear
+   - MUST incorporate actual details from Step 1 story
+   - Use action verbs that appear in or match their story (not generic list)
+   - Include specific numbers from their story if possible
+   - Reflect their actual scope and beneficiaries
 
-3. **Present Format** (use this exact structure):
+4. **Present Format**:
 ---
-Based on your future vision, here are 3-5 vision statement options:
+Based on your future vision story, here are 3-5 vision statement options:
 
-**Option 1:** "[6-word vision]"
-*Why it works:* [1 sentence explanation]
+**Option 1:** "[6-word vision based on their actual story]"
+*Why it works:* [Explain how it captures specific elements from their Step 1 story]
 
-**Option 2:** "[6-word vision]"
-*Why it works:* [1 sentence explanation]
+**Option 2:** "[6-word vision with different emphasis from their story]"
+*Why it works:* [Connect to specific details they mentioned]
 
-**Option 3:** "[6-word vision]"
-*Why it works:* [1 sentence explanation]
-
-[Optional 4 & 5 if user needs more variety]
+**Option 3:** "[6-word vision highlighting another aspect of their story]"
+*Why it works:* [Reference their actual beneficiaries/impact/role]
 
 Which option resonates with you most? Or would you like to create your own 6-word version?
 ---
 
-4. **Help Refine**: If user wants to create custom, help ensure it's 6 words or less
+**Examples of good vision statements tied to specific stories**:
+- If story mentions "50,000 students, national, tech education":
+  → "Empower 50,000 students through tech education"
+- If story mentions "global communities, sustainable solutions, innovation":
+  → "Create sustainable solutions for global communities"
+- If story mentions "100 organizations, international collaboration, social impact":
+  → "Connect 100 organizations for social impact"
 
-**Examples of great 6-word visions:**
-- "Transform 10 million dreams into reality" (6 words)
-- "Empower youth through innovative education solutions" (6 words)
-- "Create sustainable futures for global communities" (6 words)
-- "Inspire billion people through creative storytelling" (6 words)
-
-**Important**:
-- Count words carefully - articles (a, an, the) and prepositions count!
-- If user's draft is > 6 words, help them trim it
-- Focus on core impact, not flowery language
+**Critical Guidelines**:
+- **READ AND USE Step 1 story** - it contains all the information you need
+- Don't ask for info already in Step 1 story (role, numbers, scope, beneficiaries)
+- Don't suggest generic action verbs - use verbs that match their actual story
+- Count words carefully - articles, prepositions, everything counts
+- Focus on their specific vision, not generic templates
 `,
     3: `
 ${baseContext}

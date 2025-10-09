@@ -86,6 +86,25 @@ export default function VisionModuleLanding() {
   const canProceed = moduleProgress?.values.completed && moduleProgress?.strengths.completed;
   const hasStartedVision = (moduleProgress?.vision.currentStep || 0) > 0;
 
+  async function startNewSession() {
+    if (!confirm('Are you sure you want to start a new vision session? This will reset your current progress.')) {
+      return;
+    }
+
+    try {
+      // Reset vision session
+      await fetch('/api/discover/vision/session', {
+        method: 'DELETE'
+      });
+
+      alert('Session reset successfully! Starting fresh.');
+      router.push('/discover/vision/time-horizon');
+    } catch (error) {
+      console.error('[Vision Landing] Error resetting session:', error);
+      alert('Failed to reset session. Please try again.');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
       <div className="max-w-4xl mx-auto py-8">
@@ -319,6 +338,16 @@ export default function VisionModuleLanding() {
               Back to Home
             </button>
           </div>
+
+          {/* Start New Session (only show if has started) */}
+          {hasStartedVision && (
+            <button
+              onClick={startNewSession}
+              className="w-full px-6 py-3 bg-white border-2 border-red-300 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
+            >
+              Start New Session
+            </button>
+          )}
         </div>
       </div>
     </div>

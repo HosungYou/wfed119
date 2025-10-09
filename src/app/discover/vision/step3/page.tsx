@@ -331,6 +331,23 @@ export default function VisionStep3() {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Final Vision Statement</h2>
 
+              {/* From Step 2 Info */}
+              {finalStatement && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded">
+                      From Step 2
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      You can refine it below ↓
+                    </span>
+                  </div>
+                  <p className="text-sm text-green-900">
+                    <strong>Your selected vision:</strong> "{finalStatement}"
+                  </p>
+                </div>
+              )}
+
               <textarea
                 value={finalStatement}
                 onChange={(e) => {

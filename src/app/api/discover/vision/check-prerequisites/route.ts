@@ -14,8 +14,9 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인 (개발 모드 지원)
-    const { data: { session } } = await supabase.auth.getSession();
-    const auth = checkDevAuth(session);
+    // Use getUser() for better security
+    const { data: { user } } = await supabase.auth.getUser();
+    const auth = checkDevAuth(user ? { user } : null);
 
     // 개발 모드에서는 선행조건 체크를 스킵하고 모두 완료로 처리
     if (auth.isDevelopmentMode) {
@@ -36,36 +37,36 @@ export async function GET(req: NextRequest) {
 
     const userId = auth.userId;
 
-    // 2. Values Discovery 완료 여부 확인
+    // 2. Values Discovery 완료 여부 확인 (올바른 테이블 이름)
     const { data: valuesData, error: valuesError } = await supabase
-      .from('value_assessment_results')
-      .select('id, is_completed')
+      .from('value_results')
+      .select('id')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (valuesError && valuesError.code !== 'PGRST116') {
       console.error('[Prerequisites Check] Values query error:', valuesError);
     }
 
-    const valuesCompleted = valuesData?.is_completed ?? false;
+    const valuesCompleted = !!valuesData;
 
     // 3. Strengths Discovery 완료 여부 확인
+    // Assuming strength_profiles table exists
     const { data: strengthsData, error: strengthsError } = await supabase
-      .from('user_assessments')
-      .select('id, completion_status')
+      .from('strength_profiles')
+      .select('id')
       .eq('user_id', userId)
-      .eq('completion_status', 'completed')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (strengthsError && strengthsError.code !== 'PGRST116') {
       console.error('[Prerequisites Check] Strengths query error:', strengthsError);
     }
 
-    const strengthsCompleted = strengthsData?.completion_status === 'completed';
+    const strengthsCompleted = !!strengthsData;
 
     // 4. 응답 반환
     return NextResponse.json({

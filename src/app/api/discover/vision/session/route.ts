@@ -13,8 +13,10 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    const { data: { session } } = await supabase.auth.getSession();
-    const auth = checkDevAuth(session);
+    // Use getUser() for better security instead of getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -31,14 +33,14 @@ export async function GET(req: NextRequest) {
 
     // 3. 없으면 새로 생성
     if (visionError && visionError.code === 'PGRST116') {
-      // 선행 조건 데이터 가져오기
+      // 선행 조건 데이터 가져오기 (올바른 테이블 이름 사용)
       const { data: valuesData } = await supabase
-        .from('value_assessment_results')
-        .select('id, layout, insights')
+        .from('value_results')
+        .select('id, layout')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const { data: newVision, error: createError } = await supabase
         .from('vision_statements')
@@ -84,8 +86,9 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    const { data: { session } } = await supabase.auth.getSession();
-    const auth = checkDevAuth(session);
+    // Use getUser() for better security
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

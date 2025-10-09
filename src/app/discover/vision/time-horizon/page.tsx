@@ -6,11 +6,39 @@ import { Loader2, ArrowRight, Calendar, Clock } from 'lucide-react';
 
 export default function TimeHorizonSelection() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [horizonType, setHorizonType] = useState<'years_from_now' | 'specific_age'>('years_from_now');
   const [yearsFromNow, setYearsFromNow] = useState(10);
   const [specificAge, setSpecificAge] = useState(65);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  async function checkAuth() {
+    try {
+      // Test if we can access the API
+      const response = await fetch('/api/discover/vision/session');
+
+      if (response.status === 401) {
+        console.log('[Time Horizon] Not authenticated, redirecting to login...');
+        router.push('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to check authentication');
+      }
+
+      console.log('[Time Horizon] Authentication check passed');
+      setLoading(false);
+    } catch (error) {
+      console.error('[Time Horizon] Auth check error:', error);
+      alert('Authentication error. Please log in.');
+      router.push('/login');
+    }
+  }
 
   async function handleContinue() {
     setSaving(true);
@@ -55,6 +83,17 @@ export default function TimeHorizonSelection() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

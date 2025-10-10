@@ -197,7 +197,7 @@ export default function AIChatBox({
               AI
             </div>
             <div className="flex-1 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl rounded-tl-none p-4 border border-purple-200">
-              <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+              <div className="text-gray-900 whitespace-pre-wrap leading-relaxed">
                 {streamingContent}
                 <span className="inline-block w-2 h-4 ml-1 bg-purple-500 animate-pulse" />
               </div>
@@ -207,7 +207,7 @@ export default function AIChatBox({
 
         {/* Loading Indicator */}
         {isStreaming && !streamingContent && (
-          <div className="flex items-center gap-2 text-gray-500">
+          <div className="flex items-center gap-2 text-gray-700">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span className="text-sm">AI is thinking...</span>
           </div>
@@ -225,7 +225,7 @@ export default function AIChatBox({
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             disabled={isStreaming}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 placeholder:text-gray-400"
             rows={2}
           />
           {isStreaming ? (
@@ -246,7 +246,7 @@ export default function AIChatBox({
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-gray-600 mt-2">
           Shift + Enter for new line, Enter to send
         </p>
       </div>
@@ -278,10 +278,10 @@ function MessageBubble({ message }: { message: Message }) {
             : 'bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-tl-none'
         }`}
       >
-        <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+        <div className="text-gray-900 whitespace-pre-wrap leading-relaxed">
           {message.content}
         </div>
-        <div className="text-xs text-gray-500 mt-2">
+        <div className="text-xs text-gray-600 mt-2">
           {message.timestamp.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',

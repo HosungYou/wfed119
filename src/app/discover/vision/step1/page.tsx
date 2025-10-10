@@ -347,12 +347,12 @@ Share freely what comes to mind!`;
               {futureImagery ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">
                       {futureImagery}
                     </p>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-600">
                       {futureImagery.length} characters
                     </span>
                     <div className="flex gap-2">
@@ -379,7 +379,7 @@ Share freely what comes to mind!`;
                 </div>
               ) : (
                 <div className="p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-600 text-sm">
                     Continue chatting with the AI coach. When ready, the AI will generate your future vision story here.
                   </p>
                 </div>

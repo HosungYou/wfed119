@@ -21,12 +21,13 @@ body {
   line-height: 1.6;
 }
 
-@media (prefers-color-scheme: dark) {
+/* Dark mode disabled - keep light theme always */
+/* @media (prefers-color-scheme: dark) {
   body {
     color: #ededed;
     background: #0a0a0a;
   }
-}
+} */
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;

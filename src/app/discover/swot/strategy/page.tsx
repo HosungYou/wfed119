@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, TrendingUp, Plus, X, Sparkles } from 'lucide-react';
+import { Loader2, ArrowRight, TrendingUp, Plus, X, Sparkles, RefreshCw, Edit2, Save } from 'lucide-react';
+import { StepProgress } from '../components/StepProgress';
 
 interface SWOTItem {
   id: string;
@@ -26,6 +27,7 @@ interface StrategyData {
 export default function StrategyDevelopmentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [swotItems, setSwotItems] = useState<{
     strengths: SWOTItem[];
@@ -127,17 +129,35 @@ export default function StrategyDevelopmentPage() {
     }));
   }
 
-  async function handleAISuggest(type: 'so' | 'wo' | 'st' | 'wt') {
-    setAiSuggesting(true);
+  async function generateAllStrategies() {
+    setGenerating(true);
     try {
-      // AI suggestion would go here
-      // For now, we'll just show a placeholder
-      alert('AI suggestion feature will be implemented in Phase 2. For now, please manually enter your strategies.');
+      const res = await fetch('/api/swot/generate-strategies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          strengths: swotItems.strengths,
+          weaknesses: swotItems.weaknesses,
+          opportunities: swotItems.opportunities,
+          threats: swotItems.threats
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to generate');
+
+      const data = await res.json();
+      setStrategies(data.strategies);
     } catch (error) {
-      console.error('[Strategy] AI suggestion error:', error);
+      console.error('[Strategy] Error generating:', error);
+      alert('Failed to generate strategies. Please try again.');
     } finally {
-      setAiSuggesting(false);
+      setGenerating(false);
     }
+  }
+
+  async function handleAISuggest(type: 'so' | 'wo' | 'st' | 'wt') {
+    // Individual suggestion - use full generation for now
+    await generateAllStrategies();
   }
 
   async function handleSaveAndContinue() {
@@ -182,11 +202,11 @@ export default function StrategyDevelopmentPage() {
           st_strategies: strategies.st_strategies,
           wt_strategies: strategies.wt_strategies,
           strategy_priorities: strategyPriorities,
-          current_stage: 'goals'
+          current_stage: 'prioritization'
         })
       });
 
-      router.push('/discover/swot/goals');
+      router.push('/discover/swot/prioritization');
     } catch (error) {
       console.error('[Strategy] Error saving:', error);
       alert('Failed to save strategies. Please try again.');
@@ -212,9 +232,44 @@ export default function StrategyDevelopmentPage() {
     strategies.st_strategies.length >= 4 &&
     strategies.wt_strategies.length >= 4;
 
+  const hasStrategies = strategies.so_strategies.length > 0 ||
+                        strategies.wo_strategies.length > 0 ||
+                        strategies.st_strategies.length > 0 ||
+                        strategies.wt_strategies.length > 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
+        <StepProgress currentStage="strategy" />
+
+        {/* AI Generation Prompt */}
+        {!hasStrategies && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg p-8 mb-8 text-center">
+            <Sparkles className="w-16 h-16 text-purple-600 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to Generate Strategies?</h3>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              AI will analyze your SWOT and create 16 strategic approaches (4 for each: SO, WO, ST, WT)
+            </p>
+            <button
+              onClick={generateAllStrategies}
+              disabled={generating}
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Generating Strategies...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Generate Strategies with AI
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
@@ -357,7 +412,7 @@ export default function StrategyDevelopmentPage() {
               </>
             ) : (
               <>
-                Continue to Goals
+                Continue to Prioritization
                 <ArrowRight className="ml-2 w-5 h-5" />
               </>
             )}

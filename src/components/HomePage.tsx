@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb } from 'lucide-react';
+import { Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart, Lightbulb, ShieldAlert } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   return (
@@ -87,7 +87,7 @@ export const HomePage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
             {/* Enneagram Module */}
             <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-purple-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
               <div className="flex items-start justify-between mb-4">
@@ -231,6 +231,43 @@ export const HomePage: React.FC = () => {
 
               <div className="mt-3 text-center">
                 <span className="text-sm text-gray-700">⏱️ 10-15 minutes</span>
+              </div>
+            </div>
+
+            {/* SWOT Analysis Module */}
+            <div className="group bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-red-200 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ShieldAlert className="w-7 h-7 text-white" />
+                </div>
+                <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">Strategic</span>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors">
+                SWOT Analysis
+              </h4>
+
+              <p className="text-gray-700 mb-4 leading-relaxed text-sm">
+                Analyze your Strengths, Weaknesses, Opportunities, and Threats. Develop strategic goals and
+                actionable plans for personal and professional growth.
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Strategic Planning</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Goal Setting</span>
+                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm">Action Plans</span>
+              </div>
+
+              <Link
+                href="/discover/swot"
+                className="w-full bg-gradient-to-r from-red-500 to-orange-600 text-white py-3 px-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <span>Start SWOT Analysis</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <div className="mt-3 text-center">
+                <span className="text-sm text-gray-700">⏱️ 30-40 minutes</span>
               </div>
             </div>
           </div>

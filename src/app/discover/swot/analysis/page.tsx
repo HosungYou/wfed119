@@ -119,7 +119,14 @@ export default function SWOTAnalysisPage() {
   }
 
   function addItem(category: 'strengths' | 'weaknesses' | 'opportunities' | 'threats') {
-    const inputKey = category.slice(0, -1) as keyof typeof newItems;
+    const inputKeyMap = {
+      strengths: 'strength',
+      weaknesses: 'weakness',
+      opportunities: 'opportunity',
+      threats: 'threat'
+    } as const;
+
+    const inputKey = inputKeyMap[category] as keyof typeof newItems;
     const text = newItems[inputKey].trim();
 
     if (!text) return;

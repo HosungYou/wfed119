@@ -43,23 +43,44 @@ export default function SWOTAnalysisPage() {
   async function loadSWOTData() {
     try {
       // Load existing SWOT session
-      const swotRes = await fetch('/api/swot/session');
-      const swotSession = await swotRes.json();
+      let swotSession: any = {};
+      try {
+        const swotRes = await fetch('/api/swot/session');
+        if (swotRes.ok) {
+          swotSession = await swotRes.json();
+        }
+      } catch (err) {
+        console.log('[SWOT] Could not load existing session:', err);
+      }
 
       // Load Vision statement if available
-      const visionRes = await fetch('/api/discover/vision/session');
-      const visionData = await visionRes.json();
+      let visionData: any = {};
+      try {
+        const visionRes = await fetch('/api/discover/vision/session');
+        if (visionRes.ok) {
+          visionData = await visionRes.json();
+        }
+      } catch (err) {
+        console.log('[SWOT] Could not load vision data:', err);
+      }
 
       // Load Strengths data
-      const strengthsRes = await fetch('/api/discover/strengths/results');
-      const strengthsData = await strengthsRes.json();
+      let strengthsData: any = {};
+      try {
+        const strengthsRes = await fetch('/api/discover/strengths/results');
+        if (strengthsRes.ok) {
+          strengthsData = await strengthsRes.json();
+        }
+      } catch (err) {
+        console.log('[SWOT] Could not load strengths data:', err);
+      }
 
       setSwotData({
-        visionOrGoal: swotSession.vision_or_goal || visionData.final_statement || '',
-        strengths: swotSession.strengths || [],
-        weaknesses: swotSession.weaknesses || [],
-        opportunities: swotSession.opportunities || [],
-        threats: swotSession.threats || []
+        visionOrGoal: swotSession?.vision_or_goal || visionData?.final_statement || '',
+        strengths: Array.isArray(swotSession?.strengths) ? swotSession.strengths : [],
+        weaknesses: Array.isArray(swotSession?.weaknesses) ? swotSession.weaknesses : [],
+        opportunities: Array.isArray(swotSession?.opportunities) ? swotSession.opportunities : [],
+        threats: Array.isArray(swotSession?.threats) ? swotSession.threats : []
       });
 
       setLoading(false);

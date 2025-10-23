@@ -4,11 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
-    "build:render": "prisma db push --schema=prisma/schema.postgres.prisma && prisma generate --schema=prisma/schema.postgres.prisma && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "node scripts/setup-prisma.js",
     "gp": "bash scripts/git-push.sh",
     "push": "bash scripts/git-push.sh",
     "watch:push": "bash scripts/auto-commit-push.sh",
@@ -17,7 +15,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",
     "@hello-pangea/dnd": "^18.0.1",
-    "@prisma/client": "^6.16.2",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.76.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -47,7 +46,6 @@
     "@eslint/eslintrc": "^3",
     "@types/d3": "^7.4.3",
     "eslint": "^9",
-    "eslint-config-next": "15.5.0",
-    "prisma": "^6.16.2"
+    "eslint-config-next": "15.5.0"
   }
 }

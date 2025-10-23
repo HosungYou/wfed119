@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '../../../../lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
     const { sessionId } = await req.json();
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
-    // Skip DB operations for now to enable deployment
-    // Return mock export data
+    const supabase = createServerSupabaseClient();
+
+    // TODO: Implement Enneagram export with Supabase
+    // This requires enneagram_sessions table implementation
     return NextResponse.json({
-      message: 'Enneagram export temporarily disabled for deployment',
-      sessionId,
-      mockData: true
+      message: 'Enneagram export - Supabase implementation pending',
+      sessionId
     });
 
     // const payload = {

@@ -5,7 +5,7 @@ An AI-powered career coaching assistant designed for WFED 119 (Career Planning a
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat&logo=Prisma&logoColor=white)](https://www.prisma.io/)
+[![Supabase](https://img.shields.io/badge/Supabase-181818?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 
 ## 📖 Overview
 
@@ -28,10 +28,49 @@ LifeCraft Bot is a conversational AI system built on the principles of **Socrati
 - **Interactive radar charts** displaying strength profiles
 - **Real-time data visualization** with Chart.js integration
 - **Categorized strength mapping**: Skills, Attitudes, Values
-- **Export functionality** for student portfolios
+
+### 🎯 Values Discovery System
+- **Interactive drag-and-drop interface** for values categorization
+- **Multiple value sets**: Terminal, Instrumental, and Work values
+- **Position-based scoring** and priority ranking
+- **Export functionality** for personal use
+
+## 👥 Collaborator Setup
+
+This project welcomes backend and database developers. Current collaborators have write access to contribute to database management and API development.
+
+### Quick Start for Collaborators
+```bash
+# Clone and setup
+git clone https://github.com/HosungYou/wfed119.git
+cd wfed119
+npm install
+
+# Setup environment (contact owner for Supabase credentials)
+cp .env.example .env.local
+# Add your Supabase credentials to .env.local
+
+# Start development
+npm run dev
+```
+
+### Available Collaborator Commands
+- `npm run setup:collaborator` - Complete environment setup
+- `npm run db:studio` - Open database management GUI
+- `npm run admin:setup` - Setup admin roles
+- `npm run db:reset` - Reset database (development only)
+
+**📋 See [COLLABORATOR_SETUP.md](COLLABORATOR_SETUP.md) for detailed instructions**
+
+### Current Team
+- **HosungYou** (Owner) - Project lead
+- **Cloudhoppr** - Backend developer
+- **AlrJohn** - Backend developer
+- **JohnAR17** - Backend developer
 
 ### 🎨 User Experience
-- **Responsive design** optimized for various devices  
+- **Responsive design** optimized for various devices
+- **Export functionality** for student portfolios  
 - **Intuitive conversation interface** with clear progression indicators
 - **Session persistence** to resume conversations
 - **Accessibility features** for inclusive design

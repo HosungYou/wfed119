@@ -1,0 +1,167 @@
+// Unified Prisma schema for Lifecraft bot (development)
+// Mirrors the production schema while retaining local-only models (Consent, EnneagramSession, ExportArtifact)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  currentStage  String   @default("initial")
+  userGoogleId  String?
+  userEmail     String?
+  userName      String?
+  conversations Conversation[]
+  strengths     Strength[]
+  completed     Boolean  @default(false)
+
+  @@index([userGoogleId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [sessionId])
+  role      String
+  content   String
+  timestamp DateTime @default(now())
+  metadata  Json?
+}
+
+model Strength {
+  id           String   @id @default(uuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [sessionId])
+  category     String
+  name         String
+  evidence     String
+  confidence   Float
+  createdAt    DateTime @default(now())
+  userGoogleId String?
+  userEmail    String?
+  userName     String?
+
+  @@index([sessionId, category])
+  @@index([userGoogleId])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id               String   @id @default(uuid())
+  googleId         String   @unique
+  email            String?  @unique
+  name             String?
+  image            String?
+  role             UserRole @default(USER)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  userSessions     UserSession[]
+  valueResults     ValueResult[]
+  auditLogs        AuditLog[]
+  strengthProfiles StrengthProfile[]
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId    String   @unique
+  sessionType  String   @default("general")
+  currentStage String   @default("initial")
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  startedAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  metadata     Json?
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  tableName String?
+  recordId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+model ValueResult {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [googleId], onDelete: Cascade)
+  valueSet      String
+  layout        Json
+  top3          Json
+  insights      Json?
+  moduleVersion String? @default("v1")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([userId, valueSet])
+}
+
+model StrengthProfile {
+  id         String   @id @default(uuid())
+  sessionKey String   @unique
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail  String?
+  strengths  Json
+  summary    String?
+  insights   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([userEmail])
+}
+
+model Consent {
+  id         String   @id @default(uuid())
+  sessionId  String   @unique
+  persist    Boolean  @default(false)
+  locale     String   @default("en")
+  createdAt  DateTime @default(now())
+}
+
+model EnneagramSession {
+  id           String   @id @default(uuid())
+  sessionId    String   @unique
+  stage        String
+  responses    Json
+  typeScores   Json
+  primaryType  String?
+  wingEstimate String?
+  instinct     String?
+  confidence   String?
+  aiEvidence   Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model ExportArtifact {
+  id        String   @id @default(uuid())
+  sessionId String
+  kind      String
+  content   Json
+  format    String
+  createdAt DateTime @default(now())
+}

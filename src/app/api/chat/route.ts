@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIService, SessionContext } from '@/lib/services/aiServiceClaude';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 const aiService = new AIService();
 
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, messages, stage, context } = await req.json();
-    
+
     // Validate required fields
     if (!sessionId || !messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -24,41 +24,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Skip database operations in production until Vercel DB is configured
-    if (process.env.NODE_ENV !== 'production') {
-      // Ensure session exists in database
-      let session = await prisma.session.findUnique({
-        where: { sessionId }
-      });
+    // Get supabase client
+    const supabase = createServerSupabaseClient();
 
-      if (!session) {
-        session = await prisma.session.create({
-          data: {
-            sessionId,
-            currentStage: stage || 'initial',
-            completed: false
-          }
-        });
-      }
+    // Ensure session exists in database
+    const { data: existingSession } = await supabase
+      .from('user_sessions')
+      .select('*')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (!existingSession) {
+      await supabase.from('user_sessions').insert({
+        session_id: sessionId,
+        current_stage: stage || 'initial',
+        completed: false,
+        session_type: 'chat'
+      });
     }
 
     // Check if we should progress to next stage BEFORE generating response
     const progressionCheck = await aiService.shouldProgressStage(messages, (stage as SessionContext['stage']) || 'initial');
     let currentStage = (stage as SessionContext['stage']) || 'initial';
-    
+
     if (progressionCheck.shouldProgress && progressionCheck.nextStage) {
       currentStage = progressionCheck.nextStage;
-      
-      // Update session stage in database (skip in production)
-      if (process.env.NODE_ENV !== 'production') {
-        await prisma.session.update({
-          where: { sessionId },
-          data: { 
-            currentStage: currentStage,
-            updatedAt: new Date()
-          }
-        });
-      }
+
+      // Update session stage in database
+      await supabase
+        .from('user_sessions')
+        .update({
+          current_stage: currentStage,
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
     }
 
     // Build session context with updated stage
@@ -70,32 +69,51 @@ export async function POST(req: NextRequest) {
 
     // Generate AI response with correct stage
     const response = await aiService.generateResponse(messages, sessionContext);
-    
-    // Save both user and assistant messages to database (skip in production)
-    if (process.env.NODE_ENV !== 'production') {
-      await prisma.conversation.createMany({
-        data: [
-          {
-            sessionId,
-            role: 'user',
-            content: lastMessage.content,
-            metadata: JSON.stringify({ 
-              timestamp: new Date().toISOString(),
-              messageIndex: messages.length - 1
-            })
-          },
-          {
-            sessionId,
-            role: 'assistant',
-            content: response,
-            metadata: JSON.stringify({ 
-              timestamp: new Date().toISOString(),
-              messageIndex: messages.length,
-              stage: currentStage
-            })
-          }
-        ]
-      });
+
+    // Save conversation messages to database
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
+    if (authSession?.user) {
+      const userId = authSession.user.id;
+
+      // Save user message
+      const userMessageData = {
+        session_id: sessionId,
+        user_id: userId,
+        role: 'user',
+        content: lastMessage.content,
+        metadata: {
+          stage: currentStage,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      // Save assistant response
+      const assistantMessageData = {
+        session_id: sessionId,
+        user_id: userId,
+        role: 'assistant',
+        content: response,
+        metadata: {
+          stage: currentStage,
+          timestamp: new Date().toISOString(),
+          messageCount: messages.length + 1
+        }
+      };
+
+      // Insert both messages in a single transaction
+      const { error: messageError } = await supabase
+        .from('conversation_messages')
+        .insert([userMessageData, assistantMessageData]);
+
+      if (messageError) {
+        console.error('[CHAT_API] Failed to save conversation:', messageError);
+        // Don't fail the request if conversation saving fails
+      } else {
+        console.log('[CHAT_API] Conversation messages saved successfully');
+      }
+    } else {
+      console.warn('[CHAT_API] No authenticated user - conversation not saved');
     }
 
     let strengths = null;
@@ -110,33 +128,15 @@ export async function POST(req: NextRequest) {
         const conversationHistory = messages.map(m => `${m.role}: ${m.content}`).join('\n\n');
         strengths = await aiService.analyzeStrengths(conversationHistory);
         console.log('Strengths analysis completed:', strengths);
-        
-        if (strengths && process.env.NODE_ENV !== 'production') {
-          // Clear existing strengths for this session
-          await prisma.strength.deleteMany({
-            where: { sessionId }
-          });
 
-          // Save new strength analysis
-          const strengthPromises = [];
-          
-          for (const [category, items] of Object.entries(strengths)) {
-            for (const item of items as string[]) {
-              strengthPromises.push(
-                prisma.strength.create({
-                  data: {
-                    sessionId,
-                    category,
-                    name: item,
-                    evidence: conversationHistory,
-                    confidence: 0.8
-                  }
-                })
-              );
-            }
-          }
-          
-          await Promise.all(strengthPromises);
+        if (strengths) {
+          // Save strength analysis to Supabase
+          await supabase.from('strength_profiles').insert({
+            session_id: sessionId,
+            strengths: strengths,
+            summary: 'Generated from conversation analysis',
+            insights: { generated_at: new Date().toISOString() }
+          });
         }
       } catch (error) {
         console.error('Error analyzing strengths:', error);
@@ -149,12 +149,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Mark session as completed if we've reached summary (skip in production)
-    if (currentStage === 'summary' && process.env.NODE_ENV !== 'production') {
-      await prisma.session.update({
-        where: { sessionId },
-        data: { completed: true }
-      });
+    // Mark session as completed if we've reached summary
+    if (currentStage === 'summary') {
+      await supabase
+        .from('user_sessions')
+        .update({ completed: true })
+        .eq('session_id', sessionId);
     }
 
     return NextResponse.json({
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Chat API Error:', error);
-    
+
     // Return appropriate error response
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
           { status: 500 }
         );
       }
-      
+
       if (error.message.includes('rate limit')) {
         return NextResponse.json(
           { error: 'Too many requests. Please wait a moment and try again.' },
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
         );
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error. Please try again.' },
       { status: 500 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import {
@@ -25,10 +25,12 @@ export async function GET(req: NextRequest) {
     const userId = await resolveUserId(queryUserId);
     if (!userId) return NextResponse.json({ error: 'Missing user identity' }, { status: 400 });
 
-    const rows = await prisma.valueResult.findMany({
-      where: { userId },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const supabase = await createServerSupabaseClient();
+    const { data: rows } = await supabase
+      .from('value_results')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
 
     const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; updatedAt: string } | null> = {
       terminal: null,
@@ -36,11 +38,11 @@ export async function GET(req: NextRequest) {
       work: null,
     };
     for (const set of valueSets) {
-      const record = rows.find((row) => row.valueSet === set);
+      const record = rows?.find((row) => row.value_set === set);
       if (!record) continue;
       const layout = parseLayout(record.layout) ?? emptyLayout;
       const top3 = normalizeTop3(record.top3);
-      latestBySet[set] = { layout, top3, updatedAt: record.updatedAt.toISOString() };
+      latestBySet[set] = { layout, top3, updatedAt: record.updated_at };
     }
 
     return NextResponse.json({ userId, results: latestBySet });

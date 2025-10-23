@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
-// Ensure this route runs on Node.js runtime for Prisma compatibility
-export const runtime = 'nodejs';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 const databaseDisabledResponse = () =>
   NextResponse.json({ error: 'Database operations disabled' }, { status: 503 });
@@ -22,72 +19,70 @@ export async function POST(req: NextRequest) {
       return databaseDisabledResponse();
     }
 
+    const supabase = await createServerSupabaseClient();
+
     // Upsert session record
-    await prisma.session.upsert({
-      where: { sessionId },
-      update: {
-        currentStage: stage || 'initial',
-        updatedAt: new Date(),
+    await supabase
+      .from('sessions')
+      .upsert({
+        session_id: sessionId,
+        current_stage: stage || 'initial',
+        updated_at: new Date().toISOString(),
         completed: stage === 'summary',
-      },
-      create: {
-        sessionId,
-        currentStage: stage || 'initial',
-        completed: stage === 'summary',
-      },
-    });
+      }, {
+        onConflict: 'session_id',
+      });
 
     // If messages are provided, update them
     if (messages && Array.isArray(messages)) {
       // Clear existing conversations for this session to avoid duplicates
-      await prisma.conversation.deleteMany({
-        where: { sessionId },
-      });
+      await supabase
+        .from('conversations')
+        .delete()
+        .eq('session_id', sessionId);
 
       // Save all messages
       if (messages.length > 0) {
-        await prisma.conversation.createMany({
-          data: messages.map((message: { role: string; content: string; timestamp?: string }, index: number) => ({
-            sessionId,
-            role: message.role,
-            content: message.content,
-            metadata: JSON.stringify({
-              timestamp: message.timestamp || new Date().toISOString(),
-              messageIndex: index,
-            }),
-          })),
-        });
+        await supabase
+          .from('conversations')
+          .insert(
+            messages.map((message: { role: string; content: string; timestamp?: string }, index: number) => ({
+              session_id: sessionId,
+              role: message.role,
+              content: message.content,
+              metadata: {
+                timestamp: message.timestamp || new Date().toISOString(),
+                messageIndex: index,
+              },
+            }))
+          );
       }
     }
 
     // If strengths are provided, update them
     if (strengths) {
       // Clear existing strengths
-      await prisma.strength.deleteMany({
-        where: { sessionId },
-      });
+      await supabase
+        .from('strengths')
+        .delete()
+        .eq('session_id', sessionId);
 
       // Save new strengths
-      const strengthRecords: ReturnType<typeof prisma.strength.create>[] = [];
-
+      const strengthRecords = [];
       for (const [category, items] of Object.entries(strengths)) {
         for (const item of items as string[]) {
-          strengthRecords.push(
-            prisma.strength.create({
-              data: {
-                sessionId,
-                category,
-                name: item,
-                evidence: `Saved from session at ${new Date().toISOString()}`,
-                confidence: 0.8,
-              },
-            }),
-          );
+          strengthRecords.push({
+            session_id: sessionId,
+            category,
+            name: item,
+            evidence: `Saved from session at ${new Date().toISOString()}`,
+            confidence: 0.8,
+          });
         }
       }
 
       if (strengthRecords.length > 0) {
-        await Promise.all(strengthRecords);
+        await supabase.from('strengths').insert(strengthRecords);
       }
     }
 

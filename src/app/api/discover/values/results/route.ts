@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import {
@@ -10,9 +10,6 @@ import {
   type ValueLayout,
   type ValueSet,
 } from './layout-utils';
-
-// Ensure Prisma runs in the Node.js runtime (Edge lacks Prisma support)
-export const runtime = 'nodejs';
 
 const dbDisabledResponse = () =>
   NextResponse.json({ error: 'Database operations disabled' }, { status: 503 });
@@ -50,12 +47,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user_id and set' }, { status: 400 });
     }
 
-    const latest = await prisma.valueResult.findFirst({
-      where: { userId, valueSet: set },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const supabase = await createServerSupabaseClient();
+    const { data: latest, error } = await supabase
+      .from('value_results')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('value_set', set)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    if (!latest) {
+    if (error || !latest) {
       return NextResponse.json({ exists: false }, { status: 200 });
     }
 
@@ -64,11 +66,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       exists: true,
-      userId: latest.userId,
-      set: latest.valueSet,
+      userId: latest.user_id,
+      set: latest.value_set,
       layout,
       top3,
-      updatedAt: latest.updatedAt,
+      updatedAt: latest.updated_at,
     });
   } catch (err) {
     console.error('GET /api/discover/values/results error', err);
@@ -96,37 +98,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user identity, set, or layout' }, { status: 400 });
     }
 
-    const saved = await prisma.$transaction(async (tx) => {
-      const existing = await tx.valueResult.findMany({
-        where: { userId: uid, valueSet },
-        orderBy: { updatedAt: 'desc' },
-      });
+    const supabase = await createServerSupabaseClient();
 
-      const [latest, ...duplicates] = existing;
+    // Find existing records
+    const { data: existing } = await supabase
+      .from('value_results')
+      .select('*')
+      .eq('user_id', uid)
+      .eq('value_set', valueSet)
+      .order('updated_at', { ascending: false });
 
-      if (duplicates.length > 0) {
-        // Legacy saves could leave multiple rows per user/set; collapse them here.
-        await tx.valueResult.deleteMany({
-          where: { id: { in: duplicates.map((record) => record.id) } },
-        });
-      }
+    // Delete duplicates if any (keep only the latest)
+    if (existing && existing.length > 1) {
+      const duplicateIds = existing.slice(1).map(r => r.id);
+      await supabase
+        .from('value_results')
+        .delete()
+        .in('id', duplicateIds);
+    }
 
-      if (latest) {
-        return tx.valueResult.update({
-          where: { id: latest.id },
-          data: { layout, top3: top3Array },
-        });
-      }
+    // Upsert the record
+    const { data: saved, error } = await supabase
+      .from('value_results')
+      .upsert({
+        user_id: uid,
+        value_set: valueSet,
+        layout,
+        top3: top3Array,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,value_set',
+      })
+      .select()
+      .single();
 
-      return tx.valueResult.create({
-        data: {
-          userId: uid,
-          valueSet,
-          layout,
-          top3: top3Array,
-        },
-      });
-    });
+    if (error) {
+      console.error('Supabase upsert error:', error);
+      return NextResponse.json({ error: 'Failed to save data' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, id: saved.id });
   } catch (err) {

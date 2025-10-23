@@ -1,7 +1,6 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider, { type GoogleProfile } from 'next-auth/providers/google';
 import type { JWT } from 'next-auth/jwt';
-import { prisma } from '@/lib/prisma';
 
 type SanitizedGoogleProfile = Pick<GoogleProfile, 'sub' | 'email' | 'name' | 'picture'>;
 
@@ -52,22 +51,8 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  events: {
-    async signIn({ profile }) {
-      try {
-        const googleProfile = toGoogleProfile(profile);
-        if (!googleProfile?.sub) return;
-        const { sub: googleId, email, name, picture: image } = googleProfile;
-        await prisma.user.upsert({
-          where: { googleId },
-          update: { email, name, image },
-          create: { googleId, email, name, image },
-        });
-      } catch (e) {
-        console.error('User upsert failed', e);
-      }
-    },
-  },
+  // Note: User management is handled by Supabase auth.users table
+  // NextAuth is only used for Google OAuth session management
 };
 
 const handler = NextAuth(authOptions);

@@ -174,23 +174,13 @@ export const HomePage: React.FC = () => {
                   status="active"
                 />
                 <ModuleCard
-                  title="SWOT Analysis"
-                  description="Analyze Strengths, Weaknesses, Opportunities, and Threats"
+                  title="SWOT Analysis & Strategy"
+                  description="Complete 4-stage workflow: SWOT → AI Strategies → Prioritization → Reflection"
                   icon={<ShieldAlert className="w-6 h-6" />}
                   color="red"
-                  duration="25-35 minutes"
-                  tags={['Strategic', 'Analytical', '4-Quadrant']}
+                  duration="45-60 minutes"
+                  tags={['AI-Powered', '4-Stage Flow', 'Strategic']}
                   href="/discover/swot"
-                  status="active"
-                />
-                <ModuleCard
-                  title="Strategy Development"
-                  description="Develop strategic approaches using SWOT matrices"
-                  icon={<BarChart3 className="w-6 h-6" />}
-                  color="orange"
-                  duration="20-30 minutes"
-                  tags={['SO/WO/ST/WT', 'Strategic', 'Matrix-Based']}
-                  href="/discover/swot/strategy"
                   status="active"
                 />
               </div>

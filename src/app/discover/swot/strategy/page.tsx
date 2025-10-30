@@ -182,26 +182,48 @@ export default function StrategyDevelopmentPage() {
     setSaving(true);
 
     try {
-      // Save strategies with priorities
-      const strategyPriorities: Record<string, any> = {};
+      // Convert impact/difficulty from 'high'|'medium'|'low' to numeric scores (1-10)
+      const convertToNumericScore = (level: 'high' | 'medium' | 'low' = 'medium'): number => {
+        switch (level) {
+          case 'high': return 8;
+          case 'medium': return 5;
+          case 'low': return 3;
+          default: return 5;
+        }
+      };
 
-      // Collect all strategies with their priorities
-      [...strategies.so_strategies, ...strategies.wo_strategies, ...strategies.st_strategies, ...strategies.wt_strategies].forEach(s => {
-        strategyPriorities[s.id] = {
-          impact: s.impact,
-          difficulty: s.difficulty
-        };
-      });
+      // Prepare strategies with numeric scores for prioritization
+      const strategiesWithScores = {
+        so_strategies: strategies.so_strategies.map(s => ({
+          ...s,
+          impact: convertToNumericScore(s.impact),
+          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium') // Invert difficulty to feasibility
+        })),
+        wo_strategies: strategies.wo_strategies.map(s => ({
+          ...s,
+          impact: convertToNumericScore(s.impact),
+          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+        })),
+        st_strategies: strategies.st_strategies.map(s => ({
+          ...s,
+          impact: convertToNumericScore(s.impact),
+          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+        })),
+        wt_strategies: strategies.wt_strategies.map(s => ({
+          ...s,
+          impact: convertToNumericScore(s.impact),
+          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+        }))
+      };
 
       await fetch('/api/swot/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          so_strategies: strategies.so_strategies,
-          wo_strategies: strategies.wo_strategies,
-          st_strategies: strategies.st_strategies,
-          wt_strategies: strategies.wt_strategies,
-          strategy_priorities: strategyPriorities,
+          so_strategies: strategiesWithScores.so_strategies,
+          wo_strategies: strategiesWithScores.wo_strategies,
+          st_strategies: strategiesWithScores.st_strategies,
+          wt_strategies: strategiesWithScores.wt_strategies,
           current_stage: 'prioritization'
         })
       });

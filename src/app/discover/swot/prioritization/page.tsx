@@ -56,10 +56,10 @@ export default function PrioritizationPage() {
   }
 
   function getPriorityGroup(impact: number, feasibility: number): string {
-    if (impact >= 6 && feasibility >= 6) return '우선 실행';
-    if (impact < 6 && feasibility >= 6) return '빠른 성과';
-    if (impact >= 6 && feasibility < 6) return '계획적 준비';
-    return '재검토';
+    if (impact >= 6 && feasibility >= 6) return 'Execute First';
+    if (impact < 6 && feasibility >= 6) return 'Quick Wins';
+    if (impact >= 6 && feasibility < 6) return 'Strategic Planning';
+    return 'Reconsider';
   }
 
   async function handleSave() {
@@ -97,10 +97,10 @@ export default function PrioritizationPage() {
   }
 
   const groupedStrategies = {
-    '우선 실행': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === '우선 실행'),
-    '빠른 성과': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === '빠른 성과'),
-    '계획적 준비': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === '계획적 준비'),
-    '재검토': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === '재검토')
+    'Execute First': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === 'Execute First'),
+    'Quick Wins': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === 'Quick Wins'),
+    'Strategic Planning': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === 'Strategic Planning'),
+    'Reconsider': strategies.filter(s => getPriorityGroup(s.impact, s.feasibility) === 'Reconsider')
   };
 
   return (
@@ -129,7 +129,7 @@ export default function PrioritizationPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-2 block">
-                          Impact (영향력): {strategy.impact}
+                          Impact: {strategy.impact}
                         </label>
                         <input
                           type="range"
@@ -146,7 +146,7 @@ export default function PrioritizationPage() {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-2 block">
-                          Feasibility (실행 용이성): {strategy.feasibility}
+                          Feasibility: {strategy.feasibility}
                         </label>
                         <input
                           type="range"
@@ -164,9 +164,9 @@ export default function PrioritizationPage() {
                     </div>
                     <div className="mt-2">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                        getPriorityGroup(strategy.impact, strategy.feasibility) === '우선 실행' ? 'bg-green-100 text-green-800' :
-                        getPriorityGroup(strategy.impact, strategy.feasibility) === '빠른 성과' ? 'bg-blue-100 text-blue-800' :
-                        getPriorityGroup(strategy.impact, strategy.feasibility) === '계획적 준비' ? 'bg-yellow-100 text-yellow-800' :
+                        getPriorityGroup(strategy.impact, strategy.feasibility) === 'Execute First' ? 'bg-green-100 text-green-800' :
+                        getPriorityGroup(strategy.impact, strategy.feasibility) === 'Quick Wins' ? 'bg-blue-100 text-blue-800' :
+                        getPriorityGroup(strategy.impact, strategy.feasibility) === 'Strategic Planning' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
                         {getPriorityGroup(strategy.impact, strategy.feasibility)}
@@ -183,10 +183,10 @@ export default function PrioritizationPage() {
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold text-gray-900 mb-6">Priority Matrix (2x2)</h3>
           <div className="grid grid-cols-2 gap-4">
-            <PriorityQuadrant title="우선 실행" subtitle="High Impact, High Feasibility" strategies={groupedStrategies['우선 실행']} color="green" />
-            <PriorityQuadrant title="계획적 준비" subtitle="High Impact, Low Feasibility" strategies={groupedStrategies['계획적 준비']} color="yellow" />
-            <PriorityQuadrant title="빠른 성과" subtitle="Low Impact, High Feasibility" strategies={groupedStrategies['빠른 성과']} color="blue" />
-            <PriorityQuadrant title="재검토" subtitle="Low Impact, Low Feasibility" strategies={groupedStrategies['재검토']} color="gray" />
+            <PriorityQuadrant title="Execute First" subtitle="High Impact, High Feasibility" strategies={groupedStrategies['Execute First']} color="green" />
+            <PriorityQuadrant title="Strategic Planning" subtitle="High Impact, Low Feasibility" strategies={groupedStrategies['Strategic Planning']} color="yellow" />
+            <PriorityQuadrant title="Quick Wins" subtitle="Low Impact, High Feasibility" strategies={groupedStrategies['Quick Wins']} color="blue" />
+            <PriorityQuadrant title="Reconsider" subtitle="Low Impact, Low Feasibility" strategies={groupedStrategies['Reconsider']} color="gray" />
           </div>
         </div>
 

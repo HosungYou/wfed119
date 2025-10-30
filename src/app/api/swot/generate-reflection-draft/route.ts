@@ -36,7 +36,7 @@ The essay should be written in first person, as if the user is reflecting on the
 Return ONLY the reflection text in Korean (no JSON, no markdown, just the text):`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-7-sonnet-20250219',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     });

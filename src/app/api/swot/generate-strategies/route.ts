@@ -45,16 +45,16 @@ Generate strategies following this framework:
 Requirements:
 - Generate EXACTLY 4 strategies for each category
 - Each strategy should be clear, specific, and actionable
-- Write in Korean (한국어)
+- Write in ENGLISH only
 - Each strategy should be 1-2 sentences
 - Format as JSON
 
 Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
 {
-  "SO": ["전략 1", "전략 2", "전략 3", "전략 4"],
-  "WO": ["전략 1", "전략 2", "전략 3", "전략 4"],
-  "ST": ["전략 1", "전략 2", "전략 3", "전략 4"],
-  "WT": ["전략 1", "전략 2", "전략 3", "전략 4"]
+  "SO": ["Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4"],
+  "WO": ["Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4"],
+  "ST": ["Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4"],
+  "WT": ["Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4"]
 }`;
 
     const message = await anthropic.messages.create({

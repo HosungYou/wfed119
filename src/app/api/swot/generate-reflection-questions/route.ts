@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const prompt = `You are a strategic planning coach helping someone reflect on their SWOT analysis and strategic planning process.
 
-Based on their SWOT analysis and prioritized strategies, generate exactly 5 thoughtful reflection questions in Korean that will help them:
+Based on their SWOT analysis and prioritized strategies, generate exactly 5 thoughtful reflection questions in ENGLISH that will help them:
 1. Understand insights from their SWOT analysis
 2. Reflect on their strategic choices
 3. Consider implementation challenges
@@ -30,7 +30,7 @@ Top Priority Strategies: ${priorities.slice(0, 3).map((p: any) => p.text).join('
 Generate 5 open-ended questions that encourage deep reflection. Each question should be specific and actionable.
 
 Return ONLY a JSON array of 5 questions (no markdown, no code blocks):
-["질문 1", "질문 2", "질문 3", "질문 4", "질문 5"]`;
+["Question 1", "질문 2", "질문 3", "질문 4", "질문 5"]`;
 
     const message = await anthropic.messages.create({
       model: 'claude-3-7-sonnet-20250219',

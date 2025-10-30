@@ -76,13 +76,13 @@ export function StepProgress({ currentStage }: StepProgressProps) {
                     {step.label}
                   </p>
                   {status === 'completed' && (
-                    <p className="text-xs text-green-600 mt-1">완료 ✓</p>
+                    <p className="text-xs text-green-600 mt-1">Completed ✓</p>
                   )}
                   {status === 'current' && (
-                    <p className="text-xs text-blue-600 mt-1">진행중</p>
+                    <p className="text-xs text-blue-600 mt-1">In Progress</p>
                   )}
                   {status === 'pending' && (
-                    <p className="text-xs text-gray-400 mt-1">대기</p>
+                    <p className="text-xs text-gray-400 mt-1">Pending</p>
                   )}
                 </div>
               </div>

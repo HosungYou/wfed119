@@ -195,24 +195,28 @@ export default function StrategyDevelopmentPage() {
       // Prepare strategies with numeric scores for prioritization
       const strategiesWithScores = {
         so_strategies: strategies.so_strategies.map(s => ({
-          ...s,
-          impact: convertToNumericScore(s.impact),
-          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium') // Invert difficulty to feasibility
+          id: s.id,
+          text: s.text,
+          impact: s.impact ? convertToNumericScore(s.impact) : 5,
+          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
         })),
         wo_strategies: strategies.wo_strategies.map(s => ({
-          ...s,
-          impact: convertToNumericScore(s.impact),
-          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+          id: s.id,
+          text: s.text,
+          impact: s.impact ? convertToNumericScore(s.impact) : 5,
+          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
         })),
         st_strategies: strategies.st_strategies.map(s => ({
-          ...s,
-          impact: convertToNumericScore(s.impact),
-          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+          id: s.id,
+          text: s.text,
+          impact: s.impact ? convertToNumericScore(s.impact) : 5,
+          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
         })),
         wt_strategies: strategies.wt_strategies.map(s => ({
-          ...s,
-          impact: convertToNumericScore(s.impact),
-          feasibility: 10 - convertToNumericScore(s.difficulty || 'medium')
+          id: s.id,
+          text: s.text,
+          impact: s.impact ? convertToNumericScore(s.impact) : 5,
+          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
         }))
       };
 

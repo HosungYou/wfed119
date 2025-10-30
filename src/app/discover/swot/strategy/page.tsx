@@ -228,7 +228,7 @@ export default function StrategyDevelopmentPage() {
           wo_strategies: strategiesWithScores.wo_strategies,
           st_strategies: strategiesWithScores.st_strategies,
           wt_strategies: strategiesWithScores.wt_strategies,
-          current_stage: 'prioritization'
+          current_stage: 'goals'  // Changed from 'prioritization' to match DB constraint
         })
       });
 

@@ -75,7 +75,7 @@ export default function PrioritizationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           strategy_priorities: prioritizedStrategies,
-          current_stage: 'reflection'
+          current_stage: 'reflection'  // This is valid in both schemas
         })
       });
 

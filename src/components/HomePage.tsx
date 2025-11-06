@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart,
   Lightbulb, ShieldAlert, Eye, BarChart3, Zap, ChevronDown, ChevronUp,
-  CheckCircle2, Clock
+  CheckCircle2, Clock, Compass
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
@@ -152,9 +152,9 @@ export const HomePage: React.FC = () => {
               </div>
             </CategorySection>
 
-            {/* Category 2: Vision & Strategy */}
+            {/* Category 2: Visioning and Strategizing */}
             <CategorySection
-              title="Vision & Strategy"
+              title="Visioning and Strategizing"
               description="Define your vision and analyze opportunities for growth"
               icon={<Eye className="w-6 h-6" />}
               color="purple"
@@ -181,6 +181,16 @@ export const HomePage: React.FC = () => {
                   duration="45-60 minutes"
                   tags={['AI-Powered', '4-Stage Flow', 'Strategic']}
                   href="/discover/swot"
+                  status="active"
+                />
+                <ModuleCard
+                  title="Dream List"
+                  description="Create your life dreams across 4 categories and life stages"
+                  icon={<Compass className="w-6 h-6" />}
+                  color="purple"
+                  duration="30-45 minutes"
+                  tags={['4 Categories', 'Timeline View', 'Values Integration']}
+                  href="/discover/dreams"
                   status="active"
                 />
               </div>

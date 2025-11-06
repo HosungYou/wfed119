@@ -5,7 +5,7 @@ import { createSupabaseClient } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   User, Brain, Heart, Target, Sparkles,
-  CheckCircle, Circle, TrendingUp, ArrowRight, Lock, Home
+  CheckCircle, Circle, TrendingUp, ArrowRight, Lock, Home, BarChart3, Compass
 } from 'lucide-react';
 
 interface ModuleStatus {
@@ -171,7 +171,7 @@ export default function DashboardPage() {
   );
 
   const completedCount = Object.values(modules).filter(m => m.completed).length;
-  const totalModules = 3; // Values, Strengths, Vision
+  const totalModules = 5; // Values, Strengths, Vision, SWOT, Dream List
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -411,6 +411,92 @@ export default function DashboardPage() {
                 Last updated: {new Date(modules.vision.lastUpdated).toLocaleDateString()}
               </p>
             )}
+          </div>
+
+          {/* SWOT Analysis Module */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-transparent hover:border-orange-200">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                <BarChart3 className="w-7 h-7 text-white" />
+              </div>
+              <Circle className="w-7 h-7 text-gray-300" />
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">SWOT Analysis</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Strategic planning for your goals
+            </p>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                <span>Progress</span>
+                <span>0%</span>
+              </div>
+              <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-orange-500 to-red-600 h-full rounded-full transition-all"
+                  style={{ width: '0%' }}
+                />
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 bg-orange-50 rounded-lg min-h-[80px] flex items-center justify-center">
+              <p className="text-xs text-orange-700 text-center">
+                Analyze your strengths, weaknesses, opportunities, and threats
+              </p>
+            </div>
+
+            <Link
+              href="/discover/swot"
+              className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition-all"
+            >
+              Start Analysis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Dream List Module */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-200">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <Compass className="w-7 h-7 text-white" />
+              </div>
+              <Circle className="w-7 h-7 text-gray-300" />
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Dream List</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Explore, learn, achieve, and experience
+            </p>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                <span>Progress</span>
+                <span>0%</span>
+              </div>
+              <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 h-full rounded-full transition-all"
+                  style={{ width: '0%' }}
+                />
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 bg-purple-50 rounded-lg min-h-[80px] flex items-center justify-center">
+              <p className="text-xs text-purple-700 text-center">
+                Create your life dream list across 4 categories and life stages
+              </p>
+            </div>
+
+            <Link
+              href="/discover/dreams"
+              className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-700 transition-all"
+            >
+              Start Dreaming
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
 

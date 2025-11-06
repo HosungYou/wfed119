@@ -227,17 +227,16 @@ Distribution:
 - 3 dreams spread across other categories
 
 For each dream, provide:
-- category: 'exploration' | 'learning' | 'achievement' | 'experience'
 - title: Short, inspiring title (max 60 chars)
 - description: Brief description (max 120 chars)
 - life_stage: '20s' | '30s' | '40s' | '50s' | '60s' | '70s+'
-- wellbeing_area: 'relationship' | 'competency' | 'intellectual' | 'physical' | 'environment' | 'financial' | 'career' | 'leisure'
+- wellbeing_area: 'relationship' | 'spiritual' | 'intellectual' | 'physical' | 'environment' | 'financial' | 'career' | 'leisure'
 - related_values: Array of related value names from user's top values
 - why: Brief explanation of why this aligns with user (max 80 chars)
 
 Wellbeing Areas Explanation:
 - relationship: Relationships and emotional connections (관계/정서)
-- competency: Skills, growth, and personal development (역량)
+- spiritual: Meaning, purpose, and inner growth (영적)
 - intellectual: Mental stimulation and learning (지적)
 - physical: Health, fitness, and body wellbeing (신체적)
 - environment: Living space and surroundings (환경/주거)
@@ -250,7 +249,6 @@ Return ONLY a JSON array of dream objects. No other text.
 Example format:
 [
   {
-    "category": "learning",
     "title": "Master Spanish through immersion in Barcelona",
     "description": "Live in Barcelona for 3 months, attend language school, and practice with locals daily",
     "life_stage": "50s",

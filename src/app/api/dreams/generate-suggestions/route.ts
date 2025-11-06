@@ -218,7 +218,8 @@ Generate 8 personalized dream suggestions that:
 2. Leverage their key strengths
 3. Fill in the gap categories
 4. Are specific and actionable
-5. Cover different life stages (40s, 50s, 60s, 70s+)
+5. Cover different life stages (20s, 30s, 40s, 50s, 60s, 70s+)
+6. Span across diverse wellbeing areas
 
 Distribution:
 - 3 dreams for the biggest gap category
@@ -229,9 +230,20 @@ For each dream, provide:
 - category: 'exploration' | 'learning' | 'achievement' | 'experience'
 - title: Short, inspiring title (max 60 chars)
 - description: Brief description (max 120 chars)
-- life_stage: '40s' | '50s' | '60s' | '70s+'
+- life_stage: '20s' | '30s' | '40s' | '50s' | '60s' | '70s+'
+- wellbeing_area: 'relationship' | 'competency' | 'intellectual' | 'physical' | 'environment' | 'financial' | 'career' | 'leisure'
 - related_values: Array of related value names from user's top values
 - why: Brief explanation of why this aligns with user (max 80 chars)
+
+Wellbeing Areas Explanation:
+- relationship: Relationships and emotional connections (관계/정서)
+- competency: Skills, growth, and personal development (역량)
+- intellectual: Mental stimulation and learning (지적)
+- physical: Health, fitness, and body wellbeing (신체적)
+- environment: Living space and surroundings (환경/주거)
+- financial: Money, security, and wealth (재정)
+- career: Work and professional life (직업)
+- leisure: Recreation and hobbies (여가)
 
 Return ONLY a JSON array of dream objects. No other text.
 
@@ -242,6 +254,7 @@ Example format:
     "title": "Master Spanish through immersion in Barcelona",
     "description": "Live in Barcelona for 3 months, attend language school, and practice with locals daily",
     "life_stage": "50s",
+    "wellbeing_area": "intellectual",
     "related_values": ["Freedom", "Wisdom"],
     "why": "Combines your love of freedom with pursuit of new knowledge"
   }

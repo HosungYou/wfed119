@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Sparkles, Plus, X, Loader2, TrendingUp, Calendar, LayoutGrid, Heart, Brain, Dumbbell, Home, DollarSign, Briefcase, Coffee } from 'lucide-react';
+import { Sparkles, Plus, X, Loader2, TrendingUp, Heart, Brain, Dumbbell, Home, DollarSign, Briefcase, Coffee } from 'lucide-react';
 
 interface Dream {
   id: string;
@@ -16,15 +16,13 @@ interface Dream {
   is_completed: boolean;
 }
 
-type ViewMode = 'timeline' | 'matrix';
 type LifeStage = '20s' | '30s' | '40s' | '50s' | '60s' | '70s+';
 type WellbeingArea = 'relationship' | 'spiritual' | 'intellectual' | 'physical' | 'environment' | 'financial' | 'career' | 'leisure';
 
-export default function DreamsCategoriesPage() {
+export default function DreamsMatrixPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [dreams, setDreams] = useState<Dream[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('matrix');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
@@ -78,7 +76,7 @@ export default function DreamsCategoriesPage() {
         setAiSuggestions(data.suggestions || []);
         setShowAIModal(true);
       } else {
-        alert('Failed to generate AI suggestions. Please make sure you have completed Values, Strengths, or Vision modules first.');
+        alert('Failed to generate AI suggestions. Please complete Values, Strengths, or Vision modules first.');
       }
     } catch (error) {
       console.error('Failed to generate suggestions:', error);
@@ -109,6 +107,9 @@ export default function DreamsCategoriesPage() {
       if (res.ok) {
         await loadDreams();
         setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+        if (aiSuggestions.length === 1) {
+          setShowAIModal(false);
+        }
       }
     } catch (error) {
       console.error('Failed to add suggested dream:', error);
@@ -163,15 +164,15 @@ export default function DreamsCategoriesPage() {
 
   const lifeStages: LifeStage[] = ['20s', '30s', '40s', '50s', '60s', '70s+'];
 
-  const wellbeingAreas: { id: WellbeingArea; name: string; nameKo: string; icon: any }[] = [
-    { id: 'relationship', name: 'Relationship', nameKo: '관계/정서', icon: Heart },
-    { id: 'spiritual', name: 'Spiritual', nameKo: '영적', icon: Sparkles },
-    { id: 'intellectual', name: 'Intellectual', nameKo: '지적', icon: Brain },
-    { id: 'physical', name: 'Physical', nameKo: '신체적', icon: Dumbbell },
-    { id: 'environment', name: 'Environment', nameKo: '환경(주거)', icon: Home },
-    { id: 'financial', name: 'Financial', nameKo: '재정', icon: DollarSign },
-    { id: 'career', name: 'Career', nameKo: '직업', icon: Briefcase },
-    { id: 'leisure', name: 'Leisure', nameKo: '여가', icon: Coffee }
+  const wellbeingAreas: { id: WellbeingArea; nameEn: string; nameKo: string; icon: any }[] = [
+    { id: 'relationship', nameEn: 'Relationship', nameKo: '관계/정서', icon: Heart },
+    { id: 'spiritual', nameEn: 'Spiritual', nameKo: '영적', icon: Sparkles },
+    { id: 'intellectual', nameEn: 'Intellectual', nameKo: '지적', icon: Brain },
+    { id: 'physical', nameEn: 'Physical', nameKo: '신체적', icon: Dumbbell },
+    { id: 'environment', nameEn: 'Environment', nameKo: '환경(주거)', icon: Home },
+    { id: 'financial', nameEn: 'Financial', nameKo: '재정', icon: DollarSign },
+    { id: 'career', nameEn: 'Career', nameKo: '직업', icon: Briefcase },
+    { id: 'leisure', nameEn: 'Leisure', nameKo: '여가', icon: Coffee }
   ];
 
   const unassignedDreams = dreams.filter(d => !d.wellbeing_area || !d.life_stage);
@@ -216,307 +217,195 @@ export default function DreamsCategoriesPage() {
               >
                 ← Back to Dream List
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {viewMode === 'timeline' && 'Life Stage Timeline'}
-                {viewMode === 'matrix' && 'Dream Matrix'}
-              </h1>
-            </div>
-            {/* View Toggle */}
-            <div className="flex bg-white rounded-xl border-2 border-gray-200 p-1">
-              <button
-                onClick={() => setViewMode('timeline')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  viewMode === 'timeline'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Calendar className="w-4 h-4" />
-                Timeline
-              </button>
-              <button
-                onClick={() => setViewMode('matrix')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  viewMode === 'matrix'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                Matrix
-              </button>
+              <h1 className="text-3xl font-bold text-gray-900">Dream Matrix</h1>
+              <p className="text-sm text-gray-600 mt-2">
+                Organize your dreams by wellbeing area and life stage. Drag dreams from the left pool to matrix cells.
+              </p>
             </div>
           </div>
 
-          {/* Timeline View */}
-          {viewMode === 'timeline' && (
-            <div className="space-y-6">
-              {lifeStages.map((stage) => {
-                const stageDreams = dreams.filter(d => d.life_stage === stage);
-
-                return (
-                  <div key={stage} className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-6 h-6 text-purple-600" />
-                        <h3 className="text-xl font-bold text-gray-900">{stage}</h3>
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium">
-                          {stageDreams.length} {stageDreams.length === 1 ? 'dream' : 'dreams'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {stageDreams.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <p>No dreams planned for this decade yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {stageDreams.map((dream) => {
-                          const wellbeingArea = wellbeingAreas.find(w => w.id === dream.wellbeing_area);
-                          const Icon = wellbeingArea?.icon || Sparkles;
-
-                          return (
-                            <div
-                              key={dream.id}
-                              className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                              <Icon className="w-5 h-5 mt-0.5 text-purple-600" />
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">{dream.title}</h4>
-                                {dream.description && (
-                                  <p className="text-sm text-gray-600 mt-1">{dream.description}</p>
-                                )}
-                                {dream.wellbeing_area && (
-                                  <span className="inline-block mt-2 px-2 py-1 bg-white text-xs rounded-full">
-                                    {wellbeingArea?.nameKo}
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => deleteDream(dream.id)}
-                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <X className="w-5 h-5 text-red-500" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Unassigned Dreams */}
-              {unassignedDreams.length > 0 && (
-                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-yellow-900 mb-4">
-                    Unscheduled Dreams ({unassignedDreams.length})
-                  </h3>
-                  <p className="text-sm text-yellow-800 mb-4">
-                    These dreams haven't been assigned yet. Switch to Matrix view to organize them!
-                  </p>
-                  <div className="space-y-2">
-                    {unassignedDreams.map((dream) => (
-                      <div
-                        key={dream.id}
-                        className="flex items-center gap-3 p-3 bg-white rounded-lg"
-                      >
-                        <Sparkles className="w-5 h-5 text-purple-600" />
-                        <span className="flex-1 text-gray-900">{dream.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Matrix View */}
-          {viewMode === 'matrix' && (
-            <div className="grid grid-cols-12 gap-6">
-              {/* Unassigned Dreams Pool */}
-              <div className="col-span-12 lg:col-span-4">
-                <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Unassigned Dreams</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Drag dreams to the matrix to organize them by wellbeing area and life stage
-                  </p>
-                  <Droppable droppableId="unassigned">
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`space-y-2 min-h-[200px] p-3 rounded-lg transition-colors ${
-                          snapshot.isDraggingOver ? 'bg-purple-50' : 'bg-gray-50'
-                        }`}
-                      >
-                        {unassignedDreams.length === 0 ? (
-                          <div className="text-center py-8 text-gray-400">
-                            <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">All dreams are assigned!</p>
-                            <button
-                              onClick={handleAISuggest}
-                              disabled={aiGenerating}
-                              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
-                            >
-                              {aiGenerating ? 'Generating...' : 'Get AI Suggestions'}
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            {unassignedDreams.map((dream, index) => (
-                              <Draggable key={dream.id} draggableId={dream.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className={`p-3 bg-white border-2 rounded-lg cursor-move transition-all ${
-                                      snapshot.isDragging
-                                        ? 'shadow-xl border-purple-400 rotate-2'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-600" />
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-gray-900 truncate">
-                                          {dream.title}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Unassigned Dreams Pool */}
+            <div className="col-span-12 lg:col-span-4">
+              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Unassigned Dreams</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Drag dreams to the matrix to organize them by wellbeing area and life stage
+                </p>
+                <Droppable droppableId="unassigned">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`space-y-2 min-h-[200px] p-3 rounded-lg transition-colors ${
+                        snapshot.isDraggingOver ? 'bg-purple-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      {unassignedDreams.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">
+                          <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">All dreams are assigned!</p>
+                          <button
+                            onClick={handleAISuggest}
+                            disabled={aiGenerating}
+                            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {aiGenerating ? 'Generating...' : 'Get AI Suggestions'}
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {unassignedDreams.map((dream, index) => (
+                            <Draggable key={dream.id} draggableId={dream.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`p-3 bg-white border-2 rounded-lg cursor-move transition-all ${
+                                    snapshot.isDragging
+                                      ? 'shadow-xl border-purple-400 rotate-2'
+                                      : 'border-gray-200 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-600" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm text-gray-900 truncate">
+                                        {dream.title}
+                                      </p>
+                                      {dream.description && (
+                                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                          {dream.description}
                                         </p>
-                                        {dream.description && (
-                                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                                            {dream.description}
-                                          </p>
-                                        )}
-                                      </div>
+                                      )}
                                     </div>
                                   </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            <button
-                              onClick={handleAISuggest}
-                              disabled={aiGenerating}
-                              className="w-full mt-2 px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-50 disabled:opacity-50"
-                            >
-                              {aiGenerating ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <TrendingUp className="w-4 h-4 inline mr-2" />
-                                  AI Suggest More
-                                </>
-                              )}
-                            </button>
-                          </>
-                        )}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              </div>
-
-              {/* Matrix Grid with Heatmap */}
-              <div className="col-span-12 lg:col-span-8">
-                <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Wellbeing × Life Stage Matrix</h3>
-                    <div className="flex items-center gap-4 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-4 rounded bg-gray-100 border border-gray-300"></div>
-                        <span className="text-gray-600">0</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-4 rounded bg-purple-100 border border-purple-300"></div>
-                        <span className="text-gray-600">1</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-4 rounded bg-purple-300 border border-purple-400"></div>
-                        <span className="text-gray-600">2</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-4 rounded bg-gradient-to-r from-purple-500 to-indigo-600"></div>
-                        <span className="text-gray-600">3 (max)</span>
-                      </div>
-                    </div>
-                  </div>
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="p-2 text-left text-sm font-bold text-gray-700 border-b-2 border-gray-300">
-                          Wellbeing Area
-                        </th>
-                        {lifeStages.map((stage) => (
-                          <th key={stage} className="p-2 text-center text-sm font-bold text-purple-700 border-b-2 border-gray-300">
-                            {stage}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {wellbeingAreas.map((area) => {
-                        const Icon = area.icon;
-                        return (
-                          <tr key={area.id} className="hover:bg-gray-50">
-                            <td className="p-3 border-b border-gray-200">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-5 h-5 text-purple-600" />
-                                <div>
-                                  <p className="font-medium text-sm text-gray-900">{area.nameKo}</p>
-                                  <p className="text-xs text-gray-500">{area.name}</p>
                                 </div>
-                              </div>
-                            </td>
-                            {lifeStages.map((stage) => {
-                              const cellDreams = getCellDreams(area.id, stage);
-                              const cellId = `cell-${area.id}-${stage}`;
-                              const count = cellDreams.length;
-
-                              return (
-                                <td key={stage} className="p-2 border-b border-gray-200">
-                                  <Droppable droppableId={cellId}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                        onClick={() => {
-                                          if (count > 0) {
-                                            setSelectedCell({ wellbeing: area.id, lifeStage: stage });
-                                          }
-                                        }}
-                                        className={`min-h-[60px] rounded-lg flex items-center justify-center text-2xl font-bold cursor-pointer transition-all ${
-                                          snapshot.isDraggingOver
-                                            ? 'bg-purple-100 border-2 border-purple-400 scale-105'
-                                            : getHeatmapColor(count)
-                                        }`}
-                                      >
-                                        {count > 0 ? (
-                                          <span className={getTextColor(count)}>{count}</span>
-                                        ) : (
-                                          <span className="text-gray-300 text-lg">—</span>
-                                        )}
-                                        {provided.placeholder}
-                                      </div>
-                                    )}
-                                  </Droppable>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          <button
+                            onClick={handleAISuggest}
+                            disabled={aiGenerating}
+                            className="w-full mt-2 px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-50 disabled:opacity-50"
+                          >
+                            {aiGenerating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <TrendingUp className="w-4 h-4 inline mr-2" />
+                                AI Suggest More
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
               </div>
             </div>
-          )}
+
+            {/* Matrix Grid with Heatmap */}
+            <div className="col-span-12 lg:col-span-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Wellbeing × Life Stage Matrix</h3>
+                  <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                      <span className="text-gray-600">0</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-4 rounded bg-purple-100 border border-purple-300"></div>
+                      <span className="text-gray-600">1</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-4 rounded bg-purple-300 border border-purple-400"></div>
+                      <span className="text-gray-600">2</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-4 rounded bg-gradient-to-r from-purple-500 to-indigo-600"></div>
+                      <span className="text-gray-600">3 (max)</span>
+                    </div>
+                  </div>
+                </div>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left text-sm font-bold text-gray-700 border-b-2 border-gray-300">
+                        Wellbeing Area
+                      </th>
+                      {lifeStages.map((stage) => (
+                        <th key={stage} className="p-2 text-center text-sm font-bold text-purple-700 border-b-2 border-gray-300">
+                          {stage}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {wellbeingAreas.map((area) => {
+                      const Icon = area.icon;
+                      return (
+                        <tr key={area.id} className="hover:bg-gray-50">
+                          <td className="p-3 border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <p className="font-medium text-sm text-gray-900">{area.nameEn}</p>
+                                <p className="text-xs text-gray-500">{area.nameKo}</p>
+                              </div>
+                            </div>
+                          </td>
+                          {lifeStages.map((stage) => {
+                            const cellDreams = getCellDreams(area.id, stage);
+                            const cellId = `cell-${area.id}-${stage}`;
+                            const count = cellDreams.length;
+
+                            return (
+                              <td key={stage} className="p-2 border-b border-gray-200">
+                                <Droppable droppableId={cellId}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      onClick={() => {
+                                        if (count > 0) {
+                                          setSelectedCell({ wellbeing: area.id, lifeStage: stage });
+                                        }
+                                      }}
+                                      className={`min-h-[60px] rounded-lg flex items-center justify-center text-2xl font-bold cursor-pointer transition-all ${
+                                        snapshot.isDraggingOver
+                                          ? 'bg-purple-100 border-2 border-purple-400 scale-105'
+                                          : getHeatmapColor(count)
+                                      }`}
+                                    >
+                                      {count > 0 ? (
+                                        <span className={getTextColor(count)}>{count}</span>
+                                      ) : (
+                                        <span className="text-gray-300 text-lg">—</span>
+                                      )}
+                                      {provided.placeholder}
+                                    </div>
+                                  )}
+                                </Droppable>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* AI Suggestions Modal */}
@@ -528,7 +417,7 @@ export default function DreamsCategoriesPage() {
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">AI Dream Suggestions</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      Based on your values, strengths, and vision. Click to add dreams to your list!
+                      Personalized suggestions based on your profile
                     </p>
                   </div>
                   <button
@@ -561,7 +450,7 @@ export default function DreamsCategoriesPage() {
                               <div className="flex flex-wrap gap-2 mb-2">
                                 {suggestion.wellbeing_area && (
                                   <span className="px-2 py-1 bg-white text-xs rounded-full">
-                                    {wellbeingArea?.nameKo}
+                                    {wellbeingArea?.nameEn}
                                   </span>
                                 )}
                                 {suggestion.life_stage && (
@@ -572,15 +461,6 @@ export default function DreamsCategoriesPage() {
                               </div>
                               {suggestion.why && (
                                 <p className="text-xs text-gray-500 italic mb-2">💡 {suggestion.why}</p>
-                              )}
-                              {suggestion.related_values && suggestion.related_values.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                  {suggestion.related_values.map((value: string, i: number) => (
-                                    <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
-                                      {value}
-                                    </span>
-                                  ))}
-                                </div>
                               )}
                             </div>
                           </div>
@@ -609,7 +489,7 @@ export default function DreamsCategoriesPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      {wellbeingAreas.find(w => w.id === selectedCell.wellbeing)?.nameKo} - {selectedCell.lifeStage}
+                      {wellbeingAreas.find(w => w.id === selectedCell.wellbeing)?.nameEn} - {selectedCell.lifeStage}
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
                       {getCellDreams(selectedCell.wellbeing, selectedCell.lifeStage).length} dreams in this cell

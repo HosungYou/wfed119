@@ -1,8 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, Sparkles, Edit2, Check } from 'lucide-react';
+import { Loader2, ArrowRight, Sparkles, Edit2, Check, BarChart3 } from 'lucide-react';
 import { StepProgress } from '../components/StepProgress';
+
+interface Strategy {
+  id: string;
+  text: string;
+  impact: number;
+  feasibility: number;
+  priority_group?: string;
+}
 
 export default function ReflectionPage() {
   const router = useRouter();
@@ -13,6 +21,18 @@ export default function ReflectionPage() {
   const [reflection, setReflection] = useState('');
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [priorityGroups, setPriorityGroups] = useState<{
+    'Execute First': Strategy[];
+    'Quick Wins': Strategy[];
+    'Strategic Planning': Strategy[];
+    'Reconsider': Strategy[];
+  }>({
+    'Execute First': [],
+    'Quick Wins': [],
+    'Strategic Planning': [],
+    'Reconsider': []
+  });
 
   useEffect(() => { loadData(); }, []);
 
@@ -21,6 +41,19 @@ export default function ReflectionPage() {
       const res = await fetch('/api/swot/session');
       const data = await res.json();
       if (!data.id) router.push('/discover/swot/analysis');
+
+      // Load prioritized strategies
+      const allStrategies = data.strategy_priorities || [];
+      setStrategies(allStrategies);
+
+      // Group by priority
+      setPriorityGroups({
+        'Execute First': allStrategies.filter((s: Strategy) => s.priority_group === 'Execute First'),
+        'Quick Wins': allStrategies.filter((s: Strategy) => s.priority_group === 'Quick Wins'),
+        'Strategic Planning': allStrategies.filter((s: Strategy) => s.priority_group === 'Strategic Planning'),
+        'Reconsider': allStrategies.filter((s: Strategy) => s.priority_group === 'Reconsider')
+      });
+
       setLoading(false);
     } catch (e) {
       setLoading(false);
@@ -98,6 +131,43 @@ export default function ReflectionPage() {
           <p className="text-gray-600">Reflect on your SWOT journey</p>
         </div>
 
+        {/* Priority Matrix - Always Visible at Top */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <BarChart3 className="w-6 h-6 text-purple-600" />
+            <h3 className="text-xl font-bold text-gray-900">Your Strategy Priorities</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-6">
+            Review your prioritized strategies as you reflect on your SWOT journey
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <PriorityQuadrant
+              title="Execute First"
+              subtitle="High Impact, High Feasibility"
+              strategies={priorityGroups['Execute First']}
+              color="green"
+            />
+            <PriorityQuadrant
+              title="Strategic Planning"
+              subtitle="High Impact, Low Feasibility"
+              strategies={priorityGroups['Strategic Planning']}
+              color="yellow"
+            />
+            <PriorityQuadrant
+              title="Quick Wins"
+              subtitle="Low Impact, High Feasibility"
+              strategies={priorityGroups['Quick Wins']}
+              color="blue"
+            />
+            <PriorityQuadrant
+              title="Reconsider"
+              subtitle="Low Impact, Low Feasibility"
+              strategies={priorityGroups['Reconsider']}
+              color="gray"
+            />
+          </div>
+        </div>
+
         {step === 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
             <Sparkles className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
@@ -145,6 +215,37 @@ export default function ReflectionPage() {
               {saving ? 'Saving...' : 'Complete'}
             </button>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PriorityQuadrant({ title, subtitle, strategies, color }: {
+  title: string;
+  subtitle: string;
+  strategies: Strategy[];
+  color: 'green' | 'yellow' | 'blue' | 'gray';
+}) {
+  const colors = {
+    green: 'bg-green-50 border-green-300',
+    yellow: 'bg-yellow-50 border-yellow-300',
+    blue: 'bg-blue-50 border-blue-300',
+    gray: 'bg-gray-50 border-gray-300'
+  };
+
+  return (
+    <div className={`rounded-xl border-2 p-4 min-h-[160px] ${colors[color]}`}>
+      <h4 className="font-bold text-sm mb-1">{title}</h4>
+      <p className="text-xs text-gray-600 mb-3">{subtitle}</p>
+      <div className="space-y-2">
+        {strategies.map((s, i) => (
+          <div key={s.id} className="text-xs bg-white rounded p-2">
+            {i + 1}. {s.text.length > 40 ? s.text.substring(0, 40) + '...' : s.text}
+          </div>
+        ))}
+        {strategies.length === 0 && (
+          <p className="text-xs text-gray-400 italic">No strategies in this category</p>
         )}
       </div>
     </div>

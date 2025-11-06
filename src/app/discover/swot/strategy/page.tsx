@@ -13,8 +13,6 @@ interface SWOTItem {
 interface Strategy {
   id: string;
   text: string;
-  impact?: 'high' | 'medium' | 'low';
-  difficulty?: 'high' | 'medium' | 'low';
 }
 
 interface StrategyData {
@@ -99,9 +97,7 @@ export default function StrategyDevelopmentPage() {
 
     const newItem: Strategy = {
       id: Date.now().toString(),
-      text,
-      impact: 'medium',
-      difficulty: 'medium'
+      text
     };
 
     const key = `${type}_strategies` as keyof StrategyData;
@@ -118,14 +114,6 @@ export default function StrategyDevelopmentPage() {
     setStrategies(prev => ({
       ...prev,
       [key]: prev[key].filter(s => s.id !== id)
-    }));
-  }
-
-  function updateStrategy(type: 'so' | 'wo' | 'st' | 'wt', id: string, field: 'impact' | 'difficulty', value: 'high' | 'medium' | 'low') {
-    const key = `${type}_strategies` as keyof StrategyData;
-    setStrategies(prev => ({
-      ...prev,
-      [key]: prev[key].map(s => s.id === id ? { ...s, [field]: value } : s)
     }));
   }
 
@@ -182,53 +170,15 @@ export default function StrategyDevelopmentPage() {
     setSaving(true);
 
     try {
-      // Convert impact/difficulty from 'high'|'medium'|'low' to numeric scores (1-10)
-      const convertToNumericScore = (level: 'high' | 'medium' | 'low' = 'medium'): number => {
-        switch (level) {
-          case 'high': return 8;
-          case 'medium': return 5;
-          case 'low': return 3;
-          default: return 5;
-        }
-      };
-
-      // Prepare strategies with numeric scores for prioritization
-      const strategiesWithScores = {
-        so_strategies: strategies.so_strategies.map(s => ({
-          id: s.id,
-          text: s.text,
-          impact: s.impact ? convertToNumericScore(s.impact) : 5,
-          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
-        })),
-        wo_strategies: strategies.wo_strategies.map(s => ({
-          id: s.id,
-          text: s.text,
-          impact: s.impact ? convertToNumericScore(s.impact) : 5,
-          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
-        })),
-        st_strategies: strategies.st_strategies.map(s => ({
-          id: s.id,
-          text: s.text,
-          impact: s.impact ? convertToNumericScore(s.impact) : 5,
-          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
-        })),
-        wt_strategies: strategies.wt_strategies.map(s => ({
-          id: s.id,
-          text: s.text,
-          impact: s.impact ? convertToNumericScore(s.impact) : 5,
-          feasibility: s.difficulty ? (10 - convertToNumericScore(s.difficulty)) : 5
-        }))
-      };
-
       await fetch('/api/swot/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          so_strategies: strategiesWithScores.so_strategies,
-          wo_strategies: strategiesWithScores.wo_strategies,
-          st_strategies: strategiesWithScores.st_strategies,
-          wt_strategies: strategiesWithScores.wt_strategies,
-          current_stage: 'goals'  // Changed from 'prioritization' to match DB constraint
+          so_strategies: strategies.so_strategies,
+          wo_strategies: strategies.wo_strategies,
+          st_strategies: strategies.st_strategies,
+          wt_strategies: strategies.wt_strategies,
+          current_stage: 'goals'
         })
       });
 
@@ -362,7 +312,6 @@ export default function StrategyDevelopmentPage() {
             onNewChange={(v) => setNewStrategy(prev => ({ ...prev, so: v }))}
             onAdd={() => addStrategy('so')}
             onRemove={(id) => removeStrategy('so', id)}
-            onUpdate={(id, field, value) => updateStrategy('so', id, field, value)}
             onAISuggest={() => handleAISuggest('so')}
             color="green"
             aiSuggesting={aiSuggesting}
@@ -376,7 +325,6 @@ export default function StrategyDevelopmentPage() {
             onNewChange={(v) => setNewStrategy(prev => ({ ...prev, wo: v }))}
             onAdd={() => addStrategy('wo')}
             onRemove={(id) => removeStrategy('wo', id)}
-            onUpdate={(id, field, value) => updateStrategy('wo', id, field, value)}
             onAISuggest={() => handleAISuggest('wo')}
             color="blue"
             aiSuggesting={aiSuggesting}
@@ -390,7 +338,6 @@ export default function StrategyDevelopmentPage() {
             onNewChange={(v) => setNewStrategy(prev => ({ ...prev, st: v }))}
             onAdd={() => addStrategy('st')}
             onRemove={(id) => removeStrategy('st', id)}
-            onUpdate={(id, field, value) => updateStrategy('st', id, field, value)}
             onAISuggest={() => handleAISuggest('st')}
             color="purple"
             aiSuggesting={aiSuggesting}
@@ -404,7 +351,6 @@ export default function StrategyDevelopmentPage() {
             onNewChange={(v) => setNewStrategy(prev => ({ ...prev, wt: v }))}
             onAdd={() => addStrategy('wt')}
             onRemove={(id) => removeStrategy('wt', id)}
-            onUpdate={(id, field, value) => updateStrategy('wt', id, field, value)}
             onAISuggest={() => handleAISuggest('wt')}
             color="red"
             aiSuggesting={aiSuggesting}
@@ -458,7 +404,6 @@ interface StrategySectionProps {
   onNewChange: (value: string) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
-  onUpdate: (id: string, field: 'impact' | 'difficulty', value: 'high' | 'medium' | 'low') => void;
   onAISuggest: () => void;
   color: 'green' | 'blue' | 'purple' | 'red';
   aiSuggesting: boolean;
@@ -472,7 +417,6 @@ function StrategySection({
   onNewChange,
   onAdd,
   onRemove,
-  onUpdate,
   onAISuggest,
   color,
   aiSuggesting
@@ -505,7 +449,7 @@ function StrategySection({
       <div className="space-y-3 mb-4 min-h-[250px]">
         {strategies.map((strategy, index) => (
           <div key={strategy.id} className="bg-white rounded-lg p-3 shadow-sm">
-            <div className="flex items-start mb-2">
+            <div className="flex items-start">
               <span className="font-semibold mr-2 text-gray-500">{index + 1}.</span>
               <p className="flex-1 text-gray-800 text-sm">{strategy.text}</p>
               <button
@@ -514,26 +458,6 @@ function StrategySection({
               >
                 <X className="w-4 h-4 text-gray-400" />
               </button>
-            </div>
-            <div className="flex gap-2 ml-6">
-              <select
-                value={strategy.impact || 'medium'}
-                onChange={(e) => onUpdate(strategy.id, 'impact', e.target.value as any)}
-                className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
-              >
-                <option value="high">High Impact</option>
-                <option value="medium">Medium Impact</option>
-                <option value="low">Low Impact</option>
-              </select>
-              <select
-                value={strategy.difficulty || 'medium'}
-                onChange={(e) => onUpdate(strategy.id, 'difficulty', e.target.value as any)}
-                className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
-              >
-                <option value="high">High Difficulty</option>
-                <option value="medium">Medium Difficulty</option>
-                <option value="low">Low Difficulty</option>
-              </select>
             </div>
           </div>
         ))}

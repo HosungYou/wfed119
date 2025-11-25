@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { createModuleProgressService } from '@/lib/services/moduleProgressService';
-import { ModuleId, ModuleStatus, MODULE_CONFIGS } from '@/lib/types/modules';
+import { ModuleId, ModuleStatus, MODULE_CONFIGS, canStartModule } from '@/lib/types/modules';
 
 /**
  * GET /api/modules/progress
  * Get user's module progress (all or specific module)
+ *
+ * Optimized: Calculate canStart in memory instead of DB queries per module
  */
 export async function GET(req: NextRequest) {
   try {
@@ -24,10 +26,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
+    // Get all progress first (single DB call)
+    const allProgress = await service.getAllProgress();
+
+    // Pre-compute completed modules set (no additional DB calls)
+    const completedModulesSet = new Set(
+      allProgress.filter(p => p.status === 'completed').map(p => p.moduleId)
+    );
+
     if (moduleId) {
       // Get specific module progress
-      const progress = await service.getModuleProgress(moduleId);
-      const canStart = await service.canStartModule(moduleId);
+      const progress = allProgress.find(p => p.moduleId === moduleId) || null;
+      const canStart = canStartModule(moduleId, completedModulesSet);
       const config = MODULE_CONFIGS[moduleId];
 
       return NextResponse.json({
@@ -44,19 +54,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get all module progress
-    const allProgress = await service.getAllProgress();
-
-    // Build progress map with module configs
+    // Build progress map with module configs (no additional DB calls)
     const progressMap: Record<string, unknown> = {};
-    for (const moduleId of Object.keys(MODULE_CONFIGS) as ModuleId[]) {
-      const progress = allProgress.find(p => p.moduleId === moduleId);
-      const canStart = await service.canStartModule(moduleId);
-      const config = MODULE_CONFIGS[moduleId];
+    for (const modId of Object.keys(MODULE_CONFIGS) as ModuleId[]) {
+      const progress = allProgress.find(p => p.moduleId === modId);
+      const canStart = canStartModule(modId, completedModulesSet);
+      const config = MODULE_CONFIGS[modId];
 
-      progressMap[moduleId] = {
+      progressMap[modId] = {
         progress: progress || {
-          moduleId,
+          moduleId: modId,
           status: 'not_started',
           completionPercentage: 0,
           lastUpdatedAt: null,
@@ -75,9 +82,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       userId: user.id,
       modules: progressMap,
-      completedModules: allProgress
-        .filter(p => p.status === 'completed')
-        .map(p => p.moduleId),
+      completedModules: Array.from(completedModulesSet),
     });
   } catch (error) {
     console.error('[API] GET /api/modules/progress error:', error);

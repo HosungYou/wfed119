@@ -197,7 +197,8 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
   // Load saved from server if available
   useEffect(() => {
-    const userId = user?.email ?? user?.id ?? undefined;
+    // Use user.id consistently (same as server-side resolveUserId)
+    const userId = user?.id ?? user?.email ?? undefined;
     if (!userId || !routeSet) return;
     fetch(`/api/discover/values/results?user_id=${encodeURIComponent(userId)}&set=${routeSet}`)
       .then(r => r.json())

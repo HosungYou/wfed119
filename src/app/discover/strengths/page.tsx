@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { ChatInterface } from '@/components/ChatInterface';
+import { ChatInterfaceWithContext } from '@/components/ChatInterfaceWithContext';
 
 export default function StrengthsPage() {
-  return <ChatInterface />;
+  return <ChatInterfaceWithContext moduleId="strengths" />;
 }

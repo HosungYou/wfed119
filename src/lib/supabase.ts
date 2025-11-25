@@ -6,21 +6,14 @@ type SupabaseClientConfig = {
   anonKey: string
 }
 
-const resolveSupabaseClientConfig = (context: 'client' | 'server'): SupabaseClientConfig => {
+const resolveSupabaseClientConfig = (context: 'client' | 'server'): SupabaseClientConfig | null => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
-    const missing = [
-      url ? null : 'NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)',
-      anonKey ? null : 'NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)'
-    ].filter(Boolean)
-
-    throw new Error(
-      `Supabase configuration is missing in ${context} environment. Set ${missing.join(
-        ' and '
-      )} before continuing.`
-    )
+    // During build/SSR without env vars, return null to allow static generation
+    console.warn(`[Supabase] Configuration missing in ${context} environment - this is expected during build`)
+    return null
   }
 
   return { url, anonKey }
@@ -38,16 +31,28 @@ const resolveServiceRoleKey = () => {
 
 // Client-side Supabase client
 export const createSupabaseClient = () => {
-  const { url, anonKey } = resolveSupabaseClientConfig('client')
-  return createBrowserClient(url, anonKey)
+  const config = resolveSupabaseClientConfig('client')
+  if (!config) {
+    // Return a mock client for build-time/SSR without config
+    // This allows static generation to proceed
+    return null as unknown as ReturnType<typeof createBrowserClient>
+  }
+  return createBrowserClient(config.url, config.anonKey)
 }
 
 // Server-side Supabase client with service role
 export const createSupabaseAdmin = () => {
-  const { url } = resolveSupabaseClientConfig('server')
-  const serviceRoleKey = resolveServiceRoleKey()
+  const config = resolveSupabaseClientConfig('server')
+  if (!config) {
+    return null as unknown as ReturnType<typeof createClient>
+  }
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    console.warn('[Supabase] Service role key missing - admin client unavailable')
+    return null as unknown as ReturnType<typeof createClient>
+  }
 
-  return createClient(url, serviceRoleKey, {
+  return createClient(config.url, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck, RotateCcw } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import * as htmlToImage from 'html-to-image';
 
 type Value = { id: string; name: string; description: string };
@@ -180,7 +180,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     }
   }, [routeSet]);
 
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const [palette, setPalette] = useState<string[]>([]);
   const [layout, setLayout] = useState<Layout>(emptyLayout);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -189,7 +189,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
   // Load saved from server if available
   useEffect(() => {
-    const userId = session?.user?.email ?? session?.user?.id ?? undefined;
+    const userId = user?.email ?? user?.id ?? undefined;
     if (!userId || !routeSet) return;
     fetch(`/api/discover/values/results?user_id=${encodeURIComponent(userId)}&set=${routeSet}`)
       .then(r => r.json())
@@ -202,7 +202,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
         }
       })
       .catch(() => { });
-  }, [session, routeSet, VALUES]);
+  }, [user, routeSet, VALUES]);
 
   const byId = useMemo(() => Object.fromEntries(VALUES.map(v => [v.id, v])), [VALUES]);
 
@@ -559,7 +559,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }
 
   async function saveToServer() {
-    const userId = session?.user?.id ?? session?.user?.email ?? undefined;
+    const userId = user?.id ?? user?.email ?? undefined;
     if (!userId) { alert('Please sign in to save.'); return; }
     const payload = { user_id: userId, set: routeSet, layout, top3 };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -587,14 +587,14 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
             {/* Auth button - always visible */}
             <div className="flex items-center">
-              {status !== 'authenticated' ? (
-                <button onClick={() => signIn('google')} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50">
+              {!isAuthenticated ? (
+                <button onClick={signInWithGoogle} disabled={loading} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50 disabled:opacity-50">
                   <LogIn className="w-3 h-3" />
                   <span className="hidden sm:inline">Sign in with Google</span>
                   <span className="sm:hidden">Sign in</span>
                 </button>
               ) : (
-                <button onClick={() => signOut()} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50">
+                <button onClick={signOut} disabled={loading} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50 disabled:opacity-50">
                   <LogOut className="w-3 h-3" />
                   <span className="hidden sm:inline">Sign out</span>
                   <span className="sm:hidden">Out</span>

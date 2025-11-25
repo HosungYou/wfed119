@@ -5,13 +5,15 @@ import Link from 'next/link';
 import {
   Brain, Target, ArrowRight, Sparkles, Users, TrendingUp, Heart,
   Lightbulb, ShieldAlert, Eye, BarChart3, Zap, ChevronDown, ChevronUp,
-  CheckCircle2, Clock, Compass
+  CheckCircle2, Clock, Compass, LogIn, LogOut, LayoutDashboard, Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TiltCard } from './landing/TiltCard';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const HomePage: React.FC = () => {
   const [openCategory, setOpenCategory] = useState<string | null>('discovery');
+  const { user, isAuthenticated, isLoading, signInWithGoogle, signOut } = useAuth();
 
   const toggleCategory = (category: string) => {
     setOpenCategory(openCategory === category ? null : category);
@@ -30,9 +32,45 @@ export const HomePage: React.FC = () => {
               LifeCraft
             </h1>
           </div>
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#modules" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">Modules</a>
-            <a href="#about" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">About</a>
+          <nav className="flex items-center space-x-4 md:space-x-8">
+            <a href="#modules" className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors font-medium">Modules</a>
+            <a href="#about" className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors font-medium">About</a>
+
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+            ) : isAuthenticated ? (
+              <div className="flex items-center space-x-3">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+                {user?.user_metadata?.avatar_url && (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt={user.user_metadata?.full_name || 'User'}
+                    className="w-8 h-8 rounded-full border-2 border-primary-200"
+                  />
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={signInWithGoogle}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -71,13 +109,24 @@ export const HomePage: React.FC = () => {
             personality patterns, and growth opportunities.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
-              href="#modules"
-              className="group bg-gradient-to-r from-primary-600 to-secondary-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
-            >
-              <span>Start Your Journey</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </a>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="group bg-gradient-to-r from-primary-600 to-secondary-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span>Go to Dashboard</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            ) : (
+              <a
+                href="#modules"
+                className="group bg-gradient-to-r from-primary-600 to-secondary-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
+              >
+                <span>Start Your Journey</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
+            )}
             <Link
               href="/results"
               className="glass-panel text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-white/80 transition-all duration-300 flex items-center justify-center space-x-2"

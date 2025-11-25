@@ -7,6 +7,7 @@ import {
   User, Brain, Heart, Target, Sparkles,
   CheckCircle, Circle, TrendingUp, ArrowRight, Lock, Home, BarChart3, Compass
 } from 'lucide-react';
+import { ModuleJourneyProgress, NextModuleCard } from '@/components/ModuleProgressSection';
 
 interface ModuleStatus {
   completed: boolean;
@@ -206,25 +207,35 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Overall Progress Card */}
-        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Your Journey</h2>
-              <p className="text-blue-100">
-                {completedCount} of {totalModules} modules completed
-              </p>
+        {/* Module Journey Progress - New Component */}
+        <div className="mb-8">
+          <ModuleJourneyProgress />
+        </div>
+
+        {/* Next Recommended Module */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <NextModuleCard />
+
+          {/* Quick Stats Card */}
+          <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold mb-1">Quick Stats</h3>
+                <p className="text-blue-100 text-sm">
+                  {completedCount} of {totalModules} modules
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-bold">{overallProgress}%</div>
+                <p className="text-blue-100 text-xs">Overall</p>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-5xl font-bold">{overallProgress}%</div>
-              <p className="text-blue-100">Overall Progress</p>
+            <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-white h-full rounded-full transition-all duration-500"
+                style={{ width: `${overallProgress}%` }}
+              />
             </div>
-          </div>
-          <div className="bg-white/20 rounded-full h-3 overflow-hidden">
-            <div
-              className="bg-white h-full rounded-full transition-all duration-500"
-              style={{ width: `${overallProgress}%` }}
-            />
           </div>
         </div>
 

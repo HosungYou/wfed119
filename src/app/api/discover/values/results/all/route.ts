@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import {
   emptyLayout,
   normalizeTop3,
@@ -14,8 +12,9 @@ const valueSets: ValueSet[] = ['terminal', 'instrumental', 'work'];
 
 const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
   if (explicitId) return explicitId;
-  const session = await getServerSession(authOptions);
-  return session?.user?.id || session?.user?.email || undefined;
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || user?.email || undefined;
 };
 
 export async function GET(req: NextRequest) {

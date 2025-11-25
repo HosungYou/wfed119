@@ -3,28 +3,30 @@
 import React from 'react';
 import Link from 'next/link';
 import { Heart, Target, Briefcase, LogIn, LogOut } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ValuesLanding() {
-  const { status } = useSession();
+  const { isAuthenticated, signInWithGoogle, signOut, loading } = useAuth();
   return (
     <div className="min-h-screen">
       <header className="glass-panel sticky top-0 z-50 border-b border-white/20">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold">Value Discovery</h1>
           <div className="flex items-center gap-2">
-            {status !== 'authenticated' ? (
+            {!isAuthenticated ? (
               <button
-                onClick={() => signIn('google')}
-                className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"
+                onClick={signInWithGoogle}
+                disabled={loading}
+                className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
               >
                 <LogIn className="w-4 h-4" />
                 Sign in with Google
               </button>
             ) : (
               <button
-                onClick={() => signOut()}
-                className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50"
+                onClick={signOut}
+                disabled={loading}
+                className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out

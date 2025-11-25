@@ -57,27 +57,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Fetch user's top values
+// Fetch user's top values from value_results table
 async function fetchValuesData(supabase: any, userId: string) {
   try {
     const { data } = await supabase
-      .from('value_assessment_results')
-      .select('terminal_values_sorted, instrumental_values_sorted, work_values_sorted')
+      .from('value_results')
+      .select('value_set, top3')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('updated_at', { ascending: false });
 
-    if (!data) return null;
+    if (!data || data.length === 0) return null;
 
-    const terminalValues = data.terminal_values_sorted ? JSON.parse(data.terminal_values_sorted) : [];
-    const instrumentalValues = data.instrumental_values_sorted ? JSON.parse(data.instrumental_values_sorted) : [];
-    const workValues = data.work_values_sorted ? JSON.parse(data.work_values_sorted) : [];
+    // Group by value_set
+    const terminalRecord = data.find((r: any) => r.value_set === 'terminal');
+    const instrumentalRecord = data.find((r: any) => r.value_set === 'instrumental');
+    const workRecord = data.find((r: any) => r.value_set === 'work');
 
     return {
-      top_terminal: terminalValues.slice(0, 3).map((v: any) => v.value),
-      top_instrumental: instrumentalValues.slice(0, 3).map((v: any) => v.value),
-      top_work: workValues.slice(0, 3).map((v: any) => v.value)
+      top_terminal: Array.isArray(terminalRecord?.top3) ? terminalRecord.top3.slice(0, 3) : [],
+      top_instrumental: Array.isArray(instrumentalRecord?.top3) ? instrumentalRecord.top3.slice(0, 3) : [],
+      top_work: Array.isArray(workRecord?.top3) ? workRecord.top3.slice(0, 3) : []
     };
   } catch (error) {
     console.error('Error fetching values:', error);

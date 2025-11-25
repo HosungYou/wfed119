@@ -24,28 +24,29 @@ export async function GET(req: NextRequest) {
 
     const userId = auth.userId;
 
-    // 2. Values 데이터 조회
+    // 2. Values 데이터 조회 (value_results 테이블 사용)
     const { data: valuesData, error: valuesError } = await supabase
-      .from('value_assessment_results')
-      .select('set, top3, insights, layout')
+      .from('value_results')
+      .select('value_set, top3, insights, layout')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false });
 
     if (valuesError) {
       console.error('[Vision Context] Values query error:', valuesError);
     }
 
     // 3개 세트의 Top 3 가치 추출
-    const valuesContext = {
+    const valuesContext: Record<string, { top3: string[]; insights: unknown }> = {
       terminal: { top3: [], insights: null },
       instrumental: { top3: [], insights: null },
       work: { top3: [], insights: null }
     };
 
     valuesData?.forEach(record => {
-      if (record.set && valuesContext[record.set as keyof typeof valuesContext]) {
-        valuesContext[record.set as keyof typeof valuesContext] = {
-          top3: record.top3 || [],
+      const setKey = record.value_set;
+      if (setKey && valuesContext[setKey]) {
+        valuesContext[setKey] = {
+          top3: Array.isArray(record.top3) ? record.top3 : [],
           insights: record.insights
         };
       }

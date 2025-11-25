@@ -48,7 +48,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   className = ''
 }) => {
   const stages = Object.entries(STAGE_CONFIG).sort(([, a], [, b]) => a.order - b.order);
-  const currentStageOrder = STAGE_CONFIG[currentStage].order;
+
+  // Safe fallback if currentStage is undefined or invalid
+  const safeStage = currentStage && STAGE_CONFIG[currentStage] ? currentStage : 'initial';
+  const currentStageOrder = STAGE_CONFIG[safeStage].order;
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border p-4 ${className}`}>
@@ -145,13 +148,13 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       {/* Current Stage Info */}
       <div className="mt-4 p-3 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-md">
         <div className="flex items-center space-x-2">
-          <span className="text-lg">{STAGE_CONFIG[currentStage].icon}</span>
+          <span className="text-lg">{STAGE_CONFIG[safeStage].icon}</span>
           <div>
             <p className="font-medium text-gray-800">
-              Current: {STAGE_CONFIG[currentStage].label}
+              Current: {STAGE_CONFIG[safeStage].label}
             </p>
             <p className="text-sm text-gray-600">
-              {STAGE_CONFIG[currentStage].description}
+              {STAGE_CONFIG[safeStage].description}
             </p>
           </div>
         </div>

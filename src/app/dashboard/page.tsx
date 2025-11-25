@@ -35,6 +35,10 @@ export default function DashboardPage() {
   const checkAuthAndFetchData = async () => {
     try {
       const supabase = createSupabaseClient();
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
@@ -50,29 +54,46 @@ export default function DashboardPage() {
 
   const fetchModuleData = async (userId: string) => {
     const supabase = createSupabaseClient();
+    if (!supabase) return;
 
-    // Fetch Values data
-    const { data: valuesResult } = await supabase
-      .from('value_assessment_results')
+    // Fetch Values data from value_results table (3 separate records for terminal/instrumental/work)
+    const { data: valuesResults } = await supabase
+      .from('value_results')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('updated_at', { ascending: false });
 
-    if (valuesResult) {
-      setValuesData(valuesResult);
-      const progress = [
-        valuesResult.terminal_values_sorted,
-        valuesResult.instrumental_values_sorted,
-        valuesResult.work_values_sorted
-      ].filter(Boolean).length / 3 * 100;
+    if (valuesResults && valuesResults.length > 0) {
+      // Group by value_set and get latest for each
+      const terminalValue = valuesResults.find(v => v.value_set === 'terminal');
+      const instrumentalValue = valuesResults.find(v => v.value_set === 'instrumental');
+      const workValue = valuesResults.find(v => v.value_set === 'work');
 
+      // Calculate progress based on completed sets
+      const completedSets = [terminalValue, instrumentalValue, workValue].filter(Boolean).length;
+      const progress = (completedSets / 3) * 100;
+
+      // Format data for display (combine top3 from each set)
+      const combinedValuesData = {
+        terminal_values_sorted: terminalValue?.top3 ? JSON.stringify(
+          (Array.isArray(terminalValue.top3) ? terminalValue.top3 : []).map((v: string) => ({ value: v }))
+        ) : null,
+        instrumental_values_sorted: instrumentalValue?.top3 ? JSON.stringify(
+          (Array.isArray(instrumentalValue.top3) ? instrumentalValue.top3 : []).map((v: string) => ({ value: v }))
+        ) : null,
+        work_values_sorted: workValue?.top3 ? JSON.stringify(
+          (Array.isArray(workValue.top3) ? workValue.top3 : []).map((v: string) => ({ value: v }))
+        ) : null,
+        is_completed: completedSets === 3,
+        updated_at: valuesResults[0]?.updated_at,
+      };
+
+      setValuesData(combinedValuesData);
       setModules(prev => ({
         ...prev,
         values: {
-          completed: valuesResult.is_completed || false,
-          lastUpdated: valuesResult.updated_at,
+          completed: completedSets === 3,
+          lastUpdated: valuesResults[0]?.updated_at,
           progress
         }
       }));

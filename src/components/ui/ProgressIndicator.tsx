@@ -55,7 +55,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       {/* Progress Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-gray-800">Session Progress</h3>
-        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+        <span className="text-sm font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded">
           {progressPercentage}% Complete
         </span>
       </div>
@@ -63,7 +63,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
         <div
-          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+          className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-500"
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
@@ -79,23 +79,21 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
           return (
             <div
               key={stage}
-              className={`flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ${
-                isActive
-                  ? 'bg-blue-50 border border-blue-200'
+              className={`flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ${isActive
+                  ? 'bg-primary-50 border border-primary-200'
                   : isCompleted
-                  ? 'bg-green-50'
-                  : 'bg-gray-50'
-              }`}
+                    ? 'bg-secondary-50'
+                    : 'bg-gray-50'
+                }`}
             >
               {/* Step Icon */}
               <div
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  isActive
-                    ? 'bg-blue-500 text-white'
+                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${isActive
+                    ? 'bg-primary-500 text-white'
                     : isCompleted
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 text-gray-600'
-                }`}
+                      ? 'bg-secondary-500 text-white'
+                      : 'bg-gray-300 text-gray-600'
+                  }`}
               >
                 {isCompleted ? '✓' : config.order}
               </div>
@@ -105,25 +103,23 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
                 <div className="flex items-center space-x-2">
                   <span className="text-lg">{config.icon}</span>
                   <p
-                    className={`font-medium ${
-                      isActive
-                        ? 'text-blue-800'
+                    className={`font-medium ${isActive
+                        ? 'text-primary-800'
                         : isCompleted
-                        ? 'text-green-800'
-                        : 'text-gray-600'
-                    }`}
+                          ? 'text-secondary-800'
+                          : 'text-gray-600'
+                      }`}
                   >
                     {config.label}
                   </p>
                 </div>
                 <p
-                  className={`text-sm ${
-                    isActive
-                      ? 'text-blue-600'
+                  className={`text-sm ${isActive
+                      ? 'text-primary-600'
                       : isCompleted
-                      ? 'text-green-600'
-                      : 'text-gray-500'
-                  }`}
+                        ? 'text-secondary-600'
+                        : 'text-gray-500'
+                    }`}
                 >
                   {config.description}
                 </p>
@@ -132,10 +128,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
               {/* Status Indicator */}
               <div className="flex-shrink-0">
                 {isActive && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
                 )}
                 {isCompleted && (
-                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <div className="w-2 h-2 bg-secondary-500 rounded-full" />
                 )}
                 {isUpcoming && (
                   <div className="w-2 h-2 bg-gray-300 rounded-full" />
@@ -147,7 +143,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       </div>
 
       {/* Current Stage Info */}
-      <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-md">
+      <div className="mt-4 p-3 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-md">
         <div className="flex items-center space-x-2">
           <span className="text-lg">{STAGE_CONFIG[currentStage].icon}</span>
           <div>

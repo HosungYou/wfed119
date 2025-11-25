@@ -18,42 +18,42 @@ interface ChartDataPoint {
 }
 
 const CATEGORY_COLORS = {
-  Skills: '#3b82f6',
-  Attitudes: '#10b981',
-  Values: '#8b5cf6',
+  Skills: '#14b8a6', // primary-500
+  Attitudes: '#8b5cf6', // secondary-500
+  Values: '#f43f5e', // accent-500
   Integration: '#f59e0b',
-  Application: '#ef4444',
-  Growth: '#06b6d4'
+  Application: '#06b6d4',
+  Growth: '#10b981'
 };
 
-export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({ 
-  data, 
-  className = '', 
-  showDetails = true 
+export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
+  data,
+  className = '',
+  showDetails = true
 }) => {
   const chartData = useMemo(() => {
     // Calculate total items to determine proportional percentages
     const totalItems = data.skills.length + data.attitudes.length + data.values.length;
-    
+
     if (totalItems === 0) {
       // Default values when no data
       return [];
     }
-    
+
     // Calculate proportional values based on actual distribution
     const skillProportion = data.skills.length / totalItems;
     const attitudeProportion = data.attitudes.length / totalItems;
     const valueProportion = data.values.length / totalItems;
-    
+
     // Scale to meaningful percentages (30-100 range for better visualization)
     const baseScore = 30;
     const maxScore = 100;
     const scoreRange = maxScore - baseScore;
-    
+
     const skillValue = Math.round(baseScore + (skillProportion * scoreRange) + (data.skills.length * 5));
     const attitudeValue = Math.round(baseScore + (attitudeProportion * scoreRange) + (data.attitudes.length * 5));
     const valueValue = Math.round(baseScore + (valueProportion * scoreRange) + (data.values.length * 5));
-    
+
     // Derived scores based on combinations
     const integrationValue = Math.round((skillValue + attitudeValue + valueValue) / 3);
     const applicationValue = Math.round((skillValue + attitudeValue) / 2);
@@ -67,7 +67,7 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
         color: CATEGORY_COLORS.Skills
       },
       {
-        category: 'Attitudes', 
+        category: 'Attitudes',
         value: attitudeValue,
         items: data.attitudes,
         color: CATEGORY_COLORS.Attitudes
@@ -107,24 +107,24 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
   }, [chartData]);
 
   const getStrengthLevel = (score: number): { level: string; color: string; description: string } => {
-    if (score >= 80) return { 
-      level: 'Exceptional', 
-      color: 'text-green-600',
+    if (score >= 80) return {
+      level: 'Exceptional',
+      color: 'text-primary-600',
       description: 'Strong foundation for career success'
     };
-    if (score >= 60) return { 
-      level: 'Well-Developed', 
-      color: 'text-blue-600',
+    if (score >= 60) return {
+      level: 'Well-Developed',
+      color: 'text-secondary-600',
       description: 'Good strengths with growth potential'
     };
-    if (score >= 40) return { 
-      level: 'Emerging', 
-      color: 'text-yellow-600',
+    if (score >= 40) return {
+      level: 'Emerging',
+      color: 'text-accent-600',
       description: 'Developing strengths to build upon'
     };
-    return { 
-      level: 'Developing', 
-      color: 'text-orange-600',
+    return {
+      level: 'Developing',
+      color: 'text-gray-600',
       description: 'Early stages of strength development'
     };
   };
@@ -157,16 +157,16 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={chartData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
             <PolarGrid stroke="#e0e0e0" />
-            <PolarAngleAxis 
-              dataKey="category" 
+            <PolarAngleAxis
+              dataKey="category"
               tick={{ fontSize: 12, fill: '#374151' }}
               className="font-medium"
             />
             <Radar
               name="Strength Level"
               dataKey="value"
-              stroke="#3b82f6"
-              fill="#3b82f6"
+              stroke="#14b8a6"
+              fill="#14b8a6"
               fillOpacity={0.3}
               strokeWidth={2}
             />
@@ -178,23 +178,22 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
       {showDetails && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <h4 className="font-semibold text-blue-600 text-lg mb-3 flex items-center justify-center">
-              <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-primary-600 text-lg mb-3 flex items-center justify-center">
+              <div className="w-3 h-3 bg-primary-600 rounded-full mr-2"></div>
               Skills (역량)
             </h4>
             <div className="text-right mb-2">
-              <span className={`text-sm font-medium px-2 py-1 rounded ${ 
-                data.skills.length >= 4 ? 'bg-green-100 text-green-800' : 
-                data.skills.length >= 2 ? 'bg-yellow-100 text-yellow-800' : 
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <span className={`text-sm font-medium px-2 py-1 rounded ${data.skills.length >= 4 ? 'bg-primary-100 text-primary-800' :
+                  data.skills.length >= 2 ? 'bg-secondary-100 text-secondary-800' :
+                    'bg-gray-100 text-gray-800'
+                }`}>
                 {data.skills.length} identified
               </span>
             </div>
             {data.skills.length > 0 ? (
               <ul className="text-sm space-y-2">
                 {data.skills.map((skill, i) => (
-                  <li key={i} className="py-1 px-3 bg-blue-50 rounded-md border-l-3 border-blue-600">
+                  <li key={i} className="py-1 px-3 bg-primary-50 rounded-md border-l-3 border-primary-600">
                     {skill}
                   </li>
                 ))}
@@ -205,23 +204,22 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
           </div>
 
           <div className="text-center">
-            <h4 className="font-semibold text-green-600 text-lg mb-3 flex items-center justify-center">
-              <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-secondary-600 text-lg mb-3 flex items-center justify-center">
+              <div className="w-3 h-3 bg-secondary-600 rounded-full mr-2"></div>
               Attitudes (태도)
             </h4>
             <div className="text-right mb-2">
-              <span className={`text-sm font-medium px-2 py-1 rounded ${ 
-                data.attitudes.length >= 4 ? 'bg-green-100 text-green-800' : 
-                data.attitudes.length >= 2 ? 'bg-yellow-100 text-yellow-800' : 
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <span className={`text-sm font-medium px-2 py-1 rounded ${data.attitudes.length >= 4 ? 'bg-secondary-100 text-secondary-800' :
+                  data.attitudes.length >= 2 ? 'bg-accent-100 text-accent-800' :
+                    'bg-gray-100 text-gray-800'
+                }`}>
                 {data.attitudes.length} identified
               </span>
             </div>
             {data.attitudes.length > 0 ? (
               <ul className="text-sm space-y-2">
                 {data.attitudes.map((attitude, i) => (
-                  <li key={i} className="py-1 px-3 bg-green-50 rounded-md border-l-3 border-green-600">
+                  <li key={i} className="py-1 px-3 bg-secondary-50 rounded-md border-l-3 border-secondary-600">
                     {attitude}
                   </li>
                 ))}
@@ -232,23 +230,22 @@ export const StrengthHexagon: React.FC<StrengthHexagonProps> = ({
           </div>
 
           <div className="text-center">
-            <h4 className="font-semibold text-purple-600 text-lg mb-3 flex items-center justify-center">
-              <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-accent-600 text-lg mb-3 flex items-center justify-center">
+              <div className="w-3 h-3 bg-accent-600 rounded-full mr-2"></div>
               Values (가치)
             </h4>
             <div className="text-right mb-2">
-              <span className={`text-sm font-medium px-2 py-1 rounded ${ 
-                data.values.length >= 4 ? 'bg-green-100 text-green-800' : 
-                data.values.length >= 2 ? 'bg-yellow-100 text-yellow-800' : 
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <span className={`text-sm font-medium px-2 py-1 rounded ${data.values.length >= 4 ? 'bg-accent-100 text-accent-800' :
+                  data.values.length >= 2 ? 'bg-primary-100 text-primary-800' :
+                    'bg-gray-100 text-gray-800'
+                }`}>
                 {data.values.length} identified
               </span>
             </div>
             {data.values.length > 0 ? (
               <ul className="text-sm space-y-2">
                 {data.values.map((value, i) => (
-                  <li key={i} className="py-1 px-3 bg-purple-50 rounded-md border-l-3 border-purple-600">
+                  <li key={i} className="py-1 px-3 bg-accent-50 rounded-md border-l-3 border-accent-600">
                     {value}
                   </li>
                 ))}

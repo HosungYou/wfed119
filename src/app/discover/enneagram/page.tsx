@@ -136,20 +136,20 @@ function EnneagramWizardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
+    <div className="min-h-screen py-10">
       <div className="max-w-4xl mx-auto px-4">
         {/* Top Bar */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-white p-2 rounded shadow">
-            <span className="text-sm text-gray-500">Session</span>
-            <code className="px-2 py-1 bg-gray-100 rounded text-xs">{sessionId || '—'}</code>
+          <div className="flex items-center gap-2 glass-panel px-4 py-2 rounded-xl">
+            <span className="text-sm text-gray-500 font-medium">Session</span>
+            <code className="px-2 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-mono">{sessionId || '—'}</code>
           </div>
-          <div className="ml-auto flex items-center gap-2 bg-white p-2 rounded shadow">
-            <span className="text-sm text-gray-500">Language</span>
+          <div className="ml-auto flex items-center gap-2 glass-panel px-4 py-2 rounded-xl">
+            <span className="text-sm text-gray-500 font-medium">Language</span>
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value as Locale)}
-              className="border rounded px-2 py-1"
+              className="bg-transparent border-none text-gray-700 font-medium focus:ring-0 cursor-pointer"
             >
               <option value="en">English</option>
               <option value="kr">한국어</option>
@@ -163,18 +163,18 @@ function EnneagramWizardContent() {
 
         {/* Stages */}
         {stage === 'screener' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="glass-panel p-8 rounded-3xl">
             <StageHeader
               title={locale === 'kr' ? '스테이지 1 — 스크리너 (36문항)' : 'Stage 1 — Screener (36 items)'}
               subtitle={locale === 'kr' ? '각 문항에 대해 1(전혀 아니다) ~ 5(매우 그렇다)' : 'Rate each 1 (Strongly Disagree) to 5 (Strongly Agree)'}
             />
             <div className="space-y-4">
               {screenerItems.map((it) => (
-                <div key={it.id} className="border rounded p-3">
-                  <div className="mb-2">{it.text}</div>
+                <div key={it.id} className="border border-white/40 bg-white/30 rounded-xl p-4">
+                  <div className="mb-3 font-medium text-gray-800">{it.text}</div>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((v) => (
-                      <label key={v} className={`px-3 py-1 rounded cursor-pointer border ${screenerResponses[it.id] === v ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}`}>
+                      <label key={v} className={`flex-1 py-2 rounded-lg cursor-pointer border text-center transition-all ${screenerResponses[it.id] === v ? 'bg-primary-500 text-white border-primary-500 shadow-md' : 'bg-white/50 border-white/40 hover:bg-white/80'}`}>
                         <input
                           type="radio"
                           name={it.id}
@@ -202,14 +202,14 @@ function EnneagramWizardContent() {
         )}
 
         {stage === 'discriminators' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="glass-panel p-8 rounded-3xl">
             <StageHeader title={locale === 'kr' ? '스테이지 2 — 구분 문항' : 'Stage 2 — Discriminators'} />
             <div className="space-y-4">
               {discItems.map((it) => (
-                <div key={it.id} className="border rounded p-3">
-                  <div className="mb-2">{it.prompt}</div>
-                  <div className="flex flex-col gap-2">
-                    <label className={`px-3 py-2 rounded border cursor-pointer ${discResponses[it.id] === 'A' ? 'bg-blue-50 border-blue-400' : ''}`}>
+                <div key={it.id} className="border border-white/40 bg-white/30 rounded-xl p-6">
+                  <div className="mb-4 font-medium text-lg text-gray-800">{it.prompt}</div>
+                  <div className="flex flex-col gap-3">
+                    <label className={`p-4 rounded-xl border cursor-pointer transition-all ${discResponses[it.id] === 'A' ? 'bg-primary-50 border-primary-400 shadow-md' : 'bg-white/50 border-white/40 hover:bg-white/80'}`}>
                       <input
                         type="radio"
                         name={it.id}
@@ -217,9 +217,9 @@ function EnneagramWizardContent() {
                         checked={discResponses[it.id] === 'A'}
                         onChange={() => setDiscResponses((s) => ({ ...s, [it.id]: 'A' }))}
                       />
-                      A) {it.optionA}
+                      <span className="font-bold text-primary-700 mr-2">A)</span> {it.optionA}
                     </label>
-                    <label className={`px-3 py-2 rounded border cursor-pointer ${discResponses[it.id] === 'B' ? 'bg-blue-50 border-blue-400' : ''}`}>
+                    <label className={`p-4 rounded-xl border cursor-pointer transition-all ${discResponses[it.id] === 'B' ? 'bg-primary-50 border-primary-400 shadow-md' : 'bg-white/50 border-white/40 hover:bg-white/80'}`}>
                       <input
                         type="radio"
                         name={it.id}
@@ -227,7 +227,7 @@ function EnneagramWizardContent() {
                         checked={discResponses[it.id] === 'B'}
                         onChange={() => setDiscResponses((s) => ({ ...s, [it.id]: 'B' }))}
                       />
-                      B) {it.optionB}
+                      <span className="font-bold text-primary-700 mr-2">B)</span> {it.optionB}
                     </label>
                   </div>
                 </div>
@@ -246,15 +246,15 @@ function EnneagramWizardContent() {
         )}
 
         {stage === 'wings' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="glass-panel p-8 rounded-3xl">
             <StageHeader title={locale === 'kr' ? '스테이지 3 — 본능 경향' : 'Stage 3 — Instincts'} subtitle={locale === 'kr' ? '각 문항 1~5점' : 'Rate each 1–5'} />
             <div className="space-y-4">
               {instinctItems.map((it) => (
-                <div key={it.id} className="border rounded p-3">
-                  <div className="mb-2">{it.text}</div>
+                <div key={it.id} className="border border-white/40 bg-white/30 rounded-xl p-4">
+                  <div className="mb-3 font-medium text-gray-800">{it.text}</div>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((v) => (
-                      <label key={v} className={`px-3 py-1 rounded cursor-pointer border ${instinctResponses[it.id] === v ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}`}>
+                      <label key={v} className={`flex-1 py-2 rounded-lg cursor-pointer border text-center transition-all ${instinctResponses[it.id] === v ? 'bg-secondary-500 text-white border-secondary-500 shadow-md' : 'bg-white/50 border-white/40 hover:bg-white/80'}`}>
                         <input
                           type="radio"
                           name={it.id}
@@ -282,7 +282,7 @@ function EnneagramWizardContent() {
         )}
 
         {stage === 'narrative' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="glass-panel p-8 rounded-3xl">
             <StageHeader title={locale === 'kr' ? '스테이지 4 — 내러티브 검증' : 'Stage 4 — Narrative Validation'} />
             <div className="space-y-4">
               {(narrativePrompts.length ? narrativePrompts : [
@@ -293,9 +293,9 @@ function EnneagramWizardContent() {
                   <div className="text-sm text-gray-600">{p}</div>
                   <textarea
                     value={narrativeTexts[idx] || ''}
-                    onChange={(e) => setNarrativeTexts((arr) => { const n=[...arr]; n[idx]=e.target.value; return n; })}
+                    onChange={(e) => setNarrativeTexts((arr) => { const n = [...arr]; n[idx] = e.target.value; return n; })}
                     rows={4}
-                    className="w-full border rounded p-2"
+                    className="w-full border border-white/40 bg-white/50 backdrop-blur-sm rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
                     placeholder={locale === 'kr' ? '여기에 작성하세요…' : 'Type here…'}
                   />
                 </div>
@@ -305,7 +305,7 @@ function EnneagramWizardContent() {
               <button
                 onClick={submitStage}
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all disabled:opacity-50"
               >
                 {locale === 'kr' ? '완료' : 'Complete'}
               </button>
@@ -314,19 +314,19 @@ function EnneagramWizardContent() {
         )}
 
         {stage === 'complete' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="glass-panel p-8 rounded-3xl text-center">
             <StageHeader title={locale === 'kr' ? '완료' : 'Complete'} subtitle={locale === 'kr' ? '점수를 계산하고 결과 페이지로 이동합니다.' : 'Score and view your unified results.'} />
-            <div className="flex gap-3">
+            <div className="flex gap-4 justify-center">
               <button
                 onClick={scoreAndGoResults}
                 disabled={loading}
-                className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all disabled:opacity-50"
               >
                 {locale === 'kr' ? '점수 계산 및 결과 보기' : 'Score & View Results'}
               </button>
               <button
                 onClick={() => router.push(`/results?sessionId=${encodeURIComponent(sessionId)}`)}
-                className="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+                className="px-8 py-4 bg-white/50 border border-white/40 text-gray-700 rounded-xl font-bold text-lg hover:bg-white/80 transition-all"
               >
                 {locale === 'kr' ? '결과로 이동' : 'Go to Results'}
               </button>

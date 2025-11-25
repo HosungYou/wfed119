@@ -25,6 +25,17 @@ export async function POST(request: NextRequest) {
       fetchExistingDreams()
     ]);
 
+    // Validate that at least one module has data
+    if (!valuesData && !strengthsData && !visionData) {
+      return NextResponse.json(
+        {
+          error: 'No profile data found',
+          message: 'Please complete at least one of the following modules: Values, Strengths, or Vision'
+        },
+        { status: 400 }
+      );
+    }
+
     // Analyze existing dreams pattern
     const dreamAnalysis = analyzeDreamPatterns(existingDreams);
 

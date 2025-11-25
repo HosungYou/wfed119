@@ -66,13 +66,13 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
           ((localData.skills.length + localData.attitudes.length) / 2) * 16.67,
           ((localData.attitudes.length + localData.values.length) / 2) * 16.67,
         ],
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: 'rgba(59, 130, 246, 1)',
+        backgroundColor: 'rgba(20, 184, 166, 0.2)', // primary-500
+        borderColor: 'rgba(20, 184, 166, 1)',
         borderWidth: 2,
-        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+        pointBackgroundColor: 'rgba(20, 184, 166, 1)',
         pointBorderColor: '#fff',
         pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+        pointHoverBorderColor: 'rgba(20, 184, 166, 1)',
       },
     ],
   };
@@ -153,7 +153,7 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
     const newData = { ...localData };
     newData[category] = newData[category].filter((_, i) => i !== index);
     setLocalData(newData);
-    
+
     if (onUpdateData) {
       onUpdateData(newData);
     }
@@ -170,10 +170,10 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
   };
 
   const getStrengthLevel = (score: number) => {
-    if (score >= 80) return { level: 'Exceptional', color: 'text-green-600' };
-    if (score >= 60) return { level: 'Well-Developed', color: 'text-blue-600' };
-    if (score >= 40) return { level: 'Emerging', color: 'text-yellow-600' };
-    return { level: 'Developing', color: 'text-orange-600' };
+    if (score >= 80) return { level: 'Exceptional', color: 'text-primary-600' };
+    if (score >= 60) return { level: 'Well-Developed', color: 'text-secondary-600' };
+    if (score >= 40) return { level: 'Emerging', color: 'text-accent-600' };
+    return { level: 'Developing', color: 'text-gray-600' };
   };
 
   const strengthLevel = getStrengthLevel(getOverallScore());
@@ -245,14 +245,14 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Skills */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-blue-600 text-lg flex items-center">
-              <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-primary-600 text-lg flex items-center">
+              <div className="w-3 h-3 bg-primary-600 rounded-full mr-2"></div>
               Skills ({localData.skills.length})
             </h4>
             {localData.skills.length > 0 ? (
               <ul className="space-y-2">
                 {localData.skills.map((skill, i) => (
-                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
+                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors">
                     <span className="text-sm">{skill}</span>
                     {allowDelete && (
                       <button
@@ -273,14 +273,14 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
 
           {/* Attitudes */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-green-600 text-lg flex items-center">
-              <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-secondary-600 text-lg flex items-center">
+              <div className="w-3 h-3 bg-secondary-600 rounded-full mr-2"></div>
               Attitudes ({localData.attitudes.length})
             </h4>
             {localData.attitudes.length > 0 ? (
               <ul className="space-y-2">
                 {localData.attitudes.map((attitude, i) => (
-                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-green-50 rounded-md hover:bg-green-100 transition-colors">
+                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-secondary-50 rounded-md hover:bg-secondary-100 transition-colors">
                     <span className="text-sm">{attitude}</span>
                     {allowDelete && (
                       <button
@@ -301,14 +301,14 @@ export const StrengthRadarChart: React.FC<StrengthRadarChartProps> = ({
 
           {/* Values */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-purple-600 text-lg flex items-center">
-              <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+            <h4 className="font-semibold text-accent-600 text-lg flex items-center">
+              <div className="w-3 h-3 bg-accent-600 rounded-full mr-2"></div>
               Values ({localData.values.length})
             </h4>
             {localData.values.length > 0 ? (
               <ul className="space-y-2">
                 {localData.values.map((value, i) => (
-                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-purple-50 rounded-md hover:bg-purple-100 transition-colors">
+                  <li key={i} className="group flex items-center justify-between py-1 px-3 bg-accent-50 rounded-md hover:bg-accent-100 transition-colors">
                     <span className="text-sm">{value}</span>
                     {allowDelete && (
                       <button

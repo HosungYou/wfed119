@@ -56,21 +56,21 @@ function ResultsPageContent() {
   }, [canFetch]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
+    <div className="min-h-screen py-10">
       <div className="max-w-5xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-6">Unified Results</h1>
+        <h1 className="text-3xl font-bold mb-6 font-outfit text-gray-900">Unified Results</h1>
 
         {/* Session input */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow flex items-center space-x-2">
+        <div className="mb-6 glass-panel p-6 rounded-2xl flex items-center space-x-4">
           <input
             value={sessionId}
             onChange={(e) => setSessionId(e.target.value)}
             placeholder="Enter sessionId"
-            className="flex-1 border rounded px-3 py-2"
+            className="flex-1 border border-white/40 bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
           />
           <button
             onClick={fetchResults}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!canFetch || loading}
           >
             {loading ? 'Loading…' : 'Load'}
@@ -78,63 +78,66 @@ function ResultsPageContent() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded">{error}</div>
+          <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-700 rounded-xl">{error}</div>
         )}
 
         {/* Strengths Section */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Strengths</h2>
-          <StrengthRadarChart data={strengths} showDetails allowDelete={false} />
+          <h2 className="text-2xl font-bold mb-4 font-outfit text-gray-900">Strengths</h2>
+          <div className="glass-card p-6 rounded-3xl">
+            <StrengthRadarChart data={strengths} showDetails allowDelete={false} />
+          </div>
         </section>
 
         {/* Enneagram Section */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Enneagram</h2>
+          <h2 className="text-2xl font-bold mb-4 font-outfit text-gray-900">Enneagram</h2>
           {enneagram ? (
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex flex-wrap gap-4 mb-4">
-                <div>
-                  <div className="text-sm text-gray-500">Primary Type</div>
-                  <div className="text-lg font-semibold">{enneagram.primaryType ?? '-'}</div>
+            <div className="glass-card p-8 rounded-3xl">
+              <div className="flex flex-wrap gap-8 mb-8">
+                <div className="bg-white/50 rounded-2xl p-4 min-w-[120px]">
+                  <div className="text-sm text-gray-500 mb-1">Primary Type</div>
+                  <div className="text-3xl font-bold text-primary-700 font-outfit">{enneagram.primaryType ?? '-'}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Confidence</div>
-                  <div className="text-lg font-semibold capitalize">{enneagram.confidence ?? '-'}</div>
+                <div className="bg-white/50 rounded-2xl p-4 min-w-[120px]">
+                  <div className="text-sm text-gray-500 mb-1">Confidence</div>
+                  <div className="text-xl font-semibold capitalize text-gray-800">{enneagram.confidence ?? '-'}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Wing</div>
-                  <div className="text-lg">{enneagram.wingEstimate ?? '-'}</div>
+                <div className="bg-white/50 rounded-2xl p-4 min-w-[120px]">
+                  <div className="text-sm text-gray-500 mb-1">Wing</div>
+                  <div className="text-xl font-semibold text-gray-800">{enneagram.wingEstimate ?? '-'}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Instinct</div>
-                  <div className="text-lg">{enneagram.instinct ?? '-'}</div>
+                <div className="bg-white/50 rounded-2xl p-4 min-w-[120px]">
+                  <div className="text-sm text-gray-500 mb-1">Instinct</div>
+                  <div className="text-xl font-semibold text-gray-800">{enneagram.instinct ?? '-'}</div>
                 </div>
               </div>
               {/* Probabilities */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <h3 className="text-lg font-semibold mb-3 text-gray-800">Type Probabilities</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {Object.entries(enneagram.typeProbabilities ?? {}).map(([t, v]) => (
-                  <div key={t} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded">
-                    <span className="font-mono">Type {t}</span>
-                    <span>{(Number(v) * 100).toFixed(1)}%</span>
+                  <div key={t} className="flex items-center justify-between px-4 py-3 bg-white/40 rounded-xl border border-white/30">
+                    <span className="font-mono font-medium text-gray-700">Type {t}</span>
+                    <span className="font-bold text-primary-600">{(Number(v) * 100).toFixed(1)}%</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="text-gray-600">No Enneagram data yet.</div>
+            <div className="glass-card p-8 rounded-3xl text-gray-600 italic">No Enneagram data yet.</div>
           )}
         </section>
 
         {/* Export Buttons */}
         <section className="mb-16">
-          <h2 className="text-xl font-semibold mb-3">Export</h2>
+          <h2 className="text-2xl font-bold mb-4 font-outfit text-gray-900">Export</h2>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={async () => {
                 const r = await fetch('/api/enneagram/export', { method: 'POST', body: JSON.stringify({ sessionId }) });
                 if (r.ok) alert('Enneagram JSON exported (server-side artifact created).');
               }}
-              className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-accent-600 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-accent-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!canFetch}
             >
               Export Enneagram JSON

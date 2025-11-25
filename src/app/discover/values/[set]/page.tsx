@@ -201,7 +201,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
           setPalette(VALUES.filter(v => !placed.has(v.id)).map(v => v.id));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [session, routeSet, VALUES]);
 
   const byId = useMemo(() => Object.fromEntries(VALUES.map(v => [v.id, v])), [VALUES]);
@@ -574,8 +574,8 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-10">
+    <div className="min-h-screen">
+      <header className="glass-panel sticky top-0 z-10 border-b border-white/20">
         <div className="max-w-7xl mx-auto px-3 py-3">
           {/* Mobile-optimized header for iPhone 16 Pro */}
           <div className="flex items-center justify-between mb-2 sm:mb-0">
@@ -589,13 +589,13 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
             <div className="flex items-center">
               {status !== 'authenticated' ? (
                 <button onClick={() => signIn('google')} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50">
-                  <LogIn className="w-3 h-3"/>
+                  <LogIn className="w-3 h-3" />
                   <span className="hidden sm:inline">Sign in with Google</span>
                   <span className="sm:hidden">Sign in</span>
                 </button>
               ) : (
                 <button onClick={() => signOut()} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50">
-                  <LogOut className="w-3 h-3"/>
+                  <LogOut className="w-3 h-3" />
                   <span className="hidden sm:inline">Sign out</span>
                   <span className="sm:hidden">Out</span>
                 </button>
@@ -606,15 +606,15 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
           {/* Action buttons - mobile-optimized row */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 sm:justify-end">
             <button onClick={clearBoard} className="flex items-center gap-1 px-2 py-1.5 text-xs border border-orange-300 text-orange-700 rounded hover:bg-orange-50">
-              <RotateCcw className="w-3 h-3"/>
+              <RotateCcw className="w-3 h-3" />
               <span className="hidden sm:inline">Clear</span>
             </button>
             <button onClick={saveToServer} className="flex items-center gap-1 px-2 py-1.5 text-xs bg-blue-600 text-white rounded">
-              <Save className="w-3 h-3"/>
+              <Save className="w-3 h-3" />
               <span className="hidden sm:inline">Save</span>
             </button>
             <button onClick={exportBoardPNG} className="flex items-center gap-1 px-2 py-1.5 text-xs border rounded hover:bg-gray-50">
-              <Download className="w-3 h-3"/>
+              <Download className="w-3 h-3" />
               <span className="hidden sm:inline">PNG</span>
             </button>
           </div>
@@ -624,12 +624,12 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold capitalize bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold capitalize bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent font-outfit">
               {routeSet} Values — Categorize
             </h1>
             {layout.very_important.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm self-start sm:self-auto">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm self-start sm:self-auto border border-primary-200">
+                <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
                 In Progress
               </div>
             )}
@@ -639,14 +639,14 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
 
         {/* Enhanced User Instructions - Mobile Optimized */}
         <div className="mb-4 sm:mb-6 space-y-2 sm:space-y-3">
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
+          <div className="glass-card p-3 sm:p-4 rounded-2xl border border-white/40">
             <div className="flex items-start gap-2 sm:gap-3">
-              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                <span className="text-indigo-600 font-bold text-xs sm:text-sm">📋</span>
+              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-secondary-100 rounded-full flex items-center justify-center">
+                <span className="text-secondary-600 font-bold text-xs sm:text-sm">📋</span>
               </div>
               <div>
-                <h3 className="font-bold text-indigo-900 mb-1 sm:mb-2 text-sm sm:text-base">Position-Based Scoring System</h3>
-                <div className="text-xs sm:text-sm text-indigo-800 space-y-1 sm:space-y-2">
+                <h3 className="font-bold text-secondary-900 mb-1 sm:mb-2 text-sm sm:text-base font-outfit">Position-Based Scoring System</h3>
+                <div className="text-xs sm:text-sm text-secondary-800 space-y-1 sm:space-y-2">
                   <p><strong>Individual Scores:</strong> Each value receives a unique score (1-100) based on its exact position across all categories.</p>
                   <p><strong>Within Categories:</strong> Top position in each box gets the highest score, with gradients showing priority levels.</p>
                   <p><strong>Score Display:</strong> See your score for each value in the top-right corner of each card.</p>
@@ -655,14 +655,14 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
+          <div className="glass-card p-3 sm:p-4 rounded-2xl border border-white/40">
             <div className="flex items-start gap-2 sm:gap-3">
-              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <span className="text-yellow-600 font-bold text-xs sm:text-sm">🎯</span>
+              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-accent-100 rounded-full flex items-center justify-center">
+                <span className="text-accent-600 font-bold text-xs sm:text-sm">🎯</span>
               </div>
               <div>
-                <h3 className="font-bold text-yellow-900 mb-1 sm:mb-2 text-sm sm:text-base">Strategic Positioning Tips</h3>
-                <div className="text-xs sm:text-sm text-yellow-800 space-y-1">
+                <h3 className="font-bold text-accent-900 mb-1 sm:mb-2 text-sm sm:text-base font-outfit">Strategic Positioning Tips</h3>
+                <div className="text-xs sm:text-sm text-accent-800 space-y-1">
                   <p>• <strong>Order matters:</strong> Arrange items within each category by true priority</p>
                   <p>• <strong>Golden rings:</strong> #1 items in each category get special highlighting</p>
                   <p>• <strong>Gradient intensity:</strong> Stronger colors = higher priority within category</p>
@@ -672,129 +672,127 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
             </div>
           </div>
 
-          <div className="text-xs text-gray-700 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
-            <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0"/>
+          <div className="text-xs text-gray-700 flex items-center gap-2 glass-panel p-2 sm:p-3 rounded-xl border border-white/40">
+            <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-primary-600 flex-shrink-0" />
             <span className="text-xs sm:text-sm">When saved, your values classification with position-based scores will be stored for comprehensive analysis across all LifeCraft modules.</span>
           </div>
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6 lg:grid-cols-4">
-            {(['very_important','important','somewhat_important','not_important'] as const).map((bucket, bucketIndex) => {
+            {(['very_important', 'important', 'somewhat_important', 'not_important'] as const).map((bucket, bucketIndex) => {
               const bucketStyles = [
-                'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300',
-                'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300',
-                'bg-gradient-to-br from-green-50 to-green-100 border-green-300',
-                'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300'
+                'glass-panel border-secondary-200/50 bg-secondary-50/30',
+                'glass-panel border-primary-200/50 bg-primary-50/30',
+                'glass-panel border-accent-200/50 bg-accent-50/30',
+                'glass-panel border-gray-200/50 bg-gray-50/30'
               ];
               const headerColors = [
-                'text-purple-900',
-                'text-blue-900',
-                'text-green-900',
+                'text-secondary-900',
+                'text-primary-900',
+                'text-accent-900',
                 'text-gray-900'
               ];
               const countColors = [
-                'bg-purple-600 text-white',
-                'bg-blue-600 text-white',
-                'bg-green-600 text-white',
+                'bg-secondary-600 text-white',
+                'bg-primary-600 text-white',
+                'bg-accent-600 text-white',
                 'bg-gray-600 text-white'
               ];
               const dragOverColors = [
-                'ring-purple-400 border-purple-400 bg-purple-50',
-                'ring-blue-400 border-blue-400 bg-blue-50',
-                'ring-green-400 border-green-400 bg-green-50',
+                'ring-secondary-400 border-secondary-400 bg-secondary-50',
+                'ring-primary-400 border-primary-400 bg-primary-50',
+                'ring-accent-400 border-accent-400 bg-accent-50',
                 'ring-gray-400 border-gray-400 bg-gray-50'
               ];
               return (
-              <Droppable key={bucket} droppableId={bucket}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`order-1 ${bucketStyles[bucketIndex]} p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 min-h-[200px] sm:min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg ${
-                      snapshot.isDraggingOver
-                        ? (layout[bucket] as string[]).length >= 7
-                          ? 'ring-4 ring-red-400 border-red-400 bg-red-50 scale-105 shadow-2xl'
-                          : `ring-4 ring-opacity-50 ${dragOverColors[bucketIndex]} scale-105 shadow-2xl`
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
-                      <h2 className={`font-bold text-sm sm:text-base ${headerColors[bucketIndex]}`}>
-                        {bucket.replace('_',' ').replace('_',' ').replace(/^./, (c) => c.toUpperCase())}
-                      </h2>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${countColors[bucketIndex]} ${
-                        (layout[bucket] as string[]).length >= 7 ? 'ring-2 ring-red-400' : ''
-                      }`}>
-                        {(layout[bucket] as string[]).length}/7
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      {(layout[bucket] as string[]).map((id, index) => {
-                        // Position-based styling - higher position = stronger gradient
-                        const totalPosition = getTotalPositionsBefore(bucket) + index;
-                        const score = calculateValueScore(id);
-                        const isTopRank = index === 0;
+                <Droppable key={bucket} droppableId={bucket}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`order-1 ${bucketStyles[bucketIndex]} p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 min-h-[200px] sm:min-h-[240px] flex flex-col lg:order-1 transition-all duration-200 hover:shadow-lg ${snapshot.isDraggingOver
+                          ? (layout[bucket] as string[]).length >= 7
+                            ? 'ring-4 ring-red-400 border-red-400 bg-red-50 scale-105 shadow-2xl'
+                            : `ring-4 ring-opacity-50 ${dragOverColors[bucketIndex]} scale-105 shadow-2xl`
+                          : ''
+                        }`}
+                    >
+                      <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <h2 className={`font-bold text-sm sm:text-base ${headerColors[bucketIndex]}`}>
+                          {bucket.replace('_', ' ').replace('_', ' ').replace(/^./, (c) => c.toUpperCase())}
+                        </h2>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${countColors[bucketIndex]} ${(layout[bucket] as string[]).length >= 7 ? 'ring-2 ring-red-400' : ''
+                          }`}>
+                          {(layout[bucket] as string[]).length}/7
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        {(layout[bucket] as string[]).map((id, index) => {
+                          // Position-based styling - higher position = stronger gradient
+                          const totalPosition = getTotalPositionsBefore(bucket) + index;
+                          const score = calculateValueScore(id);
+                          const isTopRank = index === 0;
 
-                        // Generate position-based styling
-                        const positionStyles = [
-                          // Very Important bucket gradients
-                          ['bg-gradient-to-r from-purple-100 to-purple-200 border-purple-300 shadow-purple-100/50', 'bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200', 'bg-gradient-to-r from-purple-25 to-purple-50 border-purple-100'],
-                          // Important bucket gradients
-                          ['bg-gradient-to-r from-blue-100 to-blue-200 border-blue-300 shadow-blue-100/50', 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200', 'bg-gradient-to-r from-blue-25 to-blue-50 border-blue-100'],
-                          // Somewhat Important gradients
-                          ['bg-gradient-to-r from-green-100 to-green-200 border-green-300 shadow-green-100/50', 'bg-gradient-to-r from-green-50 to-green-100 border-green-200', 'bg-gradient-to-r from-green-25 to-green-50 border-green-100'],
-                          // Not Important gradients
-                          ['bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 shadow-gray-100/50', 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200', 'bg-gradient-to-r from-gray-25 to-gray-50 border-gray-100']
-                        ];
+                          // Generate position-based styling
+                          const positionStyles = [
+                            // Very Important bucket gradients (Secondary - Violet)
+                            ['bg-gradient-to-r from-secondary-100 to-secondary-200 border-secondary-300 shadow-secondary-100/50', 'bg-gradient-to-r from-secondary-50 to-secondary-100 border-secondary-200', 'bg-gradient-to-r from-secondary-50/50 to-secondary-50 border-secondary-100'],
+                            // Important bucket gradients (Primary - Teal)
+                            ['bg-gradient-to-r from-primary-100 to-primary-200 border-primary-300 shadow-primary-100/50', 'bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200', 'bg-gradient-to-r from-primary-50/50 to-primary-50 border-primary-100'],
+                            // Somewhat Important gradients (Accent - Rose)
+                            ['bg-gradient-to-r from-accent-100 to-accent-200 border-accent-300 shadow-accent-100/50', 'bg-gradient-to-r from-accent-50 to-accent-100 border-accent-200', 'bg-gradient-to-r from-accent-50/50 to-accent-50 border-accent-100'],
+                            // Not Important gradients (Gray)
+                            ['bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 shadow-gray-100/50', 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200', 'bg-gradient-to-r from-gray-25 to-gray-50 border-gray-100']
+                          ];
 
-                        const intensityLevel = index < 2 ? 0 : index < 4 ? 1 : 2;
-                        const gradientStyle = positionStyles[bucketIndex]?.[intensityLevel] || 'bg-white border-gray-200';
+                          const intensityLevel = index < 2 ? 0 : index < 4 ? 1 : 2;
+                          const gradientStyle = positionStyles[bucketIndex]?.[intensityLevel] || 'bg-white border-gray-200';
 
-                        return (
-                        <Draggable key={id} draggableId={id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`${gradientStyle} rounded-md sm:rounded-lg p-2 sm:p-2.5 mb-1.5 sm:mb-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-move relative ${
-                                isTopRank ? 'ring-2 ring-yellow-300 ring-opacity-70' : ''
-                              }`}
-                            >
-                              {isTopRank && (
-                                <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
-                                  1
+                          return (
+                            <Draggable key={id} draggableId={id} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`${gradientStyle} rounded-md sm:rounded-lg p-2 sm:p-2.5 mb-1.5 sm:mb-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-move relative ${isTopRank ? 'ring-2 ring-yellow-300 ring-opacity-70' : ''
+                                    }`}
+                                >
+                                  {isTopRank && (
+                                    <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                      1
+                                    </div>
+                                  )}
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="font-semibold text-xs sm:text-sm text-gray-900 leading-tight">{byId[id].name}</div>
+                                    <div className="text-xs font-mono text-gray-500 bg-white/70 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded">
+                                      {score}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-600 leading-relaxed hidden sm:block">{byId[id].description}</div>
                                 </div>
                               )}
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="font-semibold text-xs sm:text-sm text-gray-900 leading-tight">{byId[id].name}</div>
-                                <div className="text-xs font-mono text-gray-500 bg-white/70 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded">
-                                  {score}
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-600 leading-relaxed hidden sm:block">{byId[id].description}</div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );})}
-                      {provided.placeholder}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Droppable>
-            );})}
+                  )}
+                </Droppable>
+              );
+            })}
 
             <Droppable droppableId="palette">
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`order-2 bg-white/90 backdrop-blur-sm p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 min-h-[280px] sm:min-h-[320px] lg:order-2 lg:col-span-4 shadow-lg transition-all duration-200 ${
-                    snapshot.isDraggingOver
-                      ? 'border-blue-400 bg-blue-50/90 ring-4 ring-blue-300 ring-opacity-50 scale-105 shadow-2xl'
-                      : 'border-gray-300'
-                  }`}
+                  className={`order-2 glass-panel p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 min-h-[280px] sm:min-h-[320px] lg:order-2 lg:col-span-4 shadow-lg transition-all duration-200 ${snapshot.isDraggingOver
+                      ? 'border-primary-400 bg-primary-50/90 ring-4 ring-primary-300 ring-opacity-50 scale-105 shadow-2xl'
+                      : 'border-white/40'
+                    }`}
                 >
                   <div className="mb-3 sm:mb-4">
                     <h2 className="font-bold text-base sm:text-lg text-gray-900 mb-1 sm:mb-2">Values Library</h2>

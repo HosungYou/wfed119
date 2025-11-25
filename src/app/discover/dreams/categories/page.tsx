@@ -76,7 +76,8 @@ export default function DreamsMatrixPage() {
         setAiSuggestions(data.suggestions || []);
         setShowAIModal(true);
       } else {
-        alert('Failed to generate AI suggestions. Please complete Values, Strengths, or Vision modules first.');
+        const errorData = await res.json();
+        alert(errorData.message || 'Failed to generate AI suggestions. Please complete Values, Strengths, or Vision modules first.');
       }
     } catch (error) {
       console.error('Failed to generate suggestions:', error);
@@ -164,15 +165,15 @@ export default function DreamsMatrixPage() {
 
   const lifeStages: LifeStage[] = ['20s', '30s', '40s', '50s', '60s', '70s+'];
 
-  const wellbeingAreas: { id: WellbeingArea; nameEn: string; nameKo: string; icon: any }[] = [
-    { id: 'relationship', nameEn: 'Relationship', nameKo: '관계/정서', icon: Heart },
-    { id: 'spiritual', nameEn: 'Spiritual', nameKo: '영적', icon: Sparkles },
-    { id: 'intellectual', nameEn: 'Intellectual', nameKo: '지적', icon: Brain },
-    { id: 'physical', nameEn: 'Physical', nameKo: '신체적', icon: Dumbbell },
-    { id: 'environment', nameEn: 'Environment', nameKo: '환경(주거)', icon: Home },
-    { id: 'financial', nameEn: 'Financial', nameKo: '재정', icon: DollarSign },
-    { id: 'career', nameEn: 'Career', nameKo: '직업', icon: Briefcase },
-    { id: 'leisure', nameEn: 'Leisure', nameKo: '여가', icon: Coffee }
+  const wellbeingAreas: { id: WellbeingArea; nameEn: string; icon: any }[] = [
+    { id: 'relationship', nameEn: 'Relationship', icon: Heart },
+    { id: 'spiritual', nameEn: 'Spiritual', icon: Sparkles },
+    { id: 'intellectual', nameEn: 'Intellectual', icon: Brain },
+    { id: 'physical', nameEn: 'Physical', icon: Dumbbell },
+    { id: 'environment', nameEn: 'Environment', icon: Home },
+    { id: 'financial', nameEn: 'Financial', icon: DollarSign },
+    { id: 'career', nameEn: 'Career', icon: Briefcase },
+    { id: 'leisure', nameEn: 'Leisure', icon: Coffee }
   ];
 
   const unassignedDreams = dreams.filter(d => !d.wellbeing_area || !d.life_stage);
@@ -359,7 +360,6 @@ export default function DreamsMatrixPage() {
                               <Icon className="w-5 h-5 text-purple-600" />
                               <div>
                                 <p className="font-medium text-sm text-gray-900">{area.nameEn}</p>
-                                <p className="text-xs text-gray-500">{area.nameKo}</p>
                               </div>
                             </div>
                           </td>

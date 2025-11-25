@@ -5,7 +5,7 @@ import { useSessionStore, useSessionStats } from '@/lib/store/sessionStore';
 import { StrengthMindMap } from './visualization/StrengthMindMap';
 import { ProgressIndicator } from './ui/ProgressIndicator';
 import type { ChatMessage } from '@/lib/services/aiServiceClaude';
-import { Save, RefreshCw, Send, Download, Loader2 } from 'lucide-react';
+import { Save, RefreshCw, Send, Download, Loader2, Sparkles, Target } from 'lucide-react';
 
 export const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
@@ -14,7 +14,7 @@ export const ChatInterface: React.FC = () => {
   const [showNameInput, setShowNameInput] = useState(false);
   const [tempName, setTempName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     sessionId,
     messages,
@@ -119,7 +119,7 @@ export const ChatInterface: React.FC = () => {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               if (data.type === 'content') {
                 assistantMessage += data.content;
                 updateLastMessage({ role: 'assistant', content: assistantMessage });
@@ -183,8 +183,8 @@ export const ChatInterface: React.FC = () => {
 
   const formatMessageTime = (timestamp?: string) => {
     if (!timestamp) return '';
-    return new Date(timestamp).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return new Date(timestamp).toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit'
     });
   };
@@ -202,7 +202,7 @@ export const ChatInterface: React.FC = () => {
         timestamp: m.timestamp
       }))
     };
-    
+
     const blob = new Blob([JSON.stringify(profile, null, 2)], {
       type: 'application/json'
     });
@@ -219,73 +219,84 @@ export const ChatInterface: React.FC = () => {
   // Don't render until client-side hydration is complete
   if (!isClient) {
     return (
-      <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 bg-gray-50 items-center justify-center">
+      <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">⚡</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading LifeCraft...</h2>
-          <div className="animate-pulse text-gray-600">Initializing your strength discovery journey</div>
+          <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2 font-outfit">Loading LifeCraft...</h2>
+          <div className="text-gray-600">Initializing your strength discovery journey</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 bg-gray-50">
+    <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 md:p-6">
       {/* Header */}
-      <header className="flex justify-between items-center mb-4 bg-white rounded-lg shadow-sm p-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">LifeCraft</h1>
-          <p className="text-sm text-gray-600">Strength Discovery through Stories</p>
+      <header className="flex justify-between items-center mb-6 glass-panel rounded-2xl p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 font-outfit">LifeCraft</h1>
+            <p className="text-sm text-gray-600">Strength Discovery through Stories</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={saveProgress}
             disabled={!sessionId || isLoading || !isClient}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white/80 text-gray-700 rounded-xl transition-colors border border-white/40 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            <Save size={16} /> Save
+            <Save size={18} /> <span className="hidden sm:inline">Save</span>
           </button>
           {stage === 'summary' && (
             <button
               onClick={exportStrengthProfile}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors shadow-lg shadow-primary-500/20 font-medium"
             >
-              <Download size={16} /> Export
+              <Download size={18} /> <span className="hidden sm:inline">Export</span>
             </button>
           )}
           <button
             onClick={handleNewSession}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition-colors shadow-lg font-medium"
           >
-            <RefreshCw size={16} /> New Session
+            <RefreshCw size={18} /> <span className="hidden sm:inline">New Session</span>
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 gap-4 overflow-hidden">
+      <div className="flex flex-1 gap-6 overflow-hidden">
         {/* Left Sidebar - Progress */}
-        <div className="w-1/4 min-w-64">
-          <ProgressIndicator
-            currentStage={stage}
-            progressPercentage={progressStatus.completion}
-            className="sticky top-0"
-          />
+        <div className="w-1/4 min-w-64 hidden md:block">
+          <div className="glass-panel rounded-2xl p-6 h-full overflow-y-auto">
+            <ProgressIndicator
+              currentStage={stage}
+              progressPercentage={progressStatus.completion}
+              className="sticky top-0"
+            />
+          </div>
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow-sm p-4 mb-4">
+          <div className="flex-1 overflow-y-auto glass-panel rounded-2xl p-6 mb-4 scroll-smooth">
             {/* Welcome Message */}
             {showWelcome && messages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🎯</div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <div className="text-center py-12 animate-fade-in">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Target className="w-10 h-10 text-primary-600" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3 font-outfit">
                   Welcome to Your Strength Discovery Journey
                 </h2>
                 {showNameInput ? (
-                  <div className="max-w-md mx-auto mt-6">
-                    <p className="text-gray-600 mb-4">Let&apos;s start by getting to know you!</p>
+                  <div className="max-w-md mx-auto mt-8 animate-slide-up">
+                    <p className="text-gray-600 mb-6 text-lg">Let&apos;s start by getting to know you!</p>
                     <div className="flex gap-3">
                       <input
                         type="text"
@@ -293,28 +304,29 @@ export const ChatInterface: React.FC = () => {
                         onChange={(e) => setTempName(e.target.value)}
                         onKeyDown={handleNameKeyPress}
                         placeholder="What's your name?"
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="flex-1 p-4 bg-white/50 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm transition-all"
                         autoFocus
                       />
                       <button
                         onClick={handleNameSubmit}
                         disabled={!tempName.trim()}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
                       >
                         Start
                       </button>
                     </div>
                   </div>
                 ) : userName ? (
-                  <div>
-                    <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed mb-4">
-                      Hi {userName}! I&apos;m here to help you uncover your unique strengths through the power of storytelling. 
-                      By reflecting on meaningful work experiences, we&apos;ll identify the skills, attitudes, 
+                  <div className="animate-slide-up">
+                    <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed mb-8 text-lg">
+                      Hi <span className="font-semibold text-primary-700">{userName}</span>! I&apos;m here to help you uncover your unique strengths through the power of storytelling.
+                      By reflecting on meaningful work experiences, we&apos;ll identify the skills, attitudes,
                       and values that make you exceptional.
                     </p>
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg max-w-2xl mx-auto">
-                      <p className="text-blue-800 font-medium">
-                        💡 Ready to begin? Think of a time when you felt deeply satisfied with your work...
+                    <div className="mt-8 p-6 bg-primary-50/50 border border-primary-100 rounded-2xl max-w-2xl mx-auto backdrop-blur-sm">
+                      <p className="text-primary-800 font-medium flex items-center justify-center gap-2">
+                        <Sparkles className="w-5 h-5" />
+                        Ready to begin? Think of a time when you felt deeply satisfied with your work...
                       </p>
                     </div>
                   </div>
@@ -326,59 +338,57 @@ export const ChatInterface: React.FC = () => {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`mb-6 ${
-                  msg.role === 'user' ? 'text-right' : 'text-left'
-                }`}
+                className={`mb-8 animate-fade-in ${msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'
+                  }`}
               >
-                <div className="flex items-start space-x-3">
+                <div className={`flex items-start max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} gap-4`}>
                   {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md">
                       AI
                     </div>
                   )}
+                  {msg.role === 'user' && (
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md">
+                      Me
+                    </div>
+                  )}
+
                   <div
-                    className={`inline-block max-w-[80%] p-4 rounded-lg shadow-sm ${
-                      msg.role === 'user'
-                        ? 'bg-blue-500 text-white ml-auto'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                    className={`p-5 rounded-2xl shadow-sm backdrop-blur-sm ${msg.role === 'user'
+                      ? 'bg-primary-600 text-white rounded-tr-none'
+                      : 'bg-white/80 text-gray-800 rounded-tl-none border border-white/50'
+                      }`}
                   >
-                    <div className="whitespace-pre-wrap leading-relaxed">
+                    <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
                       {msg.content}
                     </div>
                     {msg.timestamp && (
                       <div
-                        className={`text-xs mt-2 ${
-                          msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                        }`}
+                        className={`text-xs mt-2 ${msg.role === 'user' ? 'text-primary-100' : 'text-gray-400'
+                          }`}
                       >
                         {formatMessageTime(msg.timestamp)}
                       </div>
                     )}
                   </div>
-                  {msg.role === 'user' && (
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                      Me
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
 
             {/* Loading Indicator */}
             {isLoading && (
-              <div className="text-left mb-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    <Loader2 size={14} className="animate-spin" />
+              <div className="flex justify-start mb-8 animate-fade-in">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md">
+                    <Loader2 size={18} className="animate-spin" />
                   </div>
-                  <div className="inline-block p-4 rounded-lg shadow-sm bg-gray-100 text-gray-800">
-                    <div className="flex items-center space-x-2">
-                      <span>Thinking about your response</span>
+                  <div className="p-5 rounded-2xl rounded-tl-none bg-white/80 text-gray-800 shadow-sm border border-white/50 backdrop-blur-sm">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium">Thinking about your response</span>
                       <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce animation-delay-100" />
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce animation-delay-200" />
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce delay-100" />
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce delay-200" />
                       </div>
                     </div>
                   </div>
@@ -388,8 +398,9 @@ export const ChatInterface: React.FC = () => {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                <strong>Error:</strong> {error}
+              <div className="mb-6 p-4 bg-red-50/90 border border-red-200 rounded-xl text-red-700 backdrop-blur-sm flex items-center gap-3 animate-fade-in">
+                <div className="w-2 h-2 bg-red-500 rounded-full" />
+                <p><strong>Error:</strong> {error}</p>
               </div>
             )}
 
@@ -397,34 +408,34 @@ export const ChatInterface: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="glass-panel rounded-2xl p-4">
             <div className="flex gap-3">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder={
-                  messages.length === 0 
+                  messages.length === 0
                     ? "Think of a time when you felt deeply satisfied with your work. Share that experience from beginning to end..."
                     : "Continue sharing your thoughts..."
                 }
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none min-h-[60px] max-h-32"
+                className="flex-1 p-4 bg-white/50 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none min-h-[60px] max-h-32 transition-all placeholder:text-gray-400"
                 disabled={isLoading}
                 rows={2}
               />
               <button
                 onClick={handleStreamingSend}
                 disabled={isLoading || !input.trim()}
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                className="px-6 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[60px]"
               >
                 {isLoading ? (
-                  <Loader2 size={20} className="animate-spin" />
+                  <Loader2 size={24} className="animate-spin" />
                 ) : (
-                  <Send size={20} />
+                  <Send size={24} />
                 )}
               </button>
             </div>
-            <div className="mt-2 flex justify-between text-sm text-gray-500">
+            <div className="mt-3 flex justify-between text-xs font-medium text-gray-500 px-1">
               <span>Press Enter to send, Shift+Enter for new line</span>
               <span>{stats.messageCount} messages • Session: {isClient ? sessionId?.slice(0, 8) : '...'}</span>
             </div>
@@ -433,12 +444,14 @@ export const ChatInterface: React.FC = () => {
 
         {/* Right Sidebar - Visualization */}
         {stage === 'summary' && (
-          <div className="w-1/3 min-w-96 max-h-full overflow-y-auto">
-            <StrengthMindMap 
-              data={strengths}
-              userName={userName}
-              className="h-fit"
-            />
+          <div className="w-1/3 min-w-96 max-h-full hidden xl:block">
+            <div className="glass-panel rounded-2xl p-6 h-full overflow-y-auto">
+              <StrengthMindMap
+                data={strengths}
+                userName={userName}
+                className="h-fit"
+              />
+            </div>
           </div>
         )}
       </div>

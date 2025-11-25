@@ -20,76 +20,76 @@ type LifeStage = '20s' | '30s' | '40s' | '50s' | '60s' | '70s+' | '80s+';
 // Developmental tasks by life stage and wellbeing area
 const developmentalTasks: Record<WellbeingArea, Record<LifeStage, string[]>> = {
   relationship: {
-    '20s': ['Romantic relationship formation', 'Building adult friendships', 'Independence from parents', 'Identity formation through relationships'],
-    '30s': ['Marriage/partnership', 'Starting a family', 'Forming school community connections', 'Maintaining friendships', 'Parent role learning'],
-    '40s': ['Understanding adolescents', 'Guiding life choices', 'Family bonding', 'Supporting elderly parents', 'Maintaining couple relationship'],
-    '50s': ['Adult children relationships', 'Empty nest adaptation', 'Grandparenting', 'Rekindling romance'],
-    '60s': ['Spouse as best friend', 'Grandparenting', 'Relationships with adult children'],
-    '70s+': ['Spousal dependency', 'Cherishing family moments', 'Anticipating death', 'End-of-life preparations'],
-    '80s+': ['Family presence during illness', 'Intergenerational care', 'Final goodbyes', 'Leaving a legacy']
+    '20s': ['Independent living', 'Romantic relationship formation', 'Identity development'],
+    '30s': ['Marriage/partnership formation', 'Parenting/family role learning', 'Building school/community networks', 'Balancing work-family-leisure', 'Expanding social network'],
+    '40s': ['Understanding adolescent development', 'Career advice provision', 'Building family memories', 'Managing adolescent children', 'Supporting aging parents', 'Maintaining couple relationship'],
+    '50s': ['Adult children relationships', 'Empty nest adjustment', 'Grandparenting', 'Rekindling couple intimacy'],
+    '60s': ['Spouse as closest companion', 'Senior socializing', 'Grandparenting', 'Relationships with adult children'],
+    '70s+': ['Accepting spousal dependency', 'Cherishing time with family', 'Contemplating mortality', 'Preparing for final moments'],
+    '80s+': ['Having family at bedside during illness', 'Receiving intergenerational care', 'Saying final goodbyes', 'Being remembered by descendants']
   },
   spiritual: {
-    '20s': ['Exploring life meaning', 'Religious identity formation', 'Developing personal values'],
-    '30s': ['Family spirituality', 'Community service', 'Finding life purpose', 'Spiritual growth through parenting'],
-    '40s': ['Life reflection', 'Career spiritual connection', 'Mentoring others', 'Deepening faith'],
-    '50s': ['Life review', 'Religious devotion', 'Spiritual community involvement', 'Finding new meaning'],
-    '60s': ['Spiritual fulfillment', 'Volunteering', 'Participating in religious activities', 'Finding life meaning'],
-    '70s+': ['Accepting mortality', 'Faith and hope', 'Spiritual community engagement', 'Life meaning reflection'],
-    '80s+': ['Preparing for death', 'Spiritual contemplation', 'Life meaning questions', 'Death acceptance']
+    '20s': ['Philosophical reflection', 'Value formation', 'Meaningful experiences', 'Self-reflection'],
+    '30s': ['Parenting as opportunity', 'Life meaning discovery', 'Volunteering and service', 'Child religious education', 'Sense of mission'],
+    '40s': ['Midlife reflection', 'Existential questioning', 'Life direction contemplation', 'Career-life balance reflection', 'Deep questioning', 'Spiritual life cultivation'],
+    '50s': ['Life review and assessment', 'Senior spiritual activities', 'Adult children spiritual guidance', 'Mission fulfillment', 'Life reflection'],
+    '60s': ['Peace of mind', 'Gratitude practice', 'Senior meaning search', 'Volunteering', 'Spiritual maturity'],
+    '70s+': ['Spiritual consolation', 'Preparation for death', 'Acceptance of mortality', 'Spiritual reading', 'Meaning of life reflection'],
+    '80s+': ['Farewell to life', 'Religious solace', 'Peaceful departure', 'Spiritual contemplation', 'Final journey preparation']
   },
   intellectual: {
-    '20s': ['Career knowledge building', 'Higher education', 'Job skills acquisition', 'Creative activities'],
-    '30s': ['Parenting knowledge', 'Leadership development', 'Professional growth', 'Intellectual hobbies'],
-    '40s': ['Career advancement learning', 'Supporting children\'s education', 'New skills development', 'Personal interests'],
-    '50s': ['Lifelong learning', 'New challenge exploration', 'Life transition preparation', 'Knowledge sharing'],
-    '60s': ['Exploring new hobbies', 'Mental stimulation activities', 'Intergenerational teaching', 'Self-improvement'],
-    '70s+': ['Brain health activities', 'Reading and writing', 'Cultural engagement', 'Sharing life wisdom'],
-    '80s+': ['Memory preservation', 'Knowledge transfer', 'Cultural activities', 'Life story documentation']
+    '20s': ['Interest/talent exploration', 'Higher education', 'Professional skill acquisition', 'Creative activities'],
+    '30s': ['Parenting expertise', 'Leadership/time management', 'Professional skill development', 'Novel reading', 'Intellectual hobbies', 'Creative activities'],
+    '40s': ['Career knowledge/certification', 'Supporting children\'s education', 'New skill development', 'Personal hobby maintenance', 'Life wisdom accumulation', 'Intergenerational knowledge transfer'],
+    '50s': ['Lifelong learning', 'New challenge exploration', 'Retirement preparation', 'Knowledge/expertise sharing'],
+    '60s': ['New hobby exploration', 'Cognitive activities for brain health', 'Teaching children/grandchildren', 'Senior learning'],
+    '70s+': ['Brain health maintenance', 'Reading and writing', 'Cultural activities', 'Life wisdom sharing'],
+    '80s+': ['Memory preservation', 'Wisdom and experience transfer', 'Cultural engagement', 'Story recording and sharing']
   },
   physical: {
-    '20s': ['Physical fitness', 'Healthy habits', 'Sports activities', 'Body image development'],
-    '30s': ['Pregnancy and childbirth', 'Postpartum recovery', 'Chronic disease prevention', 'Exercise routine'],
-    '40s': ['Chronic disease management', 'Regular exercise', 'Stress management', 'Health screening'],
-    '50s': ['Menopause management', 'Metabolic health', 'Joint health', 'Preventing chronic diseases'],
-    '60s': ['Regular health checkups', 'Physical activity', 'Injury prevention', 'Medication management'],
-    '70s+': ['Preventing frailty', 'Fall prevention', 'Mobility maintenance', 'Pain management'],
-    '80s+': ['Daily living assistance', 'Health monitoring', 'Pain management', 'Quality of life']
+    '20s': ['Physical activity/exercise', 'Establishing healthy habits', 'Disease prevention', 'Body image development'],
+    '30s': ['Pregnancy/childbirth', 'Postpartum recovery', 'Chronic disease prevention', 'Managing parenting fatigue', 'Health maintenance'],
+    '40s': ['Chronic disease management', 'Regular exercise habits', 'Stress management', 'Regular health screenings', 'Musculoskeletal health'],
+    '50s': ['Menopause management', 'Metabolic health', 'Joint health care', 'Chronic disease prevention'],
+    '60s': ['Regular health checkups', 'Physical activity maintenance', 'Fall/injury prevention', 'Medication management'],
+    '70s+': ['Preventing frailty/weakness', 'Fall prevention', 'Mobility maintenance', 'Visiting doctors for pain management'],
+    '80s+': ['Maintaining daily living skills', 'Managing pain and discomfort', 'Health monitoring', 'Physical support and assistance']
   },
   environment: {
-    '20s': ['First home', 'Roommate living', 'Residential independence'],
-    '30s': ['Home purchase', 'Creating child-friendly space', 'Building family nest', 'Community connections'],
-    '40s': ['Home renovation', 'Teenage space planning', 'Maximizing home space', 'Comfortable living'],
-    '50s': ['Downsizing planning', 'Empty nest redesign', 'Safe living space', 'Interior changes'],
-    '60s': ['Retirement home planning', 'Accessible home modifications', 'Senior-friendly design', 'Smaller home transition'],
-    '70s+': ['Safe home environment', 'Aging-in-place modifications', 'Assisted living considerations', 'Living arrangement decisions'],
-    '80s+': ['Long-term care facility', 'Hospice/palliative care', 'Safe environment', 'End-of-life care setting']
+    '20s': ['Independent housing', 'Roommate living', 'Self-reliant living'],
+    '30s': ['Home purchase', 'Childcare-friendly spaces', 'Building family nest', 'School district selection', 'Community networking'],
+    '40s': ['Interior/exterior renovation', 'Space for adolescents', 'Optimizing living space', 'Comfortable environment', 'Neighborhood considerations'],
+    '50s': ['Planning for smaller home', 'Empty nest space redesign', 'Safe living environment', 'Interior modifications'],
+    '60s': ['Retirement home planning', 'Accessibility improvements', 'Senior-friendly design', 'Downsizing to smaller home'],
+    '70s+': ['Safe home environment', 'Aging-in-place preparations', 'Care facility considerations', 'Living arrangement decisions'],
+    '80s+': ['Long-term care facility', 'Hospice care', 'Safe care environment', 'Place for end-of-life care']
   },
   financial: {
-    '20s': ['Financial independence', 'Budgeting skills', 'Starting savings', 'Loan management'],
-    '30s': ['Home purchase planning', 'Education fund', 'Emergency savings', 'Insurance planning'],
-    '40s': ['Education funding', 'Retirement preparation', 'Career advancement investments', 'Asset management'],
-    '50s': ['Retirement savings', 'Investment management', 'College tuition', 'Financial goal achievement'],
-    '60s': ['Retirement income planning', 'Healthcare cost management', 'Asset protection', 'Estate planning'],
-    '70s+': ['Living cost management', 'Healthcare expenses', 'Family financial support', 'Legacy planning'],
-    '80s+': ['Care cost management', 'Insurance utilization', 'Family financial burden reduction', 'Estate settlement']
+    '20s': ['Financial independence', 'Budgeting and saving', 'Building credit', 'Investment planning', 'Debt management'],
+    '30s': ['Home purchase fund', 'Education savings', 'Emergency fund', 'Insurance planning'],
+    '40s': ['Children\'s education fund', 'Retirement savings increase', 'Career investment/development', 'Asset management', 'Large expense planning'],
+    '50s': ['Retirement fund completion', 'Investment management', 'Children\'s college expenses', 'Financial goals achievement'],
+    '60s': ['Retirement income management', 'Medical expense planning', 'Asset protection', 'Estate planning'],
+    '70s+': ['Living expense management', 'Medical costs', 'Financial support to family', 'Inheritance planning'],
+    '80s+': ['Care cost management', 'Insurance benefits', 'Minimizing family financial burden', 'Estate distribution']
   },
   career: {
-    '20s': ['Career exploration', 'Job entry', 'Skill development', 'Professional identity'],
-    '30s': ['Career advancement', 'Work-life balance', 'Leadership opportunities', 'Professional growth'],
-    '40s': ['Career peak', 'Mentoring juniors', 'Career transition', 'Work achievements'],
-    '50s': ['Career consolidation', 'Retirement planning', 'Work meaning reflection', 'Role transitions'],
-    '60s': ['Phased retirement', 'Consulting/part-time work', 'Career identity transition', 'New opportunities'],
-    '70s+': ['Post-retirement activities', 'Volunteering', 'Social contributions', 'Meaningful activities'],
-    '80s+': ['Social connection', 'Within-ability activities', 'Contributing to society', 'Life satisfaction']
+    '20s': ['Job search/exploration', 'Career entry', 'Work skill acquisition', 'Professional identity'],
+    '30s': ['Career advancement', 'Work-life balance', 'Leadership roles', 'Career development/growth'],
+    '40s': ['Career peak period', 'Mentoring juniors', 'Career change/transition', 'Work achievements'],
+    '50s': ['Career stability/maturity', 'Retirement preparation', 'Work meaning reflection', 'Career transition'],
+    '60s': ['Gradual retirement planning', 'Part-time/consulting work', 'Career identity transition', 'New roles exploration'],
+    '70s+': ['Post-retirement activities', 'Volunteering', 'Social contribution', 'Meaningful engagement'],
+    '80s+': ['Maintaining social connections', 'Activities within capacity', 'Societal contribution', 'Satisfaction from engagement']
   },
   leisure: {
-    '20s': ['Travel and adventure', 'Hobbies exploration', 'Social activities', 'Cultural experiences'],
-    '30s': ['Family activities', 'Parent-child bonding', 'Continuing hobbies', 'Cultural engagement'],
-    '40s': ['Personal time', 'Hobby enjoyment', 'Family vacations', 'Cultural activities'],
-    '50s': ['Couple activities', 'Travel', 'Exploring new hobbies', 'Cultural enrichment'],
-    '60s': ['Hobbies and interests', 'Cultural activities', 'Travel', 'Social engagement'],
-    '70s+': ['Within-ability hobbies', 'Cultural participation', 'Social activities', 'Leisure enjoyment'],
-    '80s+': ['Simple leisure', 'Family time', 'Indoor activities', 'Quality of life activities']
+    '20s': ['Travel and adventure', 'Hobby exploration', 'Social activities', 'Cultural experiences'],
+    '30s': ['Family-centered leisure', 'Parent-child activities', 'Maintaining hobbies', 'Cultural activities'],
+    '40s': ['Personal time/hobbies', 'Family travel', 'Recreation activities', 'Cultural engagement', 'Leisure life enjoyment'],
+    '50s': ['Couple-centered leisure', 'Travel', 'New hobby exploration', 'Cultural activities'],
+    '60s': ['Hobby and leisure activities', 'Cultural engagement', 'Travel', 'Social activities'],
+    '70s+': ['Leisure within ability', 'Cultural activities', 'Social engagement', 'Enjoyable activities'],
+    '80s+': ['Simple leisure', 'Time with family', 'Indoor activities', 'Quality of life activities']
   }
 };
 
@@ -162,7 +162,8 @@ export default function DreamsHubPage() {
         setAiSuggestions(data.suggestions || []);
         setShowAIModal(true);
       } else {
-        alert('Failed to generate AI suggestions. Please complete Values, Strengths, or Vision modules first.');
+        const errorData = await res.json();
+        alert(errorData.message || 'Failed to generate AI suggestions. Please complete Values, Strengths, or Vision modules first.');
       }
     } catch (error) {
       console.error('Failed to generate suggestions:', error);
@@ -203,15 +204,15 @@ export default function DreamsHubPage() {
     }
   }
 
-  const wellbeingAreas: { id: WellbeingArea; nameEn: string; nameKo: string; icon: any }[] = [
-    { id: 'relationship', nameEn: 'Relationship', nameKo: '관계/정서', icon: Heart },
-    { id: 'spiritual', nameEn: 'Spiritual', nameKo: '영적', icon: Sparkles },
-    { id: 'intellectual', nameEn: 'Intellectual', nameKo: '지적', icon: Brain },
-    { id: 'physical', nameEn: 'Physical', nameKo: '신체적', icon: Dumbbell },
-    { id: 'environment', nameEn: 'Environment', nameKo: '환경(주거)', icon: Home },
-    { id: 'financial', nameEn: 'Financial', nameKo: '재정', icon: DollarSign },
-    { id: 'career', nameEn: 'Career', nameKo: '직업', icon: Briefcase },
-    { id: 'leisure', nameEn: 'Leisure', nameKo: '여가', icon: Coffee }
+  const wellbeingAreas: { id: WellbeingArea; nameEn: string; icon: any }[] = [
+    { id: 'relationship', nameEn: 'Relationship', icon: Heart },
+    { id: 'spiritual', nameEn: 'Spiritual', icon: Sparkles },
+    { id: 'intellectual', nameEn: 'Intellectual', icon: Brain },
+    { id: 'physical', nameEn: 'Physical', icon: Dumbbell },
+    { id: 'environment', nameEn: 'Environment', icon: Home },
+    { id: 'financial', nameEn: 'Financial', icon: DollarSign },
+    { id: 'career', nameEn: 'Career', icon: Briefcase },
+    { id: 'leisure', nameEn: 'Leisure', icon: Coffee }
   ];
 
   const lifeStages: LifeStage[] = ['20s', '30s', '40s', '50s', '60s', '70s+', '80s+'];
@@ -283,7 +284,7 @@ export default function DreamsHubPage() {
                   >
                     <option value="">Select wellbeing area</option>
                     {wellbeingAreas.map(area => (
-                      <option key={area.id} value={area.id}>{area.nameKo} ({area.nameEn})</option>
+                      <option key={area.id} value={area.id}>{area.nameEn}</option>
                     ))}
                   </select>
                 </div>
@@ -390,7 +391,7 @@ export default function DreamsHubPage() {
                           <td className="p-2 border border-gray-300">
                             <div className="flex items-center gap-2">
                               <Icon className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                              <span className="font-medium">{area.nameKo}</span>
+                              <span className="font-medium">{area.nameEn}</span>
                             </div>
                           </td>
                           {lifeStages.map(stage => (
@@ -455,7 +456,7 @@ export default function DreamsHubPage() {
                             <div className="flex flex-wrap gap-2 mb-2">
                               {suggestion.wellbeing_area && (
                                 <span className="px-2 py-1 bg-white text-xs rounded-full">
-                                  {wellbeingArea?.nameKo}
+                                  {wellbeingArea?.nameEn}
                                 </span>
                               )}
                               {suggestion.life_stage && (

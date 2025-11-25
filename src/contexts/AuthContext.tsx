@@ -69,12 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       setLoading(true);
-      // Use NEXT_PUBLIC_SITE_URL for consistent redirect (prevents localhost redirect issues)
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${siteUrl}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

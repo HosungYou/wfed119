@@ -5,7 +5,13 @@ import { getSupabaseClientConfig } from './supabase'
 
 export const createServerSupabaseClient = async () => {
   const cookieStore = await cookies()
-  const { url, anonKey } = getSupabaseClientConfig('server')
+  const config = getSupabaseClientConfig('server')
+
+  if (!config) {
+    throw new Error('[Supabase] Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY in server environment')
+  }
+
+  const { url, anonKey } = config
 
   return createServerClient<Database>(
     url,

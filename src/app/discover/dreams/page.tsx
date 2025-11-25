@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, Plus, X, Loader2, TrendingUp, Heart, Brain, Dumbbell, Home, DollarSign, Briefcase, Coffee, ArrowRight } from 'lucide-react';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 
 interface Dream {
   id: string;
@@ -101,10 +102,12 @@ export default function DreamsHubPage() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const { startModule } = useModuleProgress('dreams');
 
   useEffect(() => {
+    startModule();
     loadDreams();
-  }, []);
+  }, [startModule]);
 
   async function loadDreams() {
     try {

@@ -46,7 +46,7 @@ export class ModuleProgressService {
       return [];
     }
 
-    return (data || []).map(row => ({
+    const existingProgress = (data || []).map(row => ({
       moduleId: row.module_id as ModuleId,
       status: row.status as ModuleStatus,
       completedAt: row.completed_at,
@@ -54,6 +54,19 @@ export class ModuleProgressService {
       currentStage: row.current_stage,
       completionPercentage: row.completion_percentage || 0,
     }));
+
+    // Fill gaps from legacy data so cross-module context works before backfill
+    const progressMap = new Map<ModuleId, ModuleProgress>();
+    existingProgress.forEach(p => progressMap.set(p.moduleId, p));
+
+    const derivedProgress = await this.deriveProgressFromExistingData(supabase);
+    for (const derived of derivedProgress) {
+      if (!progressMap.has(derived.moduleId)) {
+        progressMap.set(derived.moduleId, derived);
+      }
+    }
+
+    return Array.from(progressMap.values());
   }
 
   /**
@@ -268,17 +281,32 @@ export class ModuleProgressService {
     const supabase = await createServerSupabaseClient();
 
     const { data } = await supabase
-      .from('strength_profiles')
-      .select('*')
+      .from('strength_discovery_results')
+      .select('final_strengths, summary, insights, is_completed, updated_at')
       .eq('user_id', this.userId)
-      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
     if (!data) return null;
 
+    let parsedStrengths: Array<{ name: string; description?: string; score?: number }> = [];
+
+    if (Array.isArray(data.final_strengths)) {
+      parsedStrengths = data.final_strengths;
+    } else if (typeof data.final_strengths === 'string') {
+      try {
+        const parsed = JSON.parse(data.final_strengths);
+        if (Array.isArray(parsed)) {
+          parsedStrengths = parsed;
+        }
+      } catch (err) {
+        console.warn('[ModuleProgressService] Failed to parse final_strengths:', err);
+      }
+    }
+
     return {
-      topStrengths: Array.isArray(data.strengths) ? data.strengths : [],
+      topStrengths: parsedStrengths,
       strengthsSummary: data.summary || '',
       conversationInsights: data.insights?.insights || [],
     };
@@ -432,6 +460,130 @@ ${v.visionStatement}`);
     return parts.length > 0
       ? `--- User Profile Context ---\n${parts.join('\n\n')}\n--- End Context ---`
       : '';
+  }
+
+  /**
+   * Derive module progress when module_progress entries do not yet exist.
+   * This keeps cross-module context working prior to backfill.
+   */
+  private async deriveProgressFromExistingData(
+    supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
+  ): Promise<ModuleProgress[]> {
+    const progress: ModuleProgress[] = [];
+
+    // Values
+    const { data: valuesRows } = await supabase
+      .from('value_results')
+      .select('value_set, updated_at')
+      .eq('user_id', this.userId);
+    if (valuesRows && valuesRows.length > 0) {
+      const setsCompleted = new Set(valuesRows.map(r => r.value_set));
+      const percent = Math.min(100, Math.round((setsCompleted.size / 3) * 100));
+      progress.push({
+        moduleId: 'values',
+        status: setsCompleted.size === 3 ? 'completed' : 'in_progress',
+        completionPercentage: percent,
+        currentStage: undefined,
+        lastUpdatedAt: valuesRows[0]?.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // Strengths
+    const { data: strengthsRow } = await supabase
+      .from('strength_discovery_results')
+      .select('is_completed, final_strengths, updated_at, current_step')
+      .eq('user_id', this.userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (strengthsRow) {
+      const hasStrengths = !!strengthsRow.final_strengths;
+      const status: ModuleStatus = strengthsRow.is_completed
+        ? 'completed'
+        : hasStrengths
+          ? 'in_progress'
+          : 'not_started';
+      const completionPercentage = strengthsRow.is_completed
+        ? 100
+        : strengthsRow.current_step
+          ? Math.min(100, Math.round((strengthsRow.current_step / 4) * 100))
+          : hasStrengths
+            ? 50
+            : 0;
+      progress.push({
+        moduleId: 'strengths',
+        status,
+        completionPercentage,
+        currentStage: undefined,
+        lastUpdatedAt: strengthsRow.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // Vision
+    const { data: visionRow } = await supabase
+      .from('vision_statements')
+      .select('is_completed, final_statement, current_step, updated_at')
+      .eq('user_id', this.userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (visionRow) {
+      const hasStatement = !!visionRow.final_statement;
+      const status: ModuleStatus = visionRow.is_completed
+        ? 'completed'
+        : hasStatement
+          ? 'in_progress'
+          : 'not_started';
+      const completionPercentage = visionRow.is_completed
+        ? 100
+        : visionRow.current_step
+          ? Math.min(100, Math.round((visionRow.current_step / 3) * 100))
+          : hasStatement
+            ? 50
+            : 0;
+      progress.push({
+        moduleId: 'vision',
+        status,
+        completionPercentage,
+        currentStage: undefined,
+        lastUpdatedAt: visionRow.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // SWOT
+    const { data: swotRow } = await supabase
+      .from('swot_analyses')
+      .select('updated_at')
+      .eq('user_id', this.userId)
+      .limit(1)
+      .single();
+    if (swotRow) {
+      progress.push({
+        moduleId: 'swot',
+        status: 'in_progress',
+        completionPercentage: 50,
+        currentStage: undefined,
+        lastUpdatedAt: swotRow.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // Dreams
+    const { data: dreamsRows } = await supabase
+      .from('dreams')
+      .select('updated_at')
+      .eq('user_id', this.userId)
+      .limit(1);
+    if (dreamsRows && dreamsRows.length > 0) {
+      progress.push({
+        moduleId: 'dreams',
+        status: 'in_progress',
+        completionPercentage: 50,
+        currentStage: undefined,
+        lastUpdatedAt: dreamsRows[0]?.updated_at || new Date().toISOString(),
+      });
+    }
+
+    return progress;
   }
 }
 

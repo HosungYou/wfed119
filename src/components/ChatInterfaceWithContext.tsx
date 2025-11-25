@@ -7,6 +7,7 @@ import { ProgressIndicator } from './ui/ProgressIndicator';
 import type { ChatMessage } from '@/lib/services/aiServiceClaude';
 import { useModuleContext } from '@/hooks/useModuleProgress';
 import { useAuth } from '@/contexts/AuthContext';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { ModuleId } from '@/lib/types/modules';
 import {
   Save, RefreshCw, Send, Download, Loader2, Sparkles, Target,
@@ -31,6 +32,7 @@ export const ChatInterfaceWithContext: React.FC<Props> = ({ moduleId }) => {
 
   const { isAuthenticated } = useAuth();
   const { context, loading: contextLoading } = useModuleContext(moduleId);
+  const { startModule, updateStage: updateModuleStage, completeModule } = useModuleProgress(moduleId);
 
   const {
     sessionId,
@@ -78,7 +80,29 @@ export const ChatInterfaceWithContext: React.FC<Props> = ({ moduleId }) => {
     if (isClient && !userName && messages.length === 0) {
       setShowNameInput(true);
     }
+
+    // Ensure module progress starts when chat loads
+    if (isClient) {
+      startModule();
+    }
   }, [sessionId, initSession, isClient, userName, messages.length]);
+
+  // Sync session stage to module_progress (lightweight best-effort)
+  useEffect(() => {
+    if (!stage) return;
+    const stageToPercent: Record<string, number> = {
+      initial: 10,
+      exploration: 30,
+      deepening: 55,
+      analysis: 80,
+      summary: 100,
+    };
+    const completionPercentage = stageToPercent[stage] ?? 0;
+    updateModuleStage(stage, completionPercentage);
+    if (completionPercentage >= 100) {
+      completeModule();
+    }
+  }, [stage, updateModuleStage, completeModule]);
 
   // Auto-save every few messages
   useEffect(() => {

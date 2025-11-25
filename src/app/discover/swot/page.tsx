@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, Circle, ArrowRight, Target, Lightbulb, TrendingUp, ShieldAlert } from 'lucide-react';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 
 interface ModuleProgress {
   values: {
@@ -30,10 +31,12 @@ export default function SWOTModuleLanding() {
   const [loading, setLoading] = useState(true);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress | null>(null);
   const [canStart, setCanStart] = useState(false);
+  const { startModule } = useModuleProgress('swot');
 
   useEffect(() => {
+    startModule();
     fetchModuleProgress();
-  }, []);
+  }, [startModule]);
 
   async function fetchModuleProgress() {
     try {

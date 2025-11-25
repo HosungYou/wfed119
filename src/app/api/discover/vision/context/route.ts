@@ -52,25 +52,31 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 3. Strengths 데이터 조회
-    const { data: strengthsData, error: strengthsError } = await supabase
-      .from('user_strengths')
-      .select(`
-        strength_id,
-        score,
-        rank,
-        strengths:strength_id (
-          name,
-          description,
-          category_id
-        )
-      `)
+    // 3. Strengths 데이터 조회 (단일 소스: strength_discovery_results)
+    const { data: strengthsRow, error: strengthsError } = await supabase
+      .from('strength_discovery_results')
+      .select('final_strengths')
       .eq('user_id', userId)
-      .order('rank', { ascending: true })
-      .limit(5);
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
     if (strengthsError) {
       console.error('[Vision Context] Strengths query error:', strengthsError);
+    }
+
+    let strengthsData: Array<{ name: string; description?: string }> = [];
+    if (Array.isArray(strengthsRow?.final_strengths)) {
+      strengthsData = strengthsRow?.final_strengths;
+    } else if (typeof strengthsRow?.final_strengths === 'string') {
+      try {
+        const parsed = JSON.parse(strengthsRow.final_strengths);
+        if (Array.isArray(parsed)) {
+          strengthsData = parsed;
+        }
+      } catch (err) {
+        console.warn('[Vision Context] Failed to parse final_strengths:', err);
+      }
     }
 
     // 4. Build response

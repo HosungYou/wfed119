@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { createSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // Get current user
     const { data: { session } } = await supabase.auth.getSession();
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       fetchValuesData(supabase, userId),
       fetchStrengthsData(supabase, userId),
       fetchVisionData(supabase, userId),
-      fetchExistingDreams()
+      fetchExistingDreams(supabase, userId)
     ]);
 
     // Validate that at least one module has data
@@ -129,10 +129,19 @@ async function fetchVisionData(supabase: any, userId: string) {
 }
 
 // Fetch existing dreams from in-memory store
-async function fetchExistingDreams() {
-  // In production, this would fetch from database
-  // For now, using placeholder
-  return [];
+async function fetchExistingDreams(supabase: any, userId: string) {
+  try {
+    const { data } = await supabase
+      .from('dreams')
+      .select('id, title, wellbeing_area, life_stage, category')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching dreams:', error);
+    return [];
+  }
 }
 
 // Analyze dream patterns

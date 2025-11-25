@@ -6,6 +6,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { ArrowLeft, Save, Download, LogIn, LogOut, ShieldCheck, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import * as htmlToImage from 'html-to-image';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 
 type Value = { id: string; name: string; description: string };
 type SetKey = 'terminal' | 'instrumental' | 'work';
@@ -181,9 +182,16 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }, [routeSet]);
 
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
+  const { startModule, updateStage } = useModuleProgress('values');
   const [palette, setPalette] = useState<string[]>([]);
   const [layout, setLayout] = useState<Layout>(emptyLayout);
   const boardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      startModule();
+    }
+  }, [isAuthenticated, startModule]);
 
   useEffect(() => { setPalette(VALUES.map(v => v.id)); setLayout(emptyLayout); }, [VALUES]);
 
@@ -563,7 +571,11 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     if (!userId) { alert('Please sign in to save.'); return; }
     const payload = { user_id: userId, set: routeSet, layout, top3 };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) alert('Save failed'); else alert('Saved successfully');
+    if (!res.ok) alert('Save failed'); else {
+      alert('Saved successfully');
+      // Reflect progress for this values set
+      updateStage(routeSet);
+    }
   }
 
   function clearBoard() {

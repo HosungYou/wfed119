@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, Circle, ArrowRight, LayoutDashboard, Target, Heart, Sparkles } from 'lucide-react';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 
 interface ModuleProgress {
   values: {
@@ -29,10 +30,12 @@ export default function VisionModuleLanding() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress | null>(null);
+  const { startModule } = useModuleProgress('vision');
 
   useEffect(() => {
+    startModule();
     fetchModuleProgress();
-  }, []);
+  }, [startModule]);
 
   async function fetchModuleProgress() {
     try {

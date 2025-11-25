@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const HomePage: React.FC = () => {
   const [openCategory, setOpenCategory] = useState<string | null>('discovery');
-  const { user, isAuthenticated, isLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
 
   const toggleCategory = (category: string) => {
     setOpenCategory(openCategory === category ? null : category);
@@ -36,7 +36,7 @@ export const HomePage: React.FC = () => {
             <a href="#modules" className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors font-medium">Modules</a>
             <a href="#about" className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors font-medium">About</a>
 
-            {isLoading ? (
+            {loading ? (
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
             ) : isAuthenticated ? (
               <div className="flex items-center space-x-3">

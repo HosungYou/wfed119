@@ -7,6 +7,8 @@ const PROTECTED_ROUTES = [
   '/dashboard',
   '/results',
   '/admin',
+  '/discover',
+  '/api',
 ]
 
 // Routes that are public (no auth required)
@@ -51,6 +53,14 @@ export async function middleware(req: NextRequest) {
   }
 
   const pathname = req.nextUrl.pathname
+
+  // Skip auth checks for explicitly public routes
+  const isPublicRoute = PUBLIC_ROUTES.some(route =>
+    pathname === route || pathname.startsWith(`${route}/`)
+  )
+  if (isPublicRoute) {
+    return res
+  }
 
   // Check if current route is protected
   const isProtectedRoute = PROTECTED_ROUTES.some(route =>

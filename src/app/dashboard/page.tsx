@@ -40,9 +40,9 @@ export default function DashboardPage() {
         <div className="max-w-4xl mx-auto px-4 py-20">
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
             <Lock className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold mb-4">로그인이 필요합니다</h1>
+            <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
             <p className="text-gray-600 mb-8">
-              개인화된 대시보드와 진행도를 확인하려면 구글 계정으로 로그인해 주세요.
+              Sign in with your Google account to view your personalized dashboard and progress.
             </p>
             <button
               onClick={signInWithGoogle}
@@ -105,9 +105,9 @@ export default function DashboardPage() {
           <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-xl font-bold mb-1">진행 현황</h3>
+                <h3 className="text-xl font-bold mb-1">Progress Summary</h3>
                 <p className="text-blue-100 text-sm">
-                  {completionSummary.completedCount} / {completionSummary.totalModules} 모듈 완료
+                  {completionSummary.completedCount} / {completionSummary.totalModules} modules completed
                 </p>
               </div>
               <div className="text-4xl font-bold">{completionSummary.avg}%</div>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
             {error && (
               <div className="mt-3 flex items-center gap-2 text-xs text-white/80">
                 <AlertCircle className="w-4 h-4" />
-                진행도 로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+                Failed to load progress. Please try again later.
               </div>
             )}
           </div>

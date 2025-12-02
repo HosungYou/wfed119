@@ -23,6 +23,7 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   strengths: Target,
   vision: Eye,
   swot: Grid3X3,
+  goals: Target,
   dreams: Sparkles,
   enneagram: User,
 };
@@ -202,7 +203,7 @@ interface ModuleProgressGridProps {
 }
 
 export function ModuleProgressGrid({ modules, compact = false }: ModuleProgressGridProps) {
-  const moduleOrder: ModuleId[] = ['values', 'strengths', 'vision', 'swot', 'dreams', 'enneagram'];
+  const moduleOrder: ModuleId[] = ['values', 'strengths', 'vision', 'swot', 'goals', 'dreams', 'enneagram'];
 
   return (
     <div className={`grid gap-4 ${compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>

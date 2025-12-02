@@ -281,14 +281,14 @@ export const HomePage: React.FC = () => {
             >
               <div className="grid md:grid-cols-2 gap-6">
                 <ModuleCard
-                  title="Goal Setting"
-                  description="Set SMART goals with AI-powered chatbot guidance"
+                  title="Goal Setting (OKR)"
+                  description="OKR-based role-focused goal setting with 7 principles"
                   icon={<Target className="w-6 h-6" />}
                   color="primary"
                   duration="30-40 minutes"
-                  tags={['AI Chatbot', 'SMART Goals', 'Interactive']}
-                  href="#"
-                  status="coming-soon"
+                  tags={['OKR Framework', '7 Principles', 'SWOT Integration']}
+                  href="/discover/goals"
+                  status="active"
                 />
                 <ModuleCard
                   title="ERRC Action Plan"

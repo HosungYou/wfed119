@@ -14,6 +14,7 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   strengths: Target,
   vision: Eye,
   swot: Grid3X3,
+  goals: Target,
   dreams: Sparkles,
   enneagram: User,
 };
@@ -23,6 +24,7 @@ const MODULE_COLORS: Record<ModuleId, { gradient: string; bg: string; text: stri
   strengths: { gradient: 'from-blue-500 to-cyan-600', bg: 'bg-blue-50', text: 'text-blue-700' },
   vision: { gradient: 'from-indigo-500 to-purple-600', bg: 'bg-indigo-50', text: 'text-indigo-700' },
   swot: { gradient: 'from-orange-500 to-amber-600', bg: 'bg-orange-50', text: 'text-orange-700' },
+  goals: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700' },
   dreams: { gradient: 'from-purple-500 to-fuchsia-600', bg: 'bg-purple-50', text: 'text-purple-700' },
   enneagram: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700' },
 };

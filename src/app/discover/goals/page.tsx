@@ -29,11 +29,11 @@ interface GoalProgress {
 }
 
 const STAGES = [
-  { id: 'roles', name: '역할 설정', icon: Users, description: '5-7개의 인생 역할 정의' },
-  { id: 'objectives', name: '목표 수립', icon: Target, description: 'OKR 기반 목표 설정' },
-  { id: 'key-results', name: '핵심 결과', icon: Compass, description: '측정 가능한 결과 정의' },
-  { id: 'actions', name: '실행 계획', icon: ClipboardCheck, description: '구체적인 행동 계획' },
-  { id: 'reflection', name: '7가지 원칙', icon: Sparkles, description: '목표 설정 7원칙 성찰' },
+  { id: 'roles', name: 'Role Setup', icon: Users, description: 'Define 5-7 life roles' },
+  { id: 'objectives', name: 'Objectives', icon: Target, description: 'Set OKR-based goals' },
+  { id: 'key-results', name: 'Key Results', icon: Compass, description: 'Define measurable outcomes' },
+  { id: 'actions', name: 'Action Plans', icon: ClipboardCheck, description: 'Create specific action items' },
+  { id: 'reflection', name: '7 Principles', icon: Sparkles, description: 'Reflect on goal-setting principles' },
 ];
 
 export default function GoalSettingModuleLanding() {
@@ -102,7 +102,7 @@ export default function GoalSettingModuleLanding() {
       const swotData = await swotRes.json();
 
       if (!swotData?.id) {
-        alert('SWOT 분석을 먼저 완료해주세요.');
+        alert('Please complete SWOT Analysis first.');
         router.push('/discover/swot');
         return;
       }
@@ -145,14 +145,14 @@ export default function GoalSettingModuleLanding() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
             <Target className="w-4 h-4" />
-            목표 설정 모듈 (OKR 기반)
+            Goal Setting Module (OKR-Based)
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            인생의 역할별 목표 설정
+            Role-Based Goal Setting
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            SWOT 분석 결과를 바탕으로 OKR(Objectives & Key Results) 프레임워크를 활용해
-            체계적인 목표를 수립합니다.
+            Based on your SWOT analysis, use the OKR (Objectives & Key Results) framework
+            to establish systematic goals for each life role.
           </p>
         </div>
 
@@ -162,15 +162,15 @@ export default function GoalSettingModuleLanding() {
             <div className="flex items-start gap-3">
               <Circle className="w-5 h-5 text-amber-500 mt-0.5" />
               <div>
-                <h3 className="font-medium text-amber-800">SWOT 분석 필요</h3>
+                <h3 className="font-medium text-amber-800">SWOT Analysis Required</h3>
                 <p className="text-sm text-amber-600 mt-1">
-                  목표 설정을 시작하려면 SWOT 분석을 먼저 완료해주세요.
+                  Please complete SWOT Analysis before starting Goal Setting.
                 </p>
                 <button
                   onClick={() => router.push('/discover/swot')}
                   className="mt-2 text-sm text-amber-700 hover:text-amber-800 font-medium flex items-center gap-1"
                 >
-                  SWOT 분석으로 이동 <ArrowRight className="w-4 h-4" />
+                  Go to SWOT Analysis <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function GoalSettingModuleLanding() {
 
         {/* Stage Progress */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">목표 설정 단계</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Goal Setting Stages</h2>
 
           <div className="space-y-4">
             {STAGES.map((stage, index) => {
@@ -223,12 +223,12 @@ export default function GoalSettingModuleLanding() {
 
                   {isCompleted && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                      완료
+                      Done
                     </span>
                   )}
                   {isCurrent && progress?.goals.exists && (
                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                      진행 중
+                      In Progress
                     </span>
                   )}
                 </div>
@@ -239,16 +239,16 @@ export default function GoalSettingModuleLanding() {
 
         {/* 7 Principles Card */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg p-6 mb-6 text-white">
-          <h2 className="text-lg font-semibold mb-4">목표 설정의 7가지 원칙</h2>
+          <h2 className="text-lg font-semibold mb-4">7 Principles of Goal Setting</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              '정체성 반영',
-              '충분한 숙고',
-              '미완성 수용',
-              '다양성',
-              '연계성',
-              '실현 가능성',
-              '실행 용이성',
+              'Identity',
+              'Deliberation',
+              'Incompleteness',
+              'Diversity',
+              'Connection',
+              'Feasibility',
+              'Ease of Execution',
             ].map((principle, i) => (
               <div key={i} className="bg-white/20 rounded-lg px-3 py-2 text-sm text-center">
                 {i + 1}. {principle}
@@ -265,7 +265,7 @@ export default function GoalSettingModuleLanding() {
                 onClick={handleContinue}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all"
               >
-                이어서 진행하기
+                Continue
                 <ArrowRight className="w-5 h-5" />
               </button>
             ) : (
@@ -273,7 +273,7 @@ export default function GoalSettingModuleLanding() {
                 onClick={handleStart}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all"
               >
-                목표 설정 시작하기
+                Start Goal Setting
                 <ArrowRight className="w-5 h-5" />
               </button>
             )
@@ -282,7 +282,7 @@ export default function GoalSettingModuleLanding() {
               disabled
               className="bg-gray-300 text-gray-500 font-semibold px-8 py-3 rounded-full shadow-lg flex items-center gap-2 cursor-not-allowed"
             >
-              SWOT 분석 완료 후 시작 가능
+              Complete SWOT Analysis to Start
             </button>
           )}
         </div>
@@ -292,15 +292,15 @@ export default function GoalSettingModuleLanding() {
           <div className="mt-8 grid grid-cols-3 gap-4">
             <div className="bg-white rounded-xl p-4 text-center shadow">
               <div className="text-2xl font-bold text-purple-600">{progress.goals.rolesCount}</div>
-              <div className="text-sm text-gray-500">역할</div>
+              <div className="text-sm text-gray-500">Roles</div>
             </div>
             <div className="bg-white rounded-xl p-4 text-center shadow">
               <div className="text-2xl font-bold text-purple-600">{progress.goals.objectivesCount}</div>
-              <div className="text-sm text-gray-500">목표</div>
+              <div className="text-sm text-gray-500">Objectives</div>
             </div>
             <div className="bg-white rounded-xl p-4 text-center shadow">
               <div className="text-2xl font-bold text-purple-600">{progress.goals.keyResultsCount}</div>
-              <div className="text-sm text-gray-500">핵심 결과</div>
+              <div className="text-sm text-gray-500">Key Results</div>
             </div>
           </div>
         )}

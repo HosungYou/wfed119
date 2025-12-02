@@ -141,7 +141,7 @@ export default function GoalActionsPage() {
 
           if (!res.ok) {
             const data = await res.json();
-            throw new Error(data.error || '실행 계획 저장에 실패했습니다.');
+            throw new Error(data.error || 'Failed to save action plans.');
           }
         }
       }
@@ -173,7 +173,7 @@ export default function GoalActionsPage() {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            핵심 결과로 돌아가기
+            Back to Key Results
           </button>
 
           <div className="flex items-center gap-3 mb-2">
@@ -191,7 +191,7 @@ export default function GoalActionsPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-800">
             <strong>Tip:</strong> 실행 계획은 &quot;첫 번째 작은 발걸음&quot;부터 시작하세요.
-            작고 쉬운 행동부터 시작해서 점차 확장해 나가는 것이 효과적입니다.
+            Starting with small, easy actions and gradually expanding is effective.
           </p>
         </div>
 
@@ -298,7 +298,7 @@ export default function GoalActionsPage() {
                           className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-purple-400 hover:text-purple-600 text-sm flex items-center justify-center gap-1"
                         >
                           <Plus className="w-4 h-4" />
-                          행동 추가 (최대 5개)
+                          Add Action (max 5)
                         </button>
                       )}
                     </div>

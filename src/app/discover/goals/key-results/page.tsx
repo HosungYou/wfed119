@@ -139,7 +139,7 @@ export default function GoalKeyResultsPage() {
 
           if (!res.ok) {
             const data = await res.json();
-            throw new Error(data.error || '핵심 결과 저장에 실패했습니다.');
+            throw new Error(data.error || 'Failed to save key results.');
           }
         }
       }
@@ -147,7 +147,7 @@ export default function GoalKeyResultsPage() {
       router.push('/discover/goals/actions');
     } catch (err) {
       console.error('[Goal Key Results] Error saving:', err);
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setError(err instanceof Error ? err.message : 'Saving...가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
@@ -171,7 +171,7 @@ export default function GoalKeyResultsPage() {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            목표 수립으로 돌아가기
+            Back to Objectives
           </button>
 
           <div className="flex items-center gap-3 mb-2">
@@ -179,7 +179,7 @@ export default function GoalKeyResultsPage() {
               <Compass className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">3. 핵심 결과 (Key Results)</h1>
+              <h1 className="text-2xl font-bold text-gray-900">3. Key Results</h1>
               <p className="text-sm text-gray-500">각 목표에 대해 측정 가능한 핵심 결과를 정의하세요</p>
             </div>
           </div>
@@ -188,8 +188,8 @@ export default function GoalKeyResultsPage() {
         {/* Info Card */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <strong>Tip:</strong> 핵심 결과(KR)는 목표 달성 여부를 측정하는 구체적인 지표입니다.
-            각 목표당 1-3개의 KR을 설정하고, 달성 기한과 성공 기준을 명확히 하세요.
+            <strong>Tip:</strong> Key Results (KRs) are specific metrics that measure whether objectives are achieved.
+            Set 1-3 KRs per objective with clear deadlines and success criteria.
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export default function GoalKeyResultsPage() {
                 onClick={() => setError(null)}
                 className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
               >
-                닫기
+                Close
               </button>
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function GoalKeyResultsPage() {
             className="px-6 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전
+            Back
           </button>
 
           <button
@@ -330,11 +330,11 @@ export default function GoalKeyResultsPage() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                저장 중...
+                Saving...
               </>
             ) : (
               <>
-                다음: 실행 계획
+                Next: Action Plans
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

@@ -127,11 +127,11 @@ export default function GoalObjectivesPage() {
   function requestRemoveObjective(roleId: string, index: number) {
     const current = objectives[roleId] || [];
     if (current.length <= 1) {
-      setError('최소 1개의 목표가 필요합니다.');
+      setError('At least 1 objective is required.');
       return;
     }
 
-    const objectiveText = current[index]?.objective_text || `목표 ${index + 1}`;
+    const objectiveText = current[index]?.objective_text || `Objective ${index + 1}`;
     setDeleteConfirmation({
       isOpen: true,
       roleId,
@@ -194,7 +194,7 @@ export default function GoalObjectivesPage() {
 
           if (!res.ok) {
             const data = await res.json();
-            throw new Error(data.error || '목표 저장에 실패했습니다.');
+            throw new Error(data.error || 'Failed to save objectives.');
           }
         }
       }
@@ -202,7 +202,7 @@ export default function GoalObjectivesPage() {
       router.push('/discover/goals/key-results');
     } catch (err) {
       console.error('[Goal Objectives] Error saving:', err);
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -230,7 +230,7 @@ export default function GoalObjectivesPage() {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            역할 설정으로 돌아가기
+            Back to Role Setup
           </button>
 
           <div className="flex items-center gap-3 mb-2">
@@ -238,8 +238,8 @@ export default function GoalObjectivesPage() {
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">2. 목표 수립 (Objectives)</h1>
-              <p className="text-sm text-gray-500">각 역할에 대한 영감적인 목표를 설정하세요</p>
+              <h1 className="text-2xl font-bold text-gray-900">2. Objectives</h1>
+              <p className="text-sm text-gray-500">Set inspiring objectives for each role</p>
             </div>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function GoalObjectivesPage() {
             >
               <div className="flex items-center gap-2">
                 <Lightbulb className="w-5 h-5 text-amber-600" />
-                <span className="font-medium text-amber-800">SWOT 전략 참고하기</span>
+                <span className="font-medium text-amber-800">SWOT Strategies Reference</span>
               </div>
               {showStrategies ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
@@ -302,12 +302,12 @@ export default function GoalObjectivesPage() {
                   </div>
                   <div className="text-left">
                     <h3 className="font-medium text-gray-900">{role.role_name}</h3>
-                    <p className="text-xs text-gray-500">{role.percentage_allocation}% 할당</p>
+                    <p className="text-xs text-gray-500">{role.percentage_allocation}% allocated</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-purple-600 font-medium">
-                    {objectives[role.id]?.filter(o => o.objective_text.trim()).length || 0}개 목표
+                    {objectives[role.id]?.filter(o => o.objective_text.trim()).length || 0} objectives
                   </span>
                   {expandedRole === role.id ? (
                     <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -327,7 +327,7 @@ export default function GoalObjectivesPage() {
                           <textarea
                             value={obj.objective_text}
                             onChange={(e) => updateObjective(role.id, index, e.target.value)}
-                            placeholder="예: 건강한 생활 습관을 통해 에너지 넘치는 삶을 살겠다"
+                            placeholder="e.g., Live an energetic life through healthy habits"
                             rows={2}
                             className="w-full border border-gray-200 rounded-lg p-3 text-gray-700 focus:border-purple-500 outline-none resize-none"
                           />
@@ -345,7 +345,7 @@ export default function GoalObjectivesPage() {
                       {/* Strategy Tags */}
                       {allStrategies.length > 0 && obj.objective_text.trim() && (
                         <div className="pl-8">
-                          <p className="text-xs text-gray-500 mb-1">관련 SWOT 전략:</p>
+                          <p className="text-xs text-gray-500 mb-1">Related SWOT Strategies:</p>
                           <div className="flex flex-wrap gap-1">
                             {allStrategies.slice(0, 6).map((strategy, i) => (
                               <button
@@ -372,7 +372,7 @@ export default function GoalObjectivesPage() {
                       className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-purple-400 hover:text-purple-600 text-sm flex items-center justify-center gap-1"
                     >
                       <Plus className="w-4 h-4" />
-                      목표 추가 (최대 3개)
+                      Add Objective (max 3)
                     </button>
                   )}
                 </div>
@@ -388,7 +388,7 @@ export default function GoalObjectivesPage() {
             className="px-6 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전
+            Back
           </button>
 
           <button
@@ -403,11 +403,11 @@ export default function GoalObjectivesPage() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                저장 중...
+                Saving...
               </>
             ) : (
               <>
-                다음: 핵심 결과
+                Next: Key Results
                 <ArrowRight className="w-5 h-5" />
               </>
             )}
@@ -423,14 +423,14 @@ export default function GoalObjectivesPage() {
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">목표 삭제 확인</h3>
+              <h3 className="text-lg font-bold text-gray-900">Confirm Delete Objective</h3>
             </div>
 
             <p className="text-gray-600 mb-2">
-              <strong>&quot;{deleteConfirmation.objectiveText || '이 목표'}&quot;</strong>를 삭제하시겠습니까?
+              Are you sure you want to delete <strong>&quot;{deleteConfirmation.objectiveText || 'this objective'}&quot;</strong>?
             </p>
             <p className="text-sm text-red-600 mb-6">
-              ⚠️ 이 목표와 관련된 모든 핵심 결과와 실행 계획이 함께 삭제됩니다.
+              ⚠️ All key results and action plans related to this objective will also be deleted.
             </p>
 
             <div className="flex gap-3 justify-end">
@@ -438,13 +438,13 @@ export default function GoalObjectivesPage() {
                 onClick={cancelRemoveObjective}
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
-                취소
+                Cancel
               </button>
               <button
                 onClick={confirmRemoveObjective}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
               >
-                삭제
+                Delete
               </button>
             </div>
           </div>

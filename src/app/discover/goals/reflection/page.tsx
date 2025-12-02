@@ -86,7 +86,7 @@ export default function GoalReflectionPage() {
 
       if (!reflectionsRes.ok) {
         const data = await reflectionsRes.json();
-        throw new Error(data.error || '성찰 저장에 실패했습니다.');
+        throw new Error(data.error || 'Failed to save reflections.');
       }
 
       // Mark session as completed
@@ -98,13 +98,13 @@ export default function GoalReflectionPage() {
 
       if (!sessionRes.ok) {
         const data = await sessionRes.json();
-        throw new Error(data.error || '세션 완료 처리에 실패했습니다.');
+        throw new Error(data.error || 'Failed to complete session.');
       }
 
       router.push('/discover/goals');
     } catch (err) {
       console.error('[Goal Reflections] Error saving:', err);
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -130,7 +130,7 @@ export default function GoalReflectionPage() {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            실행 계획으로 돌아가기
+            Back to Action Plans
           </button>
 
           <div className="flex items-center gap-3 mb-2">
@@ -138,8 +138,8 @@ export default function GoalReflectionPage() {
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">5. 목표 설정 7가지 원칙</h1>
-              <p className="text-sm text-gray-500">각 원칙에 대해 성찰하고 기록하세요</p>
+              <h1 className="text-2xl font-bold text-gray-900">5. Seven Principles of Goal Setting</h1>
+              <p className="text-sm text-gray-500">Reflect on each principle and record your thoughts</p>
             </div>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function GoalReflectionPage() {
         {/* Progress */}
         <div className="bg-white rounded-xl shadow-md p-4 mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">성찰 진행률</span>
+            <span className="text-sm font-medium text-gray-700">Reflection Progress</span>
             <span className="text-sm text-purple-600 font-bold">{completedCount}/7</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -168,7 +168,7 @@ export default function GoalReflectionPage() {
                 onClick={() => setError(null)}
                 className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
               >
-                닫기
+                Close
               </button>
             </div>
           </div>
@@ -196,8 +196,7 @@ export default function GoalReflectionPage() {
                       {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
                     </div>
                     <div className="text-left">
-                      <h3 className="font-medium text-gray-900">{label.korean}</h3>
-                      <p className="text-xs text-gray-500">{label.english}</p>
+                      <h3 className="font-medium text-gray-900">{label.title}</h3>
                     </div>
                   </div>
                   {isExpanded ? (
@@ -216,7 +215,7 @@ export default function GoalReflectionPage() {
                     <textarea
                       value={reflections[type]}
                       onChange={(e) => updateReflection(type, e.target.value)}
-                      placeholder="이 원칙에 대한 성찰을 작성하세요... (최소 20자)"
+                      placeholder="Write your reflection on this principle... (min. 20 characters)"
                       rows={4}
                       className="w-full border border-gray-200 rounded-lg p-3 text-gray-700 focus:border-purple-500 outline-none resize-none"
                     />
@@ -225,14 +224,14 @@ export default function GoalReflectionPage() {
                       <span className={`text-xs ${
                         reflections[type].length >= 20 ? 'text-green-600' : 'text-gray-400'
                       }`}>
-                        {reflections[type].length}자 / 최소 20자
+                        {reflections[type].length} chars / min. 20
                       </span>
                       {index < 6 && (
                         <button
                           onClick={() => setExpandedPrinciple(REFLECTION_ORDER[index + 1])}
                           className="text-sm text-purple-600 hover:text-purple-700"
                         >
-                          다음 원칙 →
+                          Next Principle →
                         </button>
                       )}
                     </div>
@@ -245,23 +244,23 @@ export default function GoalReflectionPage() {
 
         {/* Summary Card */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 mb-6 text-white">
-          <h2 className="font-bold text-lg mb-2">목표 설정 완료!</h2>
+          <h2 className="font-bold text-lg mb-2">Goal Setting Complete!</h2>
           <p className="text-sm text-purple-100 mb-4">
-            OKR 기반 목표 설정을 통해 인생의 각 역할에 대한 구체적인 목표와 행동 계획을 수립했습니다.
-            정기적으로 진행 상황을 점검하고 필요에 따라 조정하세요.
+            Through OKR-based goal setting, you have established specific goals and action plans for each role in your life.
+            Regularly review your progress and adjust as needed.
           </p>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="bg-white/20 rounded-lg p-2">
               <div className="text-xl font-bold">OKR</div>
-              <div className="text-xs">프레임워크</div>
+              <div className="text-xs">Framework</div>
             </div>
             <div className="bg-white/20 rounded-lg p-2">
               <div className="text-xl font-bold">7</div>
-              <div className="text-xs">원칙</div>
+              <div className="text-xs">Principles</div>
             </div>
             <div className="bg-white/20 rounded-lg p-2">
               <div className="text-xl font-bold">{completedCount}</div>
-              <div className="text-xs">성찰 완료</div>
+              <div className="text-xs">Reflections</div>
             </div>
           </div>
         </div>
@@ -273,7 +272,7 @@ export default function GoalReflectionPage() {
             className="px-6 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전
+            Back
           </button>
 
           <button
@@ -288,12 +287,12 @@ export default function GoalReflectionPage() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                완료 중...
+                Completing...
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-5 h-5" />
-                목표 설정 완료
+                Complete Goal Setting
               </>
             )}
           </button>

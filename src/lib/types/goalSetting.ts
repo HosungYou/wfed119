@@ -235,56 +235,49 @@ export type GoalSettingStage =
 // ============================================================================
 
 export const DEFAULT_ROLES = [
-  { role_number: 1, role_name: '웰빙/자기관리', is_wellbeing: true },
-  { role_number: 2, role_name: '가족', is_wellbeing: false },
-  { role_number: 3, role_name: '직업/경력', is_wellbeing: false },
-  { role_number: 4, role_name: '사회적 관계', is_wellbeing: false },
-  { role_number: 5, role_name: '자기계발', is_wellbeing: false },
+  { role_number: 1, role_name: 'Wellbeing/Self-Care', is_wellbeing: true },
+  { role_number: 2, role_name: 'Family', is_wellbeing: false },
+  { role_number: 3, role_name: 'Career/Work', is_wellbeing: false },
+  { role_number: 4, role_name: 'Social Relationships', is_wellbeing: false },
+  { role_number: 5, role_name: 'Personal Growth', is_wellbeing: false },
 ];
 
-export const REFLECTION_LABELS: Record<ReflectionType, { korean: string; english: string; description: string }> = {
+export const REFLECTION_LABELS: Record<ReflectionType, { title: string; description: string }> = {
   identity_alignment: {
-    korean: '정체성 반영',
-    english: 'Identity Alignment',
-    description: '목표가 나의 핵심 가치관과 정체성을 반영하고 있는가?',
+    title: 'Identity Alignment',
+    description: 'Do your goals reflect your core values and identity?',
   },
   deliberation: {
-    korean: '충분한 숙고',
-    english: 'Sufficient Deliberation',
-    description: '목표를 충분히 숙고하고 검토했는가?',
+    title: 'Sufficient Deliberation',
+    description: 'Have you thought through and reviewed your goals carefully?',
   },
   incompleteness: {
-    korean: '미완성',
-    english: 'Embrace Incompleteness',
-    description: '완벽하지 않아도 괜찮다는 것을 받아들이는가?',
+    title: 'Embrace Incompleteness',
+    description: 'Can you accept that it\'s okay not to be perfect?',
   },
   diversity: {
-    korean: '다양성',
-    english: 'Multiple Roles',
-    description: '삶의 다양한 역할들을 균형 있게 고려했는가?',
+    title: 'Multiple Roles',
+    description: 'Have you considered various roles in life in a balanced way?',
   },
   connectivity: {
-    korean: '연계성',
-    english: 'Bigger Picture',
-    description: '목표들이 더 큰 비전과 연결되어 있는가?',
+    title: 'Bigger Picture',
+    description: 'Are your goals connected to a larger vision?',
   },
   feasibility: {
-    korean: '실현 가능성',
-    english: 'Feasibility',
-    description: '목표가 현실적으로 달성 가능한가?',
+    title: 'Feasibility',
+    description: 'Are your goals realistically achievable?',
   },
   execution_ease: {
-    korean: '실행 용이성',
-    english: 'Ease of Execution',
-    description: '첫 번째 행동을 쉽게 시작할 수 있는가?',
+    title: 'Ease of Execution',
+    description: 'Can you easily start your first action step?',
   },
 };
 
-export const KEY_RESULT_STATUS_LABELS: Record<KeyResultStatus, { korean: string; color: string }> = {
-  not_started: { korean: '시작 전', color: 'gray' },
-  in_progress: { korean: '진행 중', color: 'blue' },
-  completed: { korean: '완료', color: 'green' },
-  blocked: { korean: '보류', color: 'red' },
+export const KEY_RESULT_STATUS_LABELS: Record<KeyResultStatus, { label: string; color: string }> = {
+  not_started: { label: 'Not Started', color: 'gray' },
+  in_progress: { label: 'In Progress', color: 'blue' },
+  completed: { label: 'Completed', color: 'green' },
+  blocked: { label: 'Blocked', color: 'red' },
 };
 
 // ============================================================================
@@ -301,10 +294,10 @@ export function validateRoleAllocation(roles: Array<{ percentage_allocation: num
     isValid: total === 100,
     total,
     message: total === 100
-      ? '할당이 100%입니다.'
+      ? 'Allocation is 100%.'
       : total < 100
-        ? `${100 - total}%가 더 필요합니다.`
-        : `${total - 100}%를 줄여야 합니다.`,
+        ? `Need ${100 - total}% more.`
+        : `Reduce by ${total - 100}%.`,
   };
 }
 

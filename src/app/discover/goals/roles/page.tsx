@@ -81,18 +81,18 @@ export default function GoalRolesPage() {
 
   function requestRemoveRole(index: number) {
     if (roles[index].is_wellbeing) {
-      setError('웰빙 역할은 삭제할 수 없습니다.');
+      setError('The Wellbeing role cannot be deleted.');
       return;
     }
     if (roles.length <= 3) {
-      setError('최소 3개의 역할이 필요합니다.');
+      setError('At least 3 roles are required.');
       return;
     }
     // Show confirmation dialog
     setDeleteConfirmation({
       isOpen: true,
       roleIndex: index,
-      roleName: roles[index].role_name || `역할 ${index + 1}`,
+      roleName: roles[index].role_name || `Role ${index + 1}`,
     });
   }
 
@@ -115,7 +115,7 @@ export default function GoalRolesPage() {
 
     // Validate roles
     if (roles.some(r => !r.role_name.trim())) {
-      setError('모든 역할에 이름을 입력해주세요.');
+      setError('Please enter a name for all roles.');
       return;
     }
 
@@ -138,11 +138,11 @@ export default function GoalRolesPage() {
         router.push('/discover/goals/objectives');
       } else {
         const data = await res.json();
-        setError(data.error || '저장에 실패했습니다.');
+        setError(data.error || 'Failed to save.');
       }
     } catch (error) {
       console.error('[Goal Roles] Error saving:', error);
-      setError('저장 중 오류가 발생했습니다.');
+      setError('An error occurred while saving.');
     } finally {
       setSaving(false);
     }
@@ -168,7 +168,7 @@ export default function GoalRolesPage() {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            목표 설정으로 돌아가기
+            Back to Goal Setting
           </button>
 
           <div className="flex items-center gap-3 mb-2">
@@ -176,8 +176,8 @@ export default function GoalRolesPage() {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">1. 역할 설정</h1>
-              <p className="text-sm text-gray-500">인생에서 중요한 5-7개의 역할을 정의하세요</p>
+              <h1 className="text-2xl font-bold text-gray-900">1. Role Setup</h1>
+              <p className="text-sm text-gray-500">Define 5-7 important roles in your life</p>
             </div>
           </div>
         </div>
@@ -185,9 +185,9 @@ export default function GoalRolesPage() {
         {/* Info Card */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <strong>Tip:</strong> 첫 번째 역할은 항상 &quot;웰빙/자기관리&quot;입니다.
-            나머지 역할들에 가족, 직업, 사회적 관계 등을 추가하세요.
-            각 역할에 할당되는 비율의 합이 100%가 되어야 합니다.
+            <strong>Tip:</strong> The first role is always &quot;Wellbeing/Self-Care&quot;.
+            Add other roles like Family, Career, Social Relationships, etc.
+            The sum of allocations must equal 100%.
           </p>
         </div>
 
@@ -221,7 +221,7 @@ export default function GoalRolesPage() {
                       type="text"
                       value={role.role_name}
                       onChange={(e) => updateRole(index, { role_name: e.target.value })}
-                      placeholder="역할 이름 (예: 가족, 직업, 사회적 관계)"
+                      placeholder="Role name (e.g., Family, Career, Social)"
                       disabled={role.is_wellbeing}
                       className={`flex-1 text-lg font-medium border-b-2 border-gray-200 focus:border-purple-500 outline-none pb-1 ${
                         role.is_wellbeing ? 'bg-pink-50' : ''
@@ -240,13 +240,13 @@ export default function GoalRolesPage() {
                   <textarea
                     value={role.role_description}
                     onChange={(e) => updateRole(index, { role_description: e.target.value })}
-                    placeholder="이 역할에서의 책임과 목표를 간단히 설명하세요..."
+                    placeholder="Briefly describe your responsibilities and goals in this role..."
                     rows={2}
                     className="w-full text-sm text-gray-600 border border-gray-200 rounded-lg p-2 focus:border-purple-500 outline-none resize-none"
                   />
 
                   <div className="flex items-center gap-4">
-                    <label className="text-sm text-gray-500">할당 비율:</label>
+                    <label className="text-sm text-gray-500">Allocation:</label>
                     <input
                       type="range"
                       min="0"
@@ -272,7 +272,7 @@ export default function GoalRolesPage() {
             className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-purple-400 hover:text-purple-600 flex items-center justify-center gap-2 transition-all mb-6"
           >
             <Plus className="w-5 h-5" />
-            역할 추가하기
+            Add Role
           </button>
         )}
 
@@ -282,7 +282,7 @@ export default function GoalRolesPage() {
         }`}>
           <div className="flex items-center justify-between">
             <span className={`font-medium ${validation.isValid ? 'text-green-700' : 'text-amber-700'}`}>
-              총 할당: {validation.total}%
+              Total Allocation: {validation.total}%
             </span>
             <span className={`text-sm ${validation.isValid ? 'text-green-600' : 'text-amber-600'}`}>
               {validation.message}
@@ -297,7 +297,7 @@ export default function GoalRolesPage() {
             className="px-6 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전
+            Back
           </button>
 
           <button
@@ -312,11 +312,11 @@ export default function GoalRolesPage() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                저장 중...
+                Saving...
               </>
             ) : (
               <>
-                다음: 목표 수립
+                Next: Objectives
                 <ArrowRight className="w-5 h-5" />
               </>
             )}
@@ -332,14 +332,14 @@ export default function GoalRolesPage() {
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">역할 삭제 확인</h3>
+              <h3 className="text-lg font-bold text-gray-900">Confirm Delete Role</h3>
             </div>
 
             <p className="text-gray-600 mb-2">
-              <strong>&quot;{deleteConfirmation.roleName}&quot;</strong> 역할을 삭제하시겠습니까?
+              Are you sure you want to delete <strong>&quot;{deleteConfirmation.roleName}&quot;</strong>?
             </p>
             <p className="text-sm text-red-600 mb-6">
-              ⚠️ 이 역할과 관련된 모든 목표, 핵심 결과, 실행 계획이 함께 삭제됩니다.
+              ⚠️ All objectives, key results, and action plans related to this role will also be deleted.
             </p>
 
             <div className="flex gap-3 justify-end">
@@ -347,13 +347,13 @@ export default function GoalRolesPage() {
                 onClick={cancelRemoveRole}
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
-                취소
+                Cancel
               </button>
               <button
                 onClick={confirmRemoveRole}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
               >
-                삭제
+                Delete
               </button>
             </div>
           </div>

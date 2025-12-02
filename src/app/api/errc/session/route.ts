@@ -102,7 +102,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body: CreateErrcSessionRequest & UpdateErrcSessionRequest = await req.json();
+    // Parse body with fallback to empty object
+    let body: CreateErrcSessionRequest & UpdateErrcSessionRequest = {};
+    try {
+      const text = await req.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch {
+      // Empty body is OK - will create new session with defaults
+    }
 
     // Check if session exists
     const { data: existingSession } = await supabase

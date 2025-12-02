@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Target, ArrowRight, ArrowLeft, Plus, Trash2, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Target, ArrowRight, ArrowLeft, Plus, Trash2, Lightbulb, ChevronDown, ChevronUp, AlertTriangle, AlertCircle } from 'lucide-react';
 
 interface Role {
   id: string;
@@ -29,15 +29,29 @@ interface SwotStrategies {
   wt: string[];
 }
 
+interface DeleteConfirmation {
+  isOpen: boolean;
+  roleId: string | null;
+  objectiveIndex: number | null;
+  objectiveText: string;
+}
+
 export default function GoalObjectivesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [objectives, setObjectives] = useState<Record<string, Objective[]>>({});
   const [swotStrategies, setSwotStrategies] = useState<SwotStrategies | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [showStrategies, setShowStrategies] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
+    isOpen: false,
+    roleId: null,
+    objectiveIndex: null,
+    objectiveText: '',
+  });
 
   useEffect(() => {
     fetchData();
@@ -110,17 +124,38 @@ export default function GoalObjectivesPage() {
     }));
   }
 
-  function removeObjective(roleId: string, index: number) {
+  function requestRemoveObjective(roleId: string, index: number) {
     const current = objectives[roleId] || [];
-    if (current.length <= 1) return;
+    if (current.length <= 1) {
+      setError('최소 1개의 목표가 필요합니다.');
+      return;
+    }
 
+    const objectiveText = current[index]?.objective_text || `목표 ${index + 1}`;
+    setDeleteConfirmation({
+      isOpen: true,
+      roleId,
+      objectiveIndex: index,
+      objectiveText: objectiveText.length > 30 ? objectiveText.slice(0, 30) + '...' : objectiveText,
+    });
+  }
+
+  function confirmRemoveObjective() {
+    if (deleteConfirmation.roleId === null || deleteConfirmation.objectiveIndex === null) return;
+
+    const { roleId, objectiveIndex } = deleteConfirmation;
     setObjectives(prev => ({
       ...prev,
-      [roleId]: prev[roleId].filter((_, i) => i !== index).map((obj, i) => ({
+      [roleId]: prev[roleId].filter((_, i) => i !== objectiveIndex).map((obj, i) => ({
         ...obj,
         objective_number: i + 1,
       })),
     }));
+    setDeleteConfirmation({ isOpen: false, roleId: null, objectiveIndex: null, objectiveText: '' });
+  }
+
+  function cancelRemoveObjective() {
+    setDeleteConfirmation({ isOpen: false, roleId: null, objectiveIndex: null, objectiveText: '' });
   }
 
   function toggleStrategy(roleId: string, objIndex: number, strategy: string) {
@@ -141,13 +176,14 @@ export default function GoalObjectivesPage() {
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
 
     try {
       // Save objectives for each role
       for (const roleId of Object.keys(objectives)) {
         const roleObjectives = objectives[roleId].filter(obj => obj.objective_text.trim());
         if (roleObjectives.length > 0) {
-          await fetch('/api/goals/objectives', {
+          const res = await fetch('/api/goals/objectives', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -155,12 +191,18 @@ export default function GoalObjectivesPage() {
               objectives: roleObjectives,
             }),
           });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || '목표 저장에 실패했습니다.');
+          }
         }
       }
 
       router.push('/discover/goals/key-results');
-    } catch (error) {
-      console.error('[Goal Objectives] Error saving:', error);
+    } catch (err) {
+      console.error('[Goal Objectives] Error saving:', err);
+      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
@@ -228,6 +270,22 @@ export default function GoalObjectivesPage() {
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Roles & Objectives */}
         <div className="space-y-4 mb-6">
           {roles.map((role) => (
@@ -276,7 +334,7 @@ export default function GoalObjectivesPage() {
                         </div>
                         {objectives[role.id].length > 1 && (
                           <button
-                            onClick={() => removeObjective(role.id, index)}
+                            onClick={() => requestRemoveObjective(role.id, index)}
                             className="text-gray-400 hover:text-red-500 mt-2"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -356,6 +414,42 @@ export default function GoalObjectivesPage() {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">목표 삭제 확인</h3>
+            </div>
+
+            <p className="text-gray-600 mb-2">
+              <strong>&quot;{deleteConfirmation.objectiveText || '이 목표'}&quot;</strong>를 삭제하시겠습니까?
+            </p>
+            <p className="text-sm text-red-600 mb-6">
+              ⚠️ 이 목표와 관련된 모든 핵심 결과와 실행 계획이 함께 삭제됩니다.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelRemoveObjective}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmRemoveObjective}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

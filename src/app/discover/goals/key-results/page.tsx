@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Compass, ArrowRight, ArrowLeft, Plus, Trash2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Compass, ArrowRight, ArrowLeft, Plus, Trash2, Calendar, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 
 interface Objective {
   id: string;
@@ -33,6 +33,7 @@ export default function GoalKeyResultsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [keyResults, setKeyResults] = useState<Record<string, KeyResult[]>>({});
   const [expandedObjective, setExpandedObjective] = useState<string | null>(null);
@@ -121,12 +122,13 @@ export default function GoalKeyResultsPage() {
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
 
     try {
       for (const objectiveId of Object.keys(keyResults)) {
         const objKeyResults = keyResults[objectiveId].filter(kr => kr.key_result_text.trim());
         if (objKeyResults.length > 0) {
-          await fetch('/api/goals/key-results', {
+          const res = await fetch('/api/goals/key-results', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -134,12 +136,18 @@ export default function GoalKeyResultsPage() {
               key_results: objKeyResults,
             }),
           });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || '핵심 결과 저장에 실패했습니다.');
+          }
         }
       }
 
       router.push('/discover/goals/actions');
-    } catch (error) {
-      console.error('[Goal Key Results] Error saving:', error);
+    } catch (err) {
+      console.error('[Goal Key Results] Error saving:', err);
+      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
@@ -184,6 +192,22 @@ export default function GoalKeyResultsPage() {
             각 목표당 1-3개의 KR을 설정하고, 달성 기한과 성공 기준을 명확히 하세요.
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Objectives with Key Results */}
         <div className="space-y-4 mb-6">

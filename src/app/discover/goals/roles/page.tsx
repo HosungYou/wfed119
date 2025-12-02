@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Users, Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle, Heart } from 'lucide-react';
+import { Loader2, Users, Plus, Trash2, ArrowRight, ArrowLeft, AlertCircle, Heart, AlertTriangle } from 'lucide-react';
 import { DEFAULT_ROLES, validateRoleAllocation } from '@/lib/types/goalSetting';
 
 interface Role {
@@ -14,12 +14,23 @@ interface Role {
   is_wellbeing: boolean;
 }
 
+interface DeleteConfirmation {
+  isOpen: boolean;
+  roleIndex: number | null;
+  roleName: string;
+}
+
 export default function GoalRolesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
+    isOpen: false,
+    roleIndex: null,
+    roleName: '',
+  });
 
   useEffect(() => {
     fetchRoles();
@@ -68,7 +79,7 @@ export default function GoalRolesPage() {
     }]);
   }
 
-  function removeRole(index: number) {
+  function requestRemoveRole(index: number) {
     if (roles[index].is_wellbeing) {
       setError('웰빙 역할은 삭제할 수 없습니다.');
       return;
@@ -77,10 +88,26 @@ export default function GoalRolesPage() {
       setError('최소 3개의 역할이 필요합니다.');
       return;
     }
-    setRoles(prev => prev.filter((_, i) => i !== index).map((role, i) => ({
+    // Show confirmation dialog
+    setDeleteConfirmation({
+      isOpen: true,
+      roleIndex: index,
+      roleName: roles[index].role_name || `역할 ${index + 1}`,
+    });
+  }
+
+  function confirmRemoveRole() {
+    if (deleteConfirmation.roleIndex === null) return;
+
+    setRoles(prev => prev.filter((_, i) => i !== deleteConfirmation.roleIndex).map((role, i) => ({
       ...role,
       role_number: i + 1,
     })));
+    setDeleteConfirmation({ isOpen: false, roleIndex: null, roleName: '' });
+  }
+
+  function cancelRemoveRole() {
+    setDeleteConfirmation({ isOpen: false, roleIndex: null, roleName: '' });
   }
 
   async function handleSave() {
@@ -202,7 +229,7 @@ export default function GoalRolesPage() {
                     />
                     {!role.is_wellbeing && (
                       <button
-                        onClick={() => removeRole(index)}
+                        onClick={() => requestRemoveRole(index)}
                         className="text-gray-400 hover:text-red-500"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -296,6 +323,42 @@ export default function GoalRolesPage() {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">역할 삭제 확인</h3>
+            </div>
+
+            <p className="text-gray-600 mb-2">
+              <strong>&quot;{deleteConfirmation.roleName}&quot;</strong> 역할을 삭제하시겠습니까?
+            </p>
+            <p className="text-sm text-red-600 mb-6">
+              ⚠️ 이 역할과 관련된 모든 목표, 핵심 결과, 실행 계획이 함께 삭제됩니다.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelRemoveRole}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmRemoveRole}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

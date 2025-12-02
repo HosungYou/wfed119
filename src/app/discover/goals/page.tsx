@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, Circle, ArrowRight, Target, Users, Compass, ClipboardCheck, Sparkles } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
 
+interface GoalObjective {
+  goal_key_results?: { id: string }[];
+}
+
+interface GoalRole {
+  id: string;
+  goal_objectives?: GoalObjective[];
+}
+
 interface GoalProgress {
   swot: {
     completed: boolean;
@@ -58,11 +67,11 @@ export default function GoalSettingModuleLanding() {
           exists: !!goalsData?.id,
           status: goalsData?.status || 'not_started',
           rolesCount: goalsData?.goal_roles?.length || 0,
-          objectivesCount: goalsData?.goal_roles?.reduce((sum: number, r: any) =>
+          objectivesCount: goalsData?.goal_roles?.reduce((sum: number, r: GoalRole) =>
             sum + (r.goal_objectives?.length || 0), 0) || 0,
-          keyResultsCount: goalsData?.goal_roles?.reduce((sum: number, r: any) =>
-            sum + r.goal_objectives?.reduce((s: number, o: any) =>
-              s + (o.goal_key_results?.length || 0), 0) || 0, 0) || 0,
+          keyResultsCount: goalsData?.goal_roles?.reduce((sum: number, r: GoalRole) =>
+            sum + (r.goal_objectives?.reduce((s: number, o: GoalObjective) =>
+              s + (o.goal_key_results?.length || 0), 0) || 0), 0) || 0,
         },
       };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ClipboardCheck, ArrowRight, ArrowLeft, Plus, Trash2, Calendar, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ClipboardCheck, ArrowRight, ArrowLeft, Plus, Trash2, Calendar, Check, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 
 interface KeyResult {
   id: string;
@@ -37,6 +37,7 @@ export default function GoalActionsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [actionPlans, setActionPlans] = useState<Record<string, ActionPlan[]>>({});
   const [expandedKR, setExpandedKR] = useState<string | null>(null);
@@ -123,12 +124,13 @@ export default function GoalActionsPage() {
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
 
     try {
       for (const krId of Object.keys(actionPlans)) {
         const krActions = actionPlans[krId].filter(ap => ap.action_text.trim());
         if (krActions.length > 0) {
-          await fetch('/api/goals/action-plans', {
+          const res = await fetch('/api/goals/action-plans', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -136,12 +138,18 @@ export default function GoalActionsPage() {
               action_plans: krActions,
             }),
           });
+
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || '실행 계획 저장에 실패했습니다.');
+          }
         }
       }
 
       router.push('/discover/goals/reflection');
-    } catch (error) {
-      console.error('[Goal Actions] Error saving:', error);
+    } catch (err) {
+      console.error('[Goal Actions] Error saving:', err);
+      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
@@ -186,6 +194,22 @@ export default function GoalActionsPage() {
             작고 쉬운 행동부터 시작해서 점차 확장해 나가는 것이 효과적입니다.
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Key Results with Actions */}
         <div className="space-y-4 mb-6">

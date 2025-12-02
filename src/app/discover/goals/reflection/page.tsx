@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Sparkles, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Sparkles, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { REFLECTION_LABELS, type ReflectionType } from '@/lib/types/goalSetting';
 
 interface Reflection {
@@ -24,6 +24,7 @@ export default function GoalReflectionPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [reflections, setReflections] = useState<Record<ReflectionType, string>>({
     identity_alignment: '',
     deliberation: '',
@@ -66,6 +67,7 @@ export default function GoalReflectionPage() {
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
 
     try {
       const reflectionsList = REFLECTION_ORDER
@@ -75,22 +77,34 @@ export default function GoalReflectionPage() {
           reflection_text: reflections[type],
         }));
 
-      await fetch('/api/goals/reflections', {
+      // Save reflections
+      const reflectionsRes = await fetch('/api/goals/reflections', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reflections: reflectionsList }),
       });
 
+      if (!reflectionsRes.ok) {
+        const data = await reflectionsRes.json();
+        throw new Error(data.error || '성찰 저장에 실패했습니다.');
+      }
+
       // Mark session as completed
-      await fetch('/api/goals/session', {
+      const sessionRes = await fetch('/api/goals/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' }),
       });
 
+      if (!sessionRes.ok) {
+        const data = await sessionRes.json();
+        throw new Error(data.error || '세션 완료 처리에 실패했습니다.');
+      }
+
       router.push('/discover/goals');
-    } catch (error) {
-      console.error('[Goal Reflections] Error saving:', error);
+    } catch (err) {
+      console.error('[Goal Reflections] Error saving:', err);
+      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
@@ -143,6 +157,22 @@ export default function GoalReflectionPage() {
             />
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Principles */}
         <div className="space-y-3 mb-6">

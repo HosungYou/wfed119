@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ["@prisma/client"],
-  // Enable standalone output for Docker
-  output: 'standalone',
   // Skip TypeScript type checking during build for deployment
   typescript: {
     ignoreBuildErrors: true,

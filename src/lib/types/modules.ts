@@ -14,7 +14,9 @@ export type ModuleId =
   | 'swot'
   | 'goals'
   | 'dreams'
-  | 'enneagram';
+  | 'enneagram'
+  | 'errc'
+  | 'life-themes';
 
 export type ModuleStatus =
   | 'not_started'
@@ -123,6 +125,30 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     route: '/discover/enneagram',
     dependencies: [],
     stages: ['assessment', 'results'],
+  },
+  errc: {
+    id: 'errc',
+    name: 'ERRC Action Plan',
+    description: 'Strategic life optimization using Eliminate-Reduce-Raise-Create framework',
+    route: '/discover/errc',
+    dependencies: [
+      { moduleId: 'swot', required: false, dataFields: ['strategies', 'goals', 'errc'] },
+      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+    ],
+    stages: ['wellbeing_before', 'canvas', 'actions', 'progress', 'journal', 'wellbeing_after', 'results'],
+    requiredForCompletion: ['wellbeing_before', 'canvas', 'wellbeing_after'],
+  },
+  'life-themes': {
+    id: 'life-themes',
+    name: 'Life Themes Discovery',
+    description: 'Discover recurring themes in your life through 6 reflective questions',
+    route: '/discover/life-themes',
+    dependencies: [
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
+      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+    ],
+    stages: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'patterns', 'themes', 'results'],
+    requiredForCompletion: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'themes'],
   },
 };
 

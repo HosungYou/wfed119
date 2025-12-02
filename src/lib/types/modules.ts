@@ -12,6 +12,7 @@ export type ModuleId =
   | 'strengths'
   | 'vision'
   | 'swot'
+  | 'goals'
   | 'dreams'
   | 'enneagram';
 
@@ -89,6 +90,20 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     ],
     stages: ['analysis', 'strategy', 'prioritization', 'goals', 'action', 'reflection'],
   },
+  goals: {
+    id: 'goals',
+    name: 'Goal Setting (OKR)',
+    description: 'OKR-based role-focused goal setting with 7 principles',
+    route: '/discover/goals',
+    dependencies: [
+      { moduleId: 'swot', required: true, dataFields: ['strategies', 'goals'] },
+      { moduleId: 'vision', required: true, dataFields: ['visionStatement'] },
+      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }
+    ],
+    stages: ['roles', 'objectives', 'key-results', 'actions', 'reflection'],
+    requiredForCompletion: ['roles', 'objectives', 'key-results'],
+  },
   dreams: {
     id: 'dreams',
     name: 'Life Dreams Matrix',
@@ -117,6 +132,7 @@ export const MODULE_ORDER: ModuleId[] = [
   'strengths',
   'vision',
   'swot',
+  'goals',
   'dreams',
 ];
 
@@ -198,6 +214,46 @@ export interface SwotData {
   };
 }
 
+export interface GoalSettingData {
+  roles: Array<{
+    id: string;
+    roleNumber: number;
+    roleName: string;
+    roleDescription: string;
+    percentageAllocation: number;
+    isWellbeing: boolean;
+  }>;
+  objectives: Array<{
+    id: string;
+    roleId: string;
+    objectiveText: string;
+    relatedSwotStrategies: string[];
+  }>;
+  keyResults: Array<{
+    id: string;
+    objectiveId: string;
+    keyResultNumber: number;
+    keyResultText: string;
+    successCriteria: string;
+    deadline?: string;
+    status: 'not_started' | 'in_progress' | 'completed' | 'blocked';
+    progressPercentage: number;
+  }>;
+  actionPlans: Array<{
+    id: string;
+    keyResultId: string;
+    actionNumber: number;
+    actionText: string;
+    dueDate?: string;
+    isCompleted: boolean;
+  }>;
+  reflections: Array<{
+    reflectionType: 'identity_alignment' | 'deliberation' | 'incompleteness' | 'diversity' | 'connectivity' | 'feasibility' | 'execution_ease';
+    reflectionText: string;
+  }>;
+  totalPercentage: number;
+}
+
 export interface DreamsData {
   dreams: Array<{
     id: string;
@@ -213,6 +269,7 @@ export interface ModuleDataMap {
   strengths: StrengthsData;
   vision: VisionData;
   swot: SwotData;
+  goals: GoalSettingData;
   dreams: DreamsData;
   enneagram: Record<string, unknown>;
 }

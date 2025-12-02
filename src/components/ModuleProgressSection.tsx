@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Heart, Target, Eye, Grid3X3, Sparkles, User,
+  Heart, Target, Eye, Grid3X3, Sparkles, User, Lightbulb, Zap,
   CheckCircle2, Clock, ArrowRight, ChevronRight
 } from 'lucide-react';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
@@ -17,6 +17,8 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   goals: Target,
   dreams: Sparkles,
   enneagram: User,
+  'life-themes': Lightbulb,
+  errc: Zap,
 };
 
 const MODULE_COLORS: Record<ModuleId, { gradient: string; bg: string; text: string }> = {
@@ -27,6 +29,8 @@ const MODULE_COLORS: Record<ModuleId, { gradient: string; bg: string; text: stri
   goals: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700' },
   dreams: { gradient: 'from-purple-500 to-fuchsia-600', bg: 'bg-purple-50', text: 'text-purple-700' },
   enneagram: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700' },
+  'life-themes': { gradient: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50', text: 'text-yellow-700' },
+  errc: { gradient: 'from-secondary-500 to-secondary-600', bg: 'bg-secondary-50', text: 'text-secondary-700' },
 };
 
 /**

@@ -156,10 +156,13 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
 export const MODULE_ORDER: ModuleId[] = [
   'values',
   'strengths',
+  'enneagram',
+  'life-themes',
   'vision',
   'swot',
   'goals',
   'dreams',
+  'errc',
 ];
 
 // Get prerequisites for a module

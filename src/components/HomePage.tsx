@@ -219,8 +219,8 @@ export const HomePage: React.FC = () => {
                   color="yellow"
                   duration="20-25 minutes"
                   tags={['Life Patterns', 'Purpose-Driven', 'Narrative']}
-                  href="#"
-                  status="coming-soon"
+                  href="/discover/life-themes"
+                  status="active"
                 />
               </div>
             </CategorySection>
@@ -297,8 +297,8 @@ export const HomePage: React.FC = () => {
                   color="secondary"
                   duration="30-40 minutes"
                   tags={['AI Chatbot', 'Blue Ocean', 'Action-Focused']}
-                  href="#"
-                  status="coming-soon"
+                  href="/discover/errc"
+                  status="active"
                 />
               </div>
             </CategorySection>

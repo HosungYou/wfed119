@@ -6,7 +6,7 @@ const databaseDisabledResponse = () =>
 
 export async function POST(req: NextRequest) {
   try {
-    const { sessionId, stage, messages, strengths } = await req.json();
+    const { sessionId, stage, messages, strengths, metadata } = await req.json();
 
     if (!sessionId) {
       return NextResponse.json(
@@ -20,15 +20,22 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const userId = session?.user?.id || null;
+    const userEmail = session?.user?.email || null;
 
     // Upsert session record
     await supabase
-      .from('sessions')
+      .from('user_sessions')
       .upsert({
         session_id: sessionId,
+        user_id: userId,
         current_stage: stage || 'initial',
         updated_at: new Date().toISOString(),
         completed: stage === 'summary',
+        session_type: 'strengths',
+        metadata: metadata || null,
       }, {
         onConflict: 'session_id',
       });
@@ -37,17 +44,18 @@ export async function POST(req: NextRequest) {
     if (messages && Array.isArray(messages)) {
       // Clear existing conversations for this session to avoid duplicates
       await supabase
-        .from('conversations')
+        .from('conversation_messages')
         .delete()
         .eq('session_id', sessionId);
 
       // Save all messages
       if (messages.length > 0) {
         await supabase
-          .from('conversations')
+          .from('conversation_messages')
           .insert(
             messages.map((message: { role: string; content: string; timestamp?: string }, index: number) => ({
               session_id: sessionId,
+              user_id: userId,
               role: message.role,
               content: message.content,
               metadata: {
@@ -61,29 +69,21 @@ export async function POST(req: NextRequest) {
 
     // If strengths are provided, update them
     if (strengths) {
-      // Clear existing strengths
       await supabase
-        .from('strengths')
+        .from('strength_profiles')
         .delete()
         .eq('session_id', sessionId);
 
-      // Save new strengths
-      const strengthRecords = [];
-      for (const [category, items] of Object.entries(strengths)) {
-        for (const item of items as string[]) {
-          strengthRecords.push({
-            session_id: sessionId,
-            category,
-            name: item,
-            evidence: `Saved from session at ${new Date().toISOString()}`,
-            confidence: 0.8,
-          });
-        }
-      }
-
-      if (strengthRecords.length > 0) {
-        await supabase.from('strengths').insert(strengthRecords);
-      }
+      await supabase
+        .from('strength_profiles')
+        .insert({
+          session_id: sessionId,
+          user_id: userId,
+          user_email: userEmail,
+          strengths,
+          summary: 'Saved from session',
+          insights: { saved_at: new Date().toISOString() }
+        });
     }
 
     return NextResponse.json({

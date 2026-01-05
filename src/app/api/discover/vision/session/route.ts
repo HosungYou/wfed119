@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 
+type DraftPayload = Record<string, unknown>;
+
+const extractBrainstormed = (drafts: unknown) => {
+  if (!drafts || typeof drafts !== 'object' || Array.isArray(drafts)) {
+    return { brainstormed_options: null, selected_option_index: null };
+  }
+
+  const record = drafts as DraftPayload;
+  return {
+    brainstormed_options: record.brainstormed_options ?? null,
+    selected_option_index: record.selected_option_index ?? null,
+  };
+};
+
 /**
  * GET /api/discover/vision/session
  *
@@ -13,9 +27,7 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    // Use getUser() for better security instead of getSession()
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
@@ -29,14 +41,19 @@ export async function GET(req: NextRequest) {
       .from('vision_statements')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     // 3. 없으면 새로 생성
-    if (visionError && visionError.code === 'PGRST116') {
-      // 선행 조건 데이터 가져오기 (올바른 테이블 이름 사용)
+    if (!visionData) {
+      if (visionError) {
+        console.error('[Vision Session] Query error:', visionError);
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      }
+
+      // 선행 조건 데이터 가져오기
       const { data: valuesData } = await supabase
         .from('value_results')
-        .select('id, layout')
+        .select('id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -47,7 +64,7 @@ export async function GET(req: NextRequest) {
         .insert({
           user_id: userId,
           values_result_id: valuesData?.id || null,
-          current_step: 0,
+          current_step: 1,
           is_completed: false,
           time_horizon: null,
           time_horizon_type: null
@@ -60,15 +77,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
       }
 
-      return NextResponse.json(newVision);
+      const derived = extractBrainstormed(newVision.draft_versions);
+      return NextResponse.json({
+        ...newVision,
+        ...derived
+      });
     }
 
-    if (visionError) {
-      console.error('[Vision Session] Query error:', visionError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
-
-    return NextResponse.json(visionData);
+    const derived = extractBrainstormed(visionData.draft_versions);
+    return NextResponse.json({
+      ...visionData,
+      ...derived
+    });
 
   } catch (error) {
     console.error('[Vision Session] Unexpected error:', error);
@@ -86,8 +106,7 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. Authentication check with dev mode support
-    // Use getUser() for better security
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     const auth = checkDevAuth(user ? { user } : null);
 
     if (!requireAuth(auth)) {
@@ -111,11 +130,13 @@ export async function PATCH(req: NextRequest) {
       time_horizon_type,
       primary_aspiration,
       magnitude_of_impact,
-      professional_focus_validated
+      professional_focus_validated,
+      brainstormed_options,
+      selected_option_index
     } = body;
 
     // 2. 업데이트할 필드 준비
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     };
 
@@ -123,7 +144,6 @@ export async function PATCH(req: NextRequest) {
     if (future_imagery !== undefined) updateData.future_imagery = future_imagery;
     if (future_imagery_analysis !== undefined) updateData.future_imagery_analysis = future_imagery_analysis;
     if (core_aspirations !== undefined) updateData.core_aspirations = core_aspirations;
-    if (draft_versions !== undefined) updateData.draft_versions = draft_versions;
     if (final_statement !== undefined) updateData.final_statement = final_statement;
     if (statement_style !== undefined) updateData.statement_style = statement_style;
     if (selected_template_id !== undefined) updateData.selected_template_id = selected_template_id;
@@ -139,6 +159,23 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    const draftPayload: DraftPayload = (draft_versions && typeof draft_versions === 'object' && !Array.isArray(draft_versions))
+      ? { ...(draft_versions as DraftPayload) }
+      : {};
+
+    if (Array.isArray(draft_versions)) {
+      draftPayload.drafts = draft_versions;
+    }
+
+    if (brainstormed_options !== undefined) draftPayload.brainstormed_options = brainstormed_options;
+    if (selected_option_index !== undefined) draftPayload.selected_option_index = selected_option_index;
+
+    if (Object.keys(draftPayload).length > 0) {
+      updateData.draft_versions = draftPayload;
+    } else if (draft_versions !== undefined) {
+      updateData.draft_versions = draft_versions;
+    }
+
     // 3. 업데이트 실행
     const { data, error } = await supabase
       .from('vision_statements')
@@ -152,7 +189,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    const derived = extractBrainstormed(data.draft_versions);
+    return NextResponse.json({
+      ...data,
+      ...derived
+    });
 
   } catch (error) {
     console.error('[Vision Session] Unexpected error:', error);
@@ -164,7 +205,6 @@ export async function PATCH(req: NextRequest) {
  * DELETE /api/discover/vision/session
  *
  * Vision Statement 세션 삭제 (새로운 세션 시작을 위함)
- * - 현재 세션을 삭제하여 GET 호출 시 새 세션이 생성되도록 함
  */
 export async function DELETE(req: NextRequest) {
   try {

@@ -131,16 +131,20 @@ function formatValues(values: any): string {
 
   const parts: string[] = [];
 
-  if (values.terminal?.length > 0) {
-    const topValues = values.terminal.slice(0, 3).map((v: any) => v.value).join(', ');
+  const terminal = values.terminal?.top3 || values.terminal;
+  const instrumental = values.instrumental?.top3 || values.instrumental;
+  const work = values.work?.top3 || values.work;
+
+  if (Array.isArray(terminal) && terminal.length > 0) {
+    const topValues = terminal.slice(0, 3).map((v: any) => v.value || v).join(', ');
     parts.push(`Terminal Values: ${topValues}`);
   }
-  if (values.instrumental?.length > 0) {
-    const topValues = values.instrumental.slice(0, 3).map((v: any) => v.value).join(', ');
+  if (Array.isArray(instrumental) && instrumental.length > 0) {
+    const topValues = instrumental.slice(0, 3).map((v: any) => v.value || v).join(', ');
     parts.push(`Instrumental Values: ${topValues}`);
   }
-  if (values.work?.length > 0) {
-    const topValues = values.work.slice(0, 3).map((v: any) => v.value).join(', ');
+  if (Array.isArray(work) && work.length > 0) {
+    const topValues = work.slice(0, 3).map((v: any) => v.value || v).join(', ');
     parts.push(`Work Values: ${topValues}`);
   }
 
@@ -155,7 +159,12 @@ function formatStrengths(strengths: any[]): string {
 
   return strengths
     .slice(0, 5)
-    .map((s: any, idx: number) => `${idx + 1}. ${s.strength || 'Unknown'}`)
+    .map((s: any, idx: number) => {
+      const name = typeof s === 'string'
+        ? s
+        : (s.name || s.strength || s.strengths?.name || 'Unknown');
+      return `${idx + 1}. ${name}`;
+    })
     .join(', ');
 }
 

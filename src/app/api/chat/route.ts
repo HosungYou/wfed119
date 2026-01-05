@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Get supabase client
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    const authUserId = authSession?.user?.id || null;
+    const authUserEmail = authSession?.user?.email || null;
 
     // Ensure session exists in database
     const { data: existingSession } = await supabase
@@ -37,6 +40,7 @@ export async function POST(req: NextRequest) {
     if (!existingSession) {
       await supabase.from('user_sessions').insert({
         session_id: sessionId,
+        user_id: authUserId,
         current_stage: stage || 'initial',
         completed: false,
         session_type: 'chat'
@@ -55,7 +59,8 @@ export async function POST(req: NextRequest) {
         .from('user_sessions')
         .update({
           current_stage: currentStage,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...(authUserId ? { user_id: authUserId } : {})
         })
         .eq('session_id', sessionId);
     }
@@ -71,10 +76,8 @@ export async function POST(req: NextRequest) {
     const response = await aiService.generateResponse(messages, sessionContext);
 
     // Save conversation messages to database
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-
-    if (authSession?.user) {
-      const userId = authSession.user.id;
+    if (authUserId) {
+      const userId = authUserId;
 
       // Save user message
       const userMessageData = {
@@ -133,6 +136,8 @@ export async function POST(req: NextRequest) {
           // Save strength analysis to Supabase
           await supabase.from('strength_profiles').insert({
             session_id: sessionId,
+            user_id: authUserId,
+            user_email: authUserEmail,
             strengths: strengths,
             summary: 'Generated from conversation analysis',
             insights: { generated_at: new Date().toISOString() }

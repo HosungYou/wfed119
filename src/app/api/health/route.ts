@@ -13,7 +13,7 @@ export async function GET() {
     database = 'unconfigured';
   } else {
     try {
-      const supabase = createServerSupabaseClient();
+      const supabase = await createServerSupabaseClient();
 
       // Add a short timeout so health doesn't hang
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));

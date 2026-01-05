@@ -1,42 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createSupabaseAdmin } from '@/lib/supabase';
+import { confidenceBand, primaryType, scoreStage1 } from '@/lib/enneagram/scoring';
+import { getInstinctItems } from '@/lib/enneagram/instincts';
 
 export async function POST(req: NextRequest) {
   try {
     const { sessionId } = await req.json();
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
-    const supabase = createServerSupabaseClient();
+    let admin;
+    try {
+      admin = createSupabaseAdmin();
+    } catch (error) {
+      console.error('[Enneagram Export] Service role missing:', error);
+      return NextResponse.json(
+        { error: 'SUPABASE_SERVICE_ROLE_KEY is not configured on the server.' },
+        { status: 501 }
+      );
+    }
 
-    // TODO: Implement Enneagram export with Supabase
-    // This requires enneagram_sessions table implementation
+    const { data: session, error } = await admin
+      .from('enneagram_sessions')
+      .select('*')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Enneagram Export] Session lookup error:', error);
+      return NextResponse.json({ error: 'Failed to load session' }, { status: 500 });
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    let scores = session.scores as any;
+    let primary = session.primary_type as string | null;
+    let confidence = session.confidence as string | null;
+    let wingEstimate = session.wing_estimate as string | null;
+    let instinct = session.instinct as string | null;
+
+    if (!scores || !primary) {
+      const responses = session.responses && typeof session.responses === 'object' ? session.responses : {};
+      const stage1 = (responses as Record<string, unknown>).screener;
+
+      if (!Array.isArray(stage1) || stage1.length === 0) {
+        return NextResponse.json({ error: 'Screener responses missing' }, { status: 400 });
+      }
+
+      const normalized = stage1
+        .map((entry: any) => ({ itemId: entry?.itemId, value: entry?.value }))
+        .filter((entry: any) => typeof entry.itemId === 'string' && typeof entry.value === 'number');
+
+      scores = scoreStage1(normalized, session.locale || 'en');
+      primary = primaryType(scores.probabilities);
+      confidence = confidenceBand(scores.probabilities);
+
+      const wingCandidates = {
+        '1': ['9', '2'],
+        '2': ['1', '3'],
+        '3': ['2', '4'],
+        '4': ['3', '5'],
+        '5': ['4', '6'],
+        '6': ['5', '7'],
+        '7': ['6', '8'],
+        '8': ['7', '9'],
+        '9': ['8', '1'],
+      } as const;
+
+      const wings = wingCandidates[primary as keyof typeof wingCandidates] || [];
+      const wing = wings
+        .map((candidate) => ({ candidate, score: scores.probabilities[candidate] || 0 }))
+        .sort((a, b) => b.score - a.score)[0]?.candidate;
+
+      wingEstimate = wing ? `${primary}w${wing}` : null;
+
+      const stage3 = (responses as Record<string, unknown>).wings;
+      if (Array.isArray(stage3)) {
+        const items = getInstinctItems(session.locale || 'en');
+        const byId = new Map(items.map((item) => [item.id, item.instinct]));
+        const totals = { sp: 0, so: 0, sx: 0 } as Record<'sp' | 'so' | 'sx', number>;
+
+        stage3.forEach((entry: any) => {
+          const id = entry?.itemId;
+          const value = typeof entry?.value === 'number' ? entry.value : 0;
+          const instinctKey = byId.get(id);
+          if (instinctKey) totals[instinctKey] += value;
+        });
+
+        const top = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+        instinct = top?.[0] || null;
+      }
+
+      await admin
+        .from('enneagram_sessions')
+        .update({
+          scores,
+          primary_type: primary,
+          wing_estimate: wingEstimate,
+          instinct,
+          confidence,
+          stage: 'complete',
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
+    }
+
     return NextResponse.json({
-      message: 'Enneagram export - Supabase implementation pending',
+      primaryType: primary,
+      typeProbabilities: scores?.probabilities || {},
+      confidence: confidence || null,
+      wingEstimate: wingEstimate || null,
+      instinct: instinct || null,
+      version: '1.0',
       sessionId
     });
-
-    // const payload = {
-    //   primaryType: enne.primaryType ?? null,
-    //   typeProbabilities: enne.typeScores ?? {},
-    //   confidence: enne.confidence ?? null,
-    //   likelyWing: enne.wingEstimate ?? null,
-    //   dominantInstinct: enne.instinct ?? null,
-    //   aiEvidence: (enne.aiEvidence as any) ?? [],
-    //   notes: 'neutral summary',
-    //   version: '1.0',
-    // };
-
-    // // Save export artifact for traceability
-    // await prisma.exportArtifact.create({
-    //   data: {
-    //     sessionId,
-    //     kind: 'enneagram-profile',
-    //     content: payload as any,
-    //     format: 'json',
-    //   },
-    // });
-
-    // return NextResponse.json(payload);
   } catch (e) {
     console.error('enneagram/export error', e);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

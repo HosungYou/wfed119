@@ -19,11 +19,16 @@ export async function GET(req: NextRequest) {
     const userId = auth.userId;
 
     // Get SWOT analysis ID first
-    const { data: swotData } = await supabase
+    const { data: swotData, error: swotError } = await supabase
       .from('swot_analyses')
       .select('id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (swotError && swotError.code !== 'PGRST116') {
+      console.error('[SWOT Goals] Error fetching SWOT:', swotError);
+      return NextResponse.json({ error: 'Failed to fetch SWOT analysis' }, { status: 500 });
+    }
 
     if (!swotData) {
       return NextResponse.json([]);
@@ -67,11 +72,16 @@ export async function POST(req: NextRequest) {
     const { goals } = body;
 
     // Get SWOT analysis ID
-    const { data: swotData } = await supabase
+    const { data: swotData, error: swotError } = await supabase
       .from('swot_analyses')
       .select('id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (swotError && swotError.code !== 'PGRST116') {
+      console.error('[SWOT Goals] Error fetching SWOT:', swotError);
+      return NextResponse.json({ error: 'Failed to fetch SWOT analysis' }, { status: 500 });
+    }
 
     if (!swotData) {
       return NextResponse.json({ error: 'SWOT analysis not found' }, { status: 404 });
@@ -85,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     // Insert new goals (only non-empty ones)
     const goalsToInsert = goals
-      .filter((g: any) => g.role_responsibility.trim() && g.action_plan.trim())
+      .filter((g: any) => g.role_responsibility.trim() && g.action_plan.trim() && g.criteria.trim())
       .map((g: any) => ({
         swot_analysis_id: swotData.id,
         user_id: userId,

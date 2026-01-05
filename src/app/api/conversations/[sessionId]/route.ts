@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { session: authSession }, error: authError } = await supabase.auth.getSession();
 
     if (!authSession || authError) {
@@ -98,7 +98,7 @@ export async function DELETE(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { session: authSession }, error: authError } = await supabase.auth.getSession();
 
     if (!authSession || authError) {

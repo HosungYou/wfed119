@@ -1,10 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 
+const normalizeStrengths = (raw: unknown) => {
+  if (!raw || typeof raw !== 'object') return { skills: [], attitudes: [], values: [] };
+
+  const record = raw as Record<string, unknown>;
+  const result = { skills: [] as string[], attitudes: [] as string[], values: [] as string[] };
+
+  (['skills', 'attitudes', 'values'] as const).forEach((key) => {
+    const items = record[key];
+    if (!Array.isArray(items)) return;
+
+    result[key] = items
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          const candidate = (item as Record<string, unknown>).name || (item as Record<string, unknown>).strength;
+          return typeof candidate === 'string' ? candidate : null;
+        }
+        return null;
+      })
+      .filter((item): item is string => Boolean(item));
+  });
+
+  return result;
+};
+
 export async function GET(req: NextRequest) {
   try {
     // Get authenticated user from Supabase
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.user) {
@@ -45,6 +70,21 @@ export async function GET(req: NextRequest) {
       console.error('ValueResult query failed:', valueError);
     }
 
+    // Try to get strengths result
+    let strengthsResult: any = null;
+    try {
+      const { data } = await supabase
+        .from('strength_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      strengthsResult = data || null;
+    } catch (strengthError) {
+      console.error('Strengths query failed:', strengthError);
+    }
+
     // Return simplified dashboard data
     const dashboard = {
       user: {
@@ -57,8 +97,8 @@ export async function GET(req: NextRequest) {
 
       modules: {
         strengths: {
-          completed: false,
-          latestStrengths: [],
+          completed: !!strengthsResult,
+          latestStrengths: strengthsResult ? normalizeStrengths(strengthsResult.strengths) : [],
         },
 
         values: {

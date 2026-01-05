@@ -149,7 +149,7 @@ export type Database = {
       user_sessions: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
           session_id: string
           session_type: string
           current_stage: string
@@ -160,7 +160,7 @@ export type Database = {
           metadata: any
         }
         Insert: {
-          user_id: string
+          user_id?: string | null
           session_id: string
           session_type?: string
           current_stage?: string
@@ -169,6 +169,7 @@ export type Database = {
           metadata?: any
         }
         Update: {
+          user_id?: string | null
           session_type?: string
           current_stage?: string
           completed?: boolean

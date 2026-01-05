@@ -14,19 +14,22 @@ const dbDisabledResponse = () =>
 
 const isDatabaseDisabled = () => process.env.DB_ENABLED === 'false';
 
-const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
-  if (explicitId) return explicitId;
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || user?.email || undefined;
+const isSerializableObject = (input: unknown): Record<string, unknown> | null => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  try {
+    JSON.stringify(input);
+    return input as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 };
 
 interface SaveRequestBody {
-  user_id?: unknown;
-  userId?: unknown;
   set?: unknown;
   layout?: unknown;
   top3?: unknown;
+  insights?: unknown;
+  moduleVersion?: unknown;
 }
 
 export async function GET(req: NextRequest) {
@@ -39,22 +42,30 @@ export async function GET(req: NextRequest) {
     const setParam = searchParams.get('set');
     const set = (setParam === 'terminal' || setParam === 'instrumental' || setParam === 'work') ? setParam : null;
 
-    const queryUserId = searchParams.get('user_id') || searchParams.get('userId') || undefined;
-    const userId = await resolveUserId(queryUserId || undefined);
+    const supabase = await createServerSupabaseClient();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-    if (!userId || !set) {
-      return NextResponse.json({ error: 'Missing user_id and set' }, { status: 400 });
+    if (authError) {
+      console.error('Supabase auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!set) {
+      return NextResponse.json({ error: 'Missing set' }, { status: 400 });
+    }
+
     const { data: latest, error } = await supabase
       .from('value_results')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', session.user.id)
       .eq('value_set', set)
       .order('updated_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !latest) {
       return NextResponse.json({ exists: false }, { status: 200 });
@@ -69,6 +80,8 @@ export async function GET(req: NextRequest) {
       set: latest.value_set,
       layout,
       top3,
+      insights: latest.insights ?? null,
+      moduleVersion: latest.module_version ?? null,
       updatedAt: latest.updated_at,
     });
   } catch (err) {
@@ -83,27 +96,38 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError) {
+      console.error('Supabase auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
+    }
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = (await req.json()) as SaveRequestBody;
     const set = body.set;
     const valueSet: ValueSet | null =
       set === 'terminal' || set === 'instrumental' || set === 'work' ? set : null;
     const layout: ValueLayout | null = isValueLayout(body.layout) ? body.layout : null;
     const top3Array = normalizeTop3(body.top3);
+    const insights = isSerializableObject(body.insights);
+    const moduleVersion = typeof body.moduleVersion === 'string' ? body.moduleVersion : null;
 
-    const explicitUser = typeof body.user_id === 'string' ? body.user_id : typeof body.userId === 'string' ? body.userId : undefined;
-    const uid = await resolveUserId(explicitUser);
-
-    if (!uid || !valueSet || !layout) {
-      return NextResponse.json({ error: 'Missing user identity, set, or layout' }, { status: 400 });
+    if (!valueSet || !layout) {
+      return NextResponse.json({ error: 'Missing set or layout' }, { status: 400 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    const userId = session.user.id;
 
     // Find existing records
     const { data: existing } = await supabase
       .from('value_results')
       .select('*')
-      .eq('user_id', uid)
+      .eq('user_id', userId)
       .eq('value_set', valueSet)
       .order('updated_at', { ascending: false });
 
@@ -120,10 +144,12 @@ export async function POST(req: NextRequest) {
     const { data: saved, error } = await supabase
       .from('value_results')
       .upsert({
-        user_id: uid,
+        user_id: userId,
         value_set: valueSet,
         layout,
         top3: top3Array,
+        insights: insights || null,
+        module_version: moduleVersion,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id,value_set',

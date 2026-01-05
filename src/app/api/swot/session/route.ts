@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       .from('swot_analyses')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (swotError && swotError.code !== 'PGRST116') {
       // PGRST116 means "no rows returned" which is fine
@@ -66,11 +66,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Check if session exists
-    const { data: existingData } = await supabase
+    const { data: existingData, error: existingError } = await supabase
       .from('swot_analyses')
       .select('id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('[SWOT Session] Error checking existing session:', existingError);
+      return NextResponse.json({ error: 'Failed to check SWOT session' }, { status: 500 });
+    }
 
     let result;
 
@@ -98,6 +103,7 @@ export async function POST(req: NextRequest) {
         .from('swot_analyses')
         .insert({
           user_id: userId,
+          vision_or_goal: body?.vision_or_goal ?? '',
           ...body
         })
         .select()

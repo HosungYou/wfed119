@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 async function checkSuperAdmin(userId: string) {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: user } = await supabase
     .from('users')
     .select('role')
@@ -13,7 +14,7 @@ async function checkSuperAdmin(userId: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.user) {
@@ -25,6 +26,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
     }
 
+    let admin;
+    try {
+      admin = createSupabaseAdmin();
+    } catch (error) {
+      console.error('Database stats admin client error:', error);
+      return NextResponse.json(
+        { error: 'SUPABASE_SERVICE_ROLE_KEY is not configured on the server.' },
+        { status: 501 }
+      );
+    }
+
     // Get counts from Supabase tables
     const [
       { count: userCount },
@@ -33,29 +45,29 @@ export async function GET(req: NextRequest) {
       { count: strengthCount },
       { count: sessionCount }
     ] = await Promise.all([
-      supabase.from('users').select('*', { count: 'exact', head: true }),
-      supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['ADMIN', 'SUPER_ADMIN']),
-      supabase.from('value_results').select('*', { count: 'exact', head: true }),
-      supabase.from('strength_profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('user_sessions').select('*', { count: 'exact', head: true })
+      admin.from('users').select('*', { count: 'exact', head: true }),
+      admin.from('users').select('*', { count: 'exact', head: true }).in('role', ['ADMIN', 'SUPER_ADMIN']),
+      admin.from('value_results').select('*', { count: 'exact', head: true }),
+      admin.from('strength_profiles').select('*', { count: 'exact', head: true }),
+      admin.from('user_sessions').select('*', { count: 'exact', head: true })
     ]);
 
     // Get completed sessions count
-    const { count: completedSessionCount } = await supabase
+    const { count: completedSessionCount } = await admin
       .from('user_sessions')
       .select('*', { count: 'exact', head: true })
       .eq('completed', true);
 
     // Get active sessions (updated in last 24 hours)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count: activeSessionCount } = await supabase
+    const { count: activeSessionCount } = await admin
       .from('user_sessions')
       .select('*', { count: 'exact', head: true })
       .eq('completed', false)
       .gte('updated_at', oneDayAgo);
 
     // Get value results by type
-    const { data: valuesByType } = await supabase
+    const { data: valuesByType } = await admin
       .from('value_results')
       .select('value_set');
 
@@ -65,17 +77,27 @@ export async function GET(req: NextRequest) {
     }, {} as Record<string, number>) || {};
 
     // Get unique strengths count
-    const { data: strengthData } = await supabase
+    const { data: strengthData } = await admin
       .from('strength_profiles')
       .select('strengths');
 
     const uniqueStrengths = new Set();
     strengthData?.forEach(profile => {
-      if (profile.strengths && Array.isArray(profile.strengths)) {
-        profile.strengths.forEach((strength: any) => {
-          if (strength.name) uniqueStrengths.add(strength.name);
+      if (!profile.strengths || typeof profile.strengths !== 'object') return;
+      const buckets = profile.strengths as Record<string, unknown>;
+
+      Object.values(buckets).forEach((items) => {
+        if (!Array.isArray(items)) return;
+        items.forEach((strength: any) => {
+          if (typeof strength === 'string') {
+            uniqueStrengths.add(strength);
+            return;
+          }
+          if (strength && typeof strength === 'object' && strength.name) {
+            uniqueStrengths.add(strength.name);
+          }
         });
-      }
+      });
     });
 
     // Simple storage placeholder (Supabase manages storage)

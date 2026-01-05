@@ -10,28 +10,32 @@ import {
 
 const valueSets: ValueSet[] = ['terminal', 'instrumental', 'work'];
 
-const resolveUserId = async (explicitId?: string): Promise<string | undefined> => {
-  if (explicitId) return explicitId;
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || user?.email || undefined;
-};
-
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const queryUserId = searchParams.get('user_id') || searchParams.get('userId') || undefined;
-    const userId = await resolveUserId(queryUserId);
-    if (!userId) return NextResponse.json({ error: 'Missing user identity' }, { status: 400 });
-
     const supabase = await createServerSupabaseClient();
-    const { data: rows } = await supabase
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError) {
+      console.error('Supabase auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
+    }
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: rows, error } = await supabase
       .from('value_results')
-      .select('*')
-      .eq('user_id', userId)
+      .select('id, user_id, value_set, layout, top3, insights, module_version, updated_at')
+      .eq('user_id', session.user.id)
       .order('updated_at', { ascending: false });
 
-    const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; updatedAt: string } | null> = {
+    if (error) {
+      console.error('Supabase query error:', error);
+      return NextResponse.json({ error: 'Database query failed' }, { status: 500 });
+    }
+
+    const latestBySet: Record<ValueSet, { layout: ValueLayout; top3: string[]; insights: unknown; moduleVersion: string | null; updatedAt: string } | null> = {
       terminal: null,
       instrumental: null,
       work: null,
@@ -41,10 +45,16 @@ export async function GET(req: NextRequest) {
       if (!record) continue;
       const layout = parseLayout(record.layout) ?? emptyLayout;
       const top3 = normalizeTop3(record.top3);
-      latestBySet[set] = { layout, top3, updatedAt: record.updated_at };
+      latestBySet[set] = {
+        layout,
+        top3,
+        insights: record.insights ?? null,
+        moduleVersion: record.module_version ?? null,
+        updatedAt: record.updated_at
+      };
     }
 
-    return NextResponse.json({ userId, results: latestBySet });
+    return NextResponse.json({ userId: session.user.id, results: latestBySet });
   } catch (err) {
     console.error('GET /api/discover/values/results/all error', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

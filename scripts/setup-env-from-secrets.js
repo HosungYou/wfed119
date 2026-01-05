@@ -44,18 +44,6 @@ const envTemplate = {
     default: ''
   },
 
-  // Google OAuth
-  GOOGLE_CLIENT_ID: {
-    description: 'Google OAuth Client ID (for authentication)',
-    required: false,
-    default: ''
-  },
-  GOOGLE_CLIENT_SECRET: {
-    description: 'Google OAuth Client Secret (for authentication)',
-    required: false,
-    default: ''
-  },
-
   // Configuration
   AI_PRIMARY_SERVICE: {
     description: 'Primary AI service',
@@ -66,11 +54,6 @@ const envTemplate = {
     description: 'Fallback AI service',
     required: false,
     default: 'openai'
-  },
-  NEXTAUTH_SECRET: {
-    description: 'NextAuth secret (generate random string)',
-    required: false,
-    default: () => require('crypto').randomBytes(32).toString('hex')
   }
 };
 
@@ -140,7 +123,6 @@ ${envContent}
 
 # Additional configuration
 NODE_ENV=development
-NEXTAUTH_URL=http://localhost:3000
 ENABLE_AI_ANALYSIS=true
 ENABLE_TIE_BREAKERS=true
 ENABLE_REALTIME_FEEDBACK=true

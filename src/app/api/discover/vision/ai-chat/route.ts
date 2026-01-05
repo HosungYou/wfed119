@@ -395,7 +395,12 @@ function formatStrengths(strengths: any[]): string {
 
   return strengths
     .slice(0, 5)
-    .map((s: any, idx: number) => `${idx + 1}. ${s.strengths?.name || '알 수 없음'}`)
+    .map((s: any, idx: number) => {
+      const name = typeof s === 'string'
+        ? s
+        : (s.name || s.strength || s.strengths?.name || '알 수 없음');
+      return `${idx + 1}. ${name}`;
+    })
     .join(', ');
 }
 
@@ -426,17 +431,37 @@ async function saveConversationLog(
     }
 
     await supabase
-      .from('vision_ai_conversations')
-      .insert({
-        user_id: userId,
-        vision_statement_id: visionData.id,
-        step_number: step,
-        user_message: userMessage,
-        ai_response: aiResponse,
-        model_used: 'claude-3-5-sonnet-20241022',
-        tokens_used: tokens,
-        response_time_ms: responseTime
-      });
+      .from('conversation_messages')
+      .insert([
+        {
+          session_id: `vision:${visionData.id}`,
+          user_id: userId,
+          role: 'user',
+          content: userMessage,
+          metadata: {
+            type: 'vision_ai',
+            vision_statement_id: visionData.id,
+            step_number: step,
+            model_used: 'claude-3-5-sonnet-20241022',
+            tokens_used: tokens,
+            response_time_ms: responseTime
+          }
+        },
+        {
+          session_id: `vision:${visionData.id}`,
+          user_id: userId,
+          role: 'assistant',
+          content: aiResponse,
+          metadata: {
+            type: 'vision_ai',
+            vision_statement_id: visionData.id,
+            step_number: step,
+            model_used: 'claude-3-5-sonnet-20241022',
+            tokens_used: tokens,
+            response_time_ms: responseTime
+          }
+        }
+      ]);
 
   } catch (error) {
     console.error('[AI Chat] Failed to save conversation log:', error);

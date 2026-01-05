@@ -9,34 +9,28 @@ release-notes/
 ├── README.md                    # This overview file
 ├── v1.0/                       # Version 1.0 Documentation
 │   └── README.md               # Initial release details
-├── v2.0/                       # Version 2.0 Documentation
+├── v2.0/                       # Version 2.x Documentation
 │   ├── README.md               # Major feature release details
-│   └── UPGRADE_NOTES.md        # Technical upgrade guide
-├── v2.1.0.md                   # Performance & stability improvements
-├── v2.2.0.md                   # Value Discovery module release
-├── v2.2.1.md                   # Stability & localization fixes
-├── v2.2.2.md                   # Enhanced Values Discovery UI/UX
-└── v2.2.3.md                   # Intelligent Values Analysis System
+│   ├── UPGRADE_NOTES.md        # Technical upgrade guide
+│   ├── v2.8.7.md               # Supabase auth + Vision/Enneagram fixes
+│   └── ...                     # Previous v2.x releases
 ```
 
 ## 🚀 Version Overview
 
-### [v2.2.3](v2.2.3.md) - Current Release
-**Release Date**: September 18, 2025
-**Type**: Major Enhancement Release
+### [v2.8.7](v2.0/v2.8.7.md) - Current Release
+**Release Date**: January 5, 2026
+**Type**: Patch Release + Critical Bug Fixes
 
 **Key Highlights:**
-- 🧠 **Intelligent Values Analysis** with personality type inference
-- 🎯 **Core Theme Identification** (8 distinct personality archetypes)
-- 💼 **Career Alignment Insights** with field recommendations
-- 🌱 **Growth Opportunities** with personalized development guidance
-- 🔢 **7-Item Bucket Limit** with enhanced visual feedback
-- 📊 **Revolutionary Theme Ranking** (10 comprehensive value themes)
-- 📈📉 **Dual Analysis System** (Most/Least Important themes)
-- 🔍 **Enhanced Profile Insights** with dynamic archetype identification
+- 🔐 **Supabase Auth Unification** with new `/login` and removed NextAuth
+- 🧭 **Vision API Promotion** from `discover 2` to `discover` with real Supabase tables
+- 🧠 **Enneagram Persistence** across all stages with scoring + export
+- 💬 **Streaming Chat Persistence** to `conversation_messages` and `strength_profiles`
+- 🧰 **Admin RLS Fixes** using service role for stats/export endpoints
 
-**Breaking Changes**: No
-**Migration Required**: No - enhanced analysis experience
+**Breaking Changes**: Yes - NextAuth removed; Supabase auth env vars required
+**Migration Required**: Yes - apply new migrations + Supabase env config
 
 ### [v2.2.2](v2.2.2.md)
 **Release Date**: September 18, 2025
@@ -208,7 +202,15 @@ release-notes/
 ## 📅 Release History
 
 ```
-v2.2.3 (2025-09-18) ← Current Release
+v2.8.7 (2026-01-05) ← Current Release
+└── Supabase Auth + Persistence Fixes
+    ├── Supabase OAuth login + NextAuth removal
+    ├── Vision API promotion to /api/discover/vision
+    ├── Enneagram sessions persisted + scored
+    ├── Streaming chat saved to Supabase
+    └── Admin stats/export fixed with service role
+
+v2.2.3 (2025-09-18)
 └── Intelligent Analysis System
     ├── AI-powered personality inference
     ├── Career alignment insights
@@ -283,6 +285,6 @@ v1.0.0 (2025-01-15)
 
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
-**🔄 Last Updated**: September 18, 2025
-**📊 Current Version**: v2.2.3
+**🔄 Last Updated**: January 5, 2026
+**📊 Current Version**: v2.8.7
 **👥 Maintained By**: WFED 119 Development Team

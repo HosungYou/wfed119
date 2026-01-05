@@ -14,7 +14,6 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인 (개발 모드 지원)
-    // Use getUser() for better security
     const { data: { user } } = await supabase.auth.getUser();
     const auth = checkDevAuth(user ? { user } : null);
 
@@ -36,8 +35,9 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = auth.userId;
+    const userEmail = user?.email || null;
 
-    // 2. Values Discovery 완료 여부 확인 (올바른 테이블 이름)
+    // 2. Values Discovery 완료 여부 확인
     const { data: valuesData, error: valuesError } = await supabase
       .from('value_results')
       .select('id')
@@ -52,8 +52,9 @@ export async function GET(req: NextRequest) {
 
     const valuesCompleted = !!valuesData;
 
-    // 3. Strengths Discovery 완료 여부 확인
-    // Assuming strength_profiles table exists
+    // 3. Strengths Discovery 완료 여부 확인 (user_id -> user_email fallback)
+    let strengthsCompleted = false;
+
     const { data: strengthsData, error: strengthsError } = await supabase
       .from('strength_profiles')
       .select('id')
@@ -66,7 +67,23 @@ export async function GET(req: NextRequest) {
       console.error('[Prerequisites Check] Strengths query error:', strengthsError);
     }
 
-    const strengthsCompleted = !!strengthsData;
+    strengthsCompleted = !!strengthsData;
+
+    if (!strengthsCompleted && userEmail) {
+      const { data: strengthsByEmail, error: strengthsEmailError } = await supabase
+        .from('strength_profiles')
+        .select('id')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (strengthsEmailError && strengthsEmailError.code !== 'PGRST116') {
+        console.error('[Prerequisites Check] Strengths email query error:', strengthsEmailError);
+      }
+
+      strengthsCompleted = !!strengthsByEmail;
+    }
 
     // 4. 응답 반환
     return NextResponse.json({

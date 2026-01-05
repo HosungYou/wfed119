@@ -178,7 +178,7 @@ export default function StrategyDevelopmentPage() {
           wo_strategies: strategies.wo_strategies,
           st_strategies: strategies.st_strategies,
           wt_strategies: strategies.wt_strategies,
-          current_stage: 'goals'
+          current_stage: 'prioritization'
         })
       });
 

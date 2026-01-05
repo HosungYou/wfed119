@@ -15,7 +15,7 @@ export async function GET(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // Find the session in user_sessions table
     const { data: session, error: sessionError } = await supabase
@@ -96,7 +96,7 @@ export async function DELETE(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // Delete strength profiles for this session
     await supabase

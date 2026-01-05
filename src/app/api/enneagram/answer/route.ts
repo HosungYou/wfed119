@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getScreenerItems } from '@/lib/enneagram/itemBank';
 import { getInstinctItems } from '@/lib/enneagram/instincts';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
 
@@ -69,12 +71,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing sessionId or stage' }, { status: 400 });
   }
 
+  let admin;
+  try {
+    admin = createSupabaseAdmin();
+  } catch (error) {
+    console.error('[Enneagram Answer] Service role missing:', error);
+    return NextResponse.json(
+      { error: 'SUPABASE_SERVICE_ROLE_KEY is not configured on the server.' },
+      { status: 501 }
+    );
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id || null;
+
+  const { data: existingSession, error: fetchError } = await admin
+    .from('enneagram_sessions')
+    .select('responses, user_id')
+    .eq('session_id', sessionId)
+    .maybeSingle();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    console.error('[Enneagram Answer] Session lookup error:', fetchError);
+    return NextResponse.json({ error: 'Failed to load session' }, { status: 500 });
+  }
+
   let progress = 0;
   let nextStage: Stage = stage;
+
+  const responses = (existingSession?.responses && typeof existingSession.responses === 'object')
+    ? existingSession.responses
+    : {};
+  const updatedResponses = { ...responses } as Record<string, unknown>;
 
   if (stage === 'screener') {
     const totalItems = getScreenerItems(locale).length;
     const responses = asLikertItems((input as { items?: unknown })?.items, totalItems);
+    updatedResponses.screener = responses;
     progress = Math.min(1, responses.length / totalItems);
     if (responses.length < totalItems) {
       return NextResponse.json(
@@ -91,6 +125,7 @@ export async function POST(req: NextRequest) {
 
   if (stage === 'discriminators') {
     const answers = asDiscriminatorAnswers((input as { answers?: unknown })?.answers, discriminatorsRequired);
+    updatedResponses.discriminators = answers;
     progress = Math.min(1, answers.length / discriminatorsRequired);
     if (progress >= 1) {
       nextStage = 'wings';
@@ -100,6 +135,7 @@ export async function POST(req: NextRequest) {
   if (stage === 'wings') {
     const validIds = new Set(getInstinctItems(locale).map((item) => item.id));
     const responses = asLikertItems((input as { items?: unknown })?.items, validIds.size).filter((item) => validIds.has(item.itemId));
+    updatedResponses.wings = responses;
     const total = validIds.size || 1;
     progress = Math.min(1, responses.length / total);
     if (progress >= 1) {
@@ -109,6 +145,7 @@ export async function POST(req: NextRequest) {
 
   if (stage === 'narrative') {
     const texts = asTexts((input as { texts?: unknown })?.texts, 2);
+    updatedResponses.narrative = texts;
     progress = texts.length / 2;
     if (texts.length === 2) {
       nextStage = 'complete';
@@ -117,6 +154,24 @@ export async function POST(req: NextRequest) {
 
   if (stage === 'complete') {
     progress = 1;
+  }
+
+  const upsertPayload = {
+    session_id: sessionId,
+    user_id: userId || existingSession?.user_id || null,
+    locale,
+    stage: nextStage,
+    responses: updatedResponses,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error: upsertError } = await admin
+    .from('enneagram_sessions')
+    .upsert(upsertPayload, { onConflict: 'session_id' });
+
+  if (upsertError) {
+    console.error('[Enneagram Answer] Upsert error:', upsertError);
+    return NextResponse.json({ error: 'Failed to save responses' }, { status: 500 });
   }
 
   return NextResponse.json({ sessionId, stage, nextStage, progress });

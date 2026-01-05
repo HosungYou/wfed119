@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '../../../../lib/prisma';
 import { getScreenerItems } from '../../../../lib/enneagram/itemBank';
 import { getInstinctItems } from '../../../../lib/enneagram/instincts';
+import { getDiscriminatorItems, getDiscriminatorPairsForTop } from '../../../../lib/enneagram/discriminators';
+import { scoreStage1 } from '../../../../lib/enneagram/scoring';
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,10 +17,6 @@ export async function GET(req: NextRequest) {
     if (stage === 'screener') {
       return NextResponse.json({ items: getScreenerItems(locale) });
     }
-
-    // Skip DB operations for now to enable deployment
-    // Return empty for non-screener stages
-    return NextResponse.json({ items: [] });
 
     // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
     // if (!enne) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -42,6 +40,54 @@ export async function GET(req: NextRequest) {
 
     //   return NextResponse.json({ items });
     // }
+
+    if (stage === 'discriminators') {
+      let admin;
+      try {
+        admin = createSupabaseAdmin();
+      } catch (error) {
+        console.error('[Enneagram Items] Service role missing:', error);
+        return NextResponse.json(
+          { error: 'SUPABASE_SERVICE_ROLE_KEY is not configured on the server.' },
+          { status: 501 }
+        );
+      }
+
+      const { data: session, error } = await admin
+        .from('enneagram_sessions')
+        .select('responses, locale')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('[Enneagram Items] Session lookup error:', error);
+        return NextResponse.json({ error: 'Failed to load session' }, { status: 500 });
+      }
+
+      if (!session?.responses || typeof session.responses !== 'object') {
+        return NextResponse.json({ error: 'Screener responses not found' }, { status: 404 });
+      }
+
+      const stage1 = (session.responses as Record<string, unknown>).screener;
+      if (!Array.isArray(stage1) || stage1.length === 0) {
+        return NextResponse.json({ error: 'Screener responses not found' }, { status: 404 });
+      }
+
+      const normalized = stage1
+        .map((entry: any) => ({ itemId: entry?.itemId, value: entry?.value }))
+        .filter((entry: any) => typeof entry.itemId === 'string' && typeof entry.value === 'number');
+
+      const { probabilities } = scoreStage1(normalized, locale);
+      const topTypes = Object.entries(probabilities)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([type]) => Number(type));
+
+      const pairs = getDiscriminatorPairsForTop(topTypes);
+      const items = getDiscriminatorItems(locale, pairs);
+
+      return NextResponse.json({ items });
+    }
 
     if (stage === 'wings') {
       return NextResponse.json({ items: getInstinctItems(locale) });

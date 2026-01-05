@@ -15,11 +15,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: swotData } = await supabase
+    const { data: swotData, error: swotError } = await supabase
       .from('swot_analyses')
       .select('id')
       .eq('user_id', auth.userId)
-      .single();
+      .maybeSingle();
+
+    if (swotError && swotError.code !== 'PGRST116') {
+      console.error('[SWOT ERRC] Error checking SWOT:', swotError);
+      return NextResponse.json({ error: 'Failed to fetch SWOT analysis' }, { status: 500 });
+    }
 
     if (!swotData) {
       return NextResponse.json({});
@@ -59,22 +64,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { eliminate, reduce, reinforce, create_new } = body;
 
-    const { data: swotData } = await supabase
+    const { data: swotData, error: swotError } = await supabase
       .from('swot_analyses')
       .select('id')
       .eq('user_id', auth.userId)
-      .single();
+      .maybeSingle();
+
+    if (swotError && swotError.code !== 'PGRST116') {
+      console.error('[SWOT ERRC] Error checking SWOT:', swotError);
+      return NextResponse.json({ error: 'Failed to fetch SWOT analysis' }, { status: 500 });
+    }
 
     if (!swotData) {
       return NextResponse.json({ error: 'SWOT analysis not found' }, { status: 404 });
     }
 
     // Check if ERRC exists
-    const { data: existingERRC } = await supabase
+    const { data: existingERRC, error: existingError } = await supabase
       .from('swot_errc')
       .select('id')
       .eq('swot_analysis_id', swotData.id)
-      .single();
+      .maybeSingle();
+
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('[SWOT ERRC] Error checking existing ERRC:', existingError);
+      return NextResponse.json({ error: 'Failed to check ERRC' }, { status: 500 });
+    }
 
     let result;
 

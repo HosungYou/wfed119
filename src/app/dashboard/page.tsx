@@ -1,54 +1,45 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import Link from 'next/link';
+import { User, Lock, Home, Loader2, Settings, LogOut } from 'lucide-react';
 import {
-  User, Lock, Home, Loader2, CheckCircle2, Circle, ArrowRight, AlertCircle
-} from 'lucide-react';
-import { ModuleJourneyProgress, NextModuleCard } from '@/components/ModuleProgressSection';
-import { ModuleProgressGrid } from '@/components/ModuleProgressCard';
+  JourneyProgressMap,
+  CompletedModulesSummary,
+  IntegratedProfileCard,
+} from '@/components/dashboard';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
-import { MODULE_ORDER, ModuleId } from '@/lib/types/modules';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading, signInWithGoogle } = useAuth();
-  const { modules, completedModules, loading: modulesLoading, error } = useAllModulesProgress();
-
-  const completionSummary = useMemo(() => {
-    const scores = MODULE_ORDER.map(moduleId => {
-      const progress = modules[moduleId]?.progress;
-      return progress?.completionPercentage ?? 0;
-    });
-    const total = scores.reduce((sum, v) => sum + v, 0);
-    const avg = scores.length ? Math.round(total / scores.length) : 0;
-    const completedCount = completedModules.length;
-    return { avg, completedCount, totalModules: scores.length };
-  }, [modules, completedModules]);
+  const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
+  const { completedModules, loading: modulesLoading } = useAllModulesProgress();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-10 h-10 animate-spin text-primary-600" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <div className="max-w-4xl mx-auto px-4 py-20">
-          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-lg mx-auto px-4 py-20">
+          <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <Lock className="w-8 h-8 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">로그인이 필요합니다</h1>
             <p className="text-gray-600 mb-8">
-              Sign in with your Google account to view your personalized dashboard and progress.
+              Google 계정으로 로그인하여 개인화된 대시보드와 진행 상황을 확인하세요.
             </p>
             <button
               onClick={signInWithGoogle}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-700 transition-colors"
             >
-              Sign in with Google
+              Google로 로그인
             </button>
           </div>
         </div>
@@ -57,85 +48,178 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+            {/* User Info */}
             <div className="flex items-center gap-4">
               {user?.user_metadata?.avatar_url ? (
                 <img
                   src={user.user_metadata.avatar_url}
                   alt={user.user_metadata?.full_name || 'User'}
-                  className="w-12 h-12 rounded-full border-2 border-blue-200"
+                  className="w-10 h-10 rounded-full border-2 border-primary-100"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-                  <User className="w-6 h-6" />
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                  <User className="w-5 h-5" />
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {user?.user_metadata?.full_name || 'Dashboard'}
+                <h1 className="text-lg font-bold text-gray-900">
+                  {user?.user_metadata?.full_name || '대시보드'}
                 </h1>
-                <p className="text-sm text-gray-600">{user?.email}</p>
+                <p className="text-sm text-gray-500">{user?.email}</p>
               </div>
             </div>
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              <Home className="w-5 h-5" />
-              <span className="hidden md:inline">Home</span>
-            </Link>
+
+            {/* Navigation */}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Home className="w-5 h-5" />
+                <span className="hidden sm:inline text-sm">홈</span>
+              </Link>
+              <button
+                onClick={signOut}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="hidden sm:inline text-sm">로그아웃</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Module Journey */}
+        {/* Page Title */}
         <div className="mb-8">
-          <ModuleJourneyProgress />
+          <h2 className="text-2xl font-bold text-gray-900">나의 여정</h2>
+          <p className="text-gray-600 mt-1">
+            LifeCraft 8단계 모듈을 통해 자기 발견과 목표 설정을 완성하세요.
+          </p>
         </div>
 
-        {/* Next Module & Quick Stats */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <NextModuleCard />
+        {/* Journey Progress Map */}
+        <div className="mb-8">
+          {modulesLoading ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+            </div>
+          ) : (
+            <JourneyProgressMap variant="full" showPartLabels={true} />
+          )}
+        </div>
 
-          <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h3 className="text-xl font-bold mb-1">Progress Summary</h3>
-                <p className="text-blue-100 text-sm">
-                  {completionSummary.completedCount} / {completionSummary.totalModules} modules completed
-                </p>
+        {/* Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Left Column - Completed Modules */}
+          <div>
+            {modulesLoading ? (
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-gray-200 rounded w-1/3" />
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 bg-gray-100 rounded-xl" />
+                  ))}
+                </div>
               </div>
-              <div className="text-4xl font-bold">{completionSummary.avg}%</div>
-            </div>
-            <div className="bg-white/20 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-white h-full rounded-full transition-all duration-500"
-                style={{ width: `${completionSummary.avg}%` }}
-              />
-            </div>
-            {error && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-white/80">
-                <AlertCircle className="w-4 h-4" />
-                Failed to load progress. Please try again later.
+            ) : (
+              <CompletedModulesSummary completedModules={completedModules} />
+            )}
+          </div>
+
+          {/* Right Column - Integrated Profile */}
+          <div>
+            {modulesLoading ? (
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-gray-100 rounded w-3/4" />
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-8 bg-gray-100 rounded" />
+                    ))}
+                  </div>
+                </div>
               </div>
+            ) : (
+              <IntegratedProfileCard showAiInsights={true} />
             )}
           </div>
         </div>
 
-        {/* Modules Grid */}
-        {modulesLoading ? (
-          <div className="bg-white rounded-2xl shadow-lg p-10 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        ) : (
-          <ModuleProgressGrid modules={modules as any} />
-        )}
+        {/* Quick Actions */}
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <QuickActionCard
+            href="/discover/values"
+            title="가치관"
+            description="핵심 가치 발견"
+            icon="heart"
+            color="rose"
+          />
+          <QuickActionCard
+            href="/discover/strengths"
+            title="강점"
+            description="AI 강점 분석"
+            icon="target"
+            color="blue"
+          />
+          <QuickActionCard
+            href="/discover/vision"
+            title="비전"
+            description="비전 & 꿈 설정"
+            icon="eye"
+            color="purple"
+          />
+          <QuickActionCard
+            href="/discover/goals"
+            title="목표"
+            description="OKR 목표 설정"
+            icon="check"
+            color="indigo"
+          />
+        </div>
       </main>
     </div>
+  );
+}
+
+// Quick Action Card Component
+function QuickActionCard({
+  href,
+  title,
+  description,
+  icon,
+  color,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  icon: 'heart' | 'target' | 'eye' | 'check';
+  color: 'rose' | 'blue' | 'purple' | 'indigo';
+}) {
+  const colorClasses = {
+    rose: 'bg-rose-50 text-rose-600 hover:bg-rose-100',
+    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+    purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
+    indigo: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
+  };
+
+  return (
+    <Link
+      href={href}
+      className={`
+        block p-4 rounded-xl transition-colors
+        ${colorClasses[color]}
+      `}
+    >
+      <h4 className="font-medium">{title}</h4>
+      <p className="text-sm opacity-80">{description}</p>
+    </Link>
   );
 }

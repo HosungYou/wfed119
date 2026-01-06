@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Heart, Target, Eye, Grid3X3, Sparkles, User, Lightbulb, Zap,
+  Heart, Target, Eye, Grid3X3, User, Lightbulb, Zap,
   CheckCircle2, Clock, ArrowRight, ChevronRight
 } from 'lucide-react';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
@@ -12,25 +12,23 @@ import { ModuleId, MODULE_CONFIGS, MODULE_ORDER } from '@/lib/types/modules';
 const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   values: Heart,
   strengths: Target,
-  vision: Eye,
-  swot: Grid3X3,
-  goals: Target,
-  dreams: Sparkles,
   enneagram: User,
   'life-themes': Lightbulb,
+  vision: Eye,
+  swot: Grid3X3,
+  goals: CheckCircle2,
   errc: Zap,
 };
 
 const MODULE_COLORS: Record<ModuleId, { gradient: string; bg: string; text: string }> = {
   values: { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-50', text: 'text-pink-700' },
   strengths: { gradient: 'from-blue-500 to-cyan-600', bg: 'bg-blue-50', text: 'text-blue-700' },
+  enneagram: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700' },
+  'life-themes': { gradient: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50', text: 'text-yellow-700' },
   vision: { gradient: 'from-indigo-500 to-purple-600', bg: 'bg-indigo-50', text: 'text-indigo-700' },
   swot: { gradient: 'from-orange-500 to-amber-600', bg: 'bg-orange-50', text: 'text-orange-700' },
   goals: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700' },
-  dreams: { gradient: 'from-purple-500 to-fuchsia-600', bg: 'bg-purple-50', text: 'text-purple-700' },
-  enneagram: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700' },
-  'life-themes': { gradient: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50', text: 'text-yellow-700' },
-  errc: { gradient: 'from-secondary-500 to-secondary-600', bg: 'bg-secondary-50', text: 'text-secondary-700' },
+  errc: { gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50', text: 'text-emerald-700' },
 };
 
 /**

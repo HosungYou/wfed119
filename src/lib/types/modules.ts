@@ -1,27 +1,86 @@
 /**
  * Module Types and Interfaces for WFED119 LifeCraft
  *
- * Module Dependency Chain:
- * Values → Strengths → Vision → SWOT → Dreams
+ * MAJOR REBASE (2026-01-06):
+ * - Linear (순차적 강제) progression: 8 modules must be completed in sequence
+ * - Dreams integrated into Vision module as Step 4
+ * - Full cross-module data integration with AI insights
  *
- * Each module can inject data from prerequisite modules.
+ * Module Order (Linear Progression):
+ * Part 1 - Self-Discovery:
+ *   1. Values → 2. Strengths → 3. Enneagram → 4. Life Themes
+ * Part 2 - Vision & Mission:
+ *   5. Vision (includes Dreams Matrix)
+ * Part 3 - Strategic Analysis:
+ *   6. SWOT
+ * Part 4 - Goal Setting:
+ *   7. Goals → 8. ERRC
  */
+
+// ============================================================================
+// Module ID Types (8 modules, linear order)
+// ============================================================================
 
 export type ModuleId =
   | 'values'
   | 'strengths'
+  | 'enneagram'
+  | 'life-themes'
   | 'vision'
   | 'swot'
   | 'goals'
-  | 'dreams'
-  | 'enneagram'
-  | 'errc'
-  | 'life-themes';
+  | 'errc';
 
 export type ModuleStatus =
   | 'not_started'
   | 'in_progress'
   | 'completed';
+
+// Part grouping for UI display
+export type ModulePart =
+  | 'self-discovery'    // Part 1: Modules 1-4
+  | 'vision-mission'    // Part 2: Module 5
+  | 'strategic-analysis' // Part 3: Module 6
+  | 'goal-setting';     // Part 4: Modules 7-8
+
+// ============================================================================
+// Module Order (Linear Progression - STRICT)
+// ============================================================================
+
+export const MODULE_ORDER: ModuleId[] = [
+  'values',       // 1: Part 1 - Self-Discovery
+  'strengths',    // 2: Part 1 - Self-Discovery
+  'enneagram',    // 3: Part 1 - Self-Discovery
+  'life-themes',  // 4: Part 1 - Self-Discovery
+  'vision',       // 5: Part 2 - Vision & Mission (includes Dreams as Step 4)
+  'swot',         // 6: Part 3 - Strategic Analysis
+  'goals',        // 7: Part 4 - Goal Setting
+  'errc',         // 8: Part 4 - Action Optimization
+];
+
+// Module to Part mapping
+export const MODULE_PARTS: Record<ModuleId, ModulePart> = {
+  'values': 'self-discovery',
+  'strengths': 'self-discovery',
+  'enneagram': 'self-discovery',
+  'life-themes': 'self-discovery',
+  'vision': 'vision-mission',
+  'swot': 'strategic-analysis',
+  'goals': 'goal-setting',
+  'errc': 'goal-setting',
+};
+
+// Part display names (Korean)
+export const PART_NAMES: Record<ModulePart, { en: string; ko: string }> = {
+  'self-discovery': { en: 'Self-Discovery', ko: '자기 발견' },
+  'vision-mission': { en: 'Vision & Mission', ko: '비전 & 미션' },
+  'strategic-analysis': { en: 'Strategic Analysis', ko: '전략 분석' },
+  'goal-setting': { en: 'Goal Setting', ko: '목표 설정' },
+};
+
+// ============================================================================
+// Module Progress Types
+// ============================================================================
 
 export interface ModuleProgress {
   moduleId: ModuleId;
@@ -41,153 +100,204 @@ export interface ModuleDependency {
 export interface ModuleConfig {
   id: ModuleId;
   name: string;
+  nameKo: string;
   description: string;
+  descriptionKo: string;
   route: string;
+  part: ModulePart;
+  order: number;
   dependencies: ModuleDependency[];
   stages?: string[];
   requiredForCompletion?: string[];
+  estimatedMinutes?: number;
 }
 
-// Module dependency configuration
+// ============================================================================
+// Module Configuration (8 Modules)
+// ============================================================================
+
 export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   values: {
     id: 'values',
     name: 'Values Discovery',
+    nameKo: '가치관 발견',
     description: 'Identify your terminal, instrumental, and work values',
+    descriptionKo: '당신의 궁극적 가치, 도구적 가치, 직업 가치를 발견합니다',
     route: '/discover/values',
-    dependencies: [],
+    part: 'self-discovery',
+    order: 1,
+    dependencies: [], // First module - no prerequisites
     stages: ['terminal', 'instrumental', 'work'],
     requiredForCompletion: ['terminal', 'instrumental', 'work'],
+    estimatedMinutes: 30,
   },
   strengths: {
     id: 'strengths',
     name: 'Strengths Assessment',
+    nameKo: '강점 발견',
     description: 'Discover your unique strengths through AI conversation',
+    descriptionKo: 'AI 대화를 통해 당신만의 고유한 강점을 발견합니다',
     route: '/discover/strengths',
+    part: 'self-discovery',
+    order: 2,
     dependencies: [
-      { moduleId: 'values', required: false, dataFields: ['top3Values', 'valueThemes'] }
+      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] }
     ],
     stages: ['conversation', 'analysis', 'summary'],
-  },
-  vision: {
-    id: 'vision',
-    name: 'Vision Statement',
-    description: 'Craft your personal vision statement',
-    route: '/discover/vision',
-    dependencies: [
-      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] },
-      { moduleId: 'strengths', required: false, dataFields: ['topStrengths', 'strengthsSummary'] }
-    ],
-    stages: ['time-horizon', 'step1', 'step2', 'step3'],
-  },
-  swot: {
-    id: 'swot',
-    name: 'SWOT Analysis',
-    description: 'Strategic self-analysis with goal setting',
-    route: '/discover/swot',
-    dependencies: [
-      { moduleId: 'vision', required: true, dataFields: ['visionStatement'] },
-      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
-      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }
-    ],
-    stages: ['analysis', 'strategy', 'prioritization', 'goals', 'action', 'reflection'],
-  },
-  goals: {
-    id: 'goals',
-    name: 'Goal Setting (OKR)',
-    description: 'OKR-based role-focused goal setting with core principles',
-    route: '/discover/goals',
-    dependencies: [
-      { moduleId: 'swot', required: true, dataFields: ['strategies', 'goals'] },
-      { moduleId: 'vision', required: true, dataFields: ['visionStatement'] },
-      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
-      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }
-    ],
-    stages: ['roles', 'objectives', 'key-results', 'actions', 'reflection'],
-    requiredForCompletion: ['roles', 'objectives', 'key-results'],
-  },
-  dreams: {
-    id: 'dreams',
-    name: 'Life Dreams Matrix',
-    description: 'Map your dreams across life stages and wellbeing areas',
-    route: '/discover/dreams',
-    dependencies: [
-      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
-      { moduleId: 'vision', required: false, dataFields: ['visionStatement'] },
-      { moduleId: 'swot', required: false, dataFields: ['goals', 'strategies'] }
-    ],
-    stages: ['dreams', 'categories', 'timeline', 'integration'],
+    estimatedMinutes: 45,
   },
   enneagram: {
     id: 'enneagram',
     name: 'Enneagram Assessment',
+    nameKo: '에니어그램 진단',
     description: 'Discover your Enneagram personality type',
+    descriptionKo: '에니어그램 성격 유형을 진단합니다',
     route: '/discover/enneagram',
-    dependencies: [],
-    stages: ['assessment', 'results'],
-  },
-  errc: {
-    id: 'errc',
-    name: 'ERRC Action Plan',
-    description: 'Strategic life optimization using Eliminate-Reduce-Raise-Create framework',
-    route: '/discover/errc',
+    part: 'self-discovery',
+    order: 3,
     dependencies: [
-      { moduleId: 'swot', required: false, dataFields: ['strategies', 'goals', 'errc'] },
-      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: true, dataFields: ['topStrengths'] }
     ],
-    stages: ['wellbeing_before', 'canvas', 'actions', 'progress', 'journal', 'wellbeing_after', 'results'],
-    requiredForCompletion: ['wellbeing_before', 'canvas', 'wellbeing_after'],
+    stages: ['assessment', 'results'],
+    estimatedMinutes: 20,
   },
   'life-themes': {
     id: 'life-themes',
     name: 'Life Themes Discovery',
-    description: 'Discover recurring themes in your life through 6 reflective questions',
+    nameKo: '생애 주제 발견',
+    description: 'Discover recurring themes in your life through Career Construction Interview',
+    descriptionKo: '커리어 구성 인터뷰를 통해 삶의 반복되는 주제를 발견합니다',
     route: '/discover/life-themes',
+    part: 'self-discovery',
+    order: 4,
     dependencies: [
-      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
+      { moduleId: 'enneagram', required: true, dataFields: ['type', 'wing', 'instinct'] },
       { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] },
     ],
     stages: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'patterns', 'themes', 'results'],
     requiredForCompletion: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'themes'],
+    estimatedMinutes: 60,
+  },
+  vision: {
+    id: 'vision',
+    name: 'Vision & Dreams',
+    nameKo: '비전 & 꿈',
+    description: 'Craft your vision statement with integrated dreams matrix',
+    descriptionKo: '꿈 매트릭스와 함께 비전 선언문을 작성합니다',
+    route: '/discover/vision',
+    part: 'vision-mission',
+    order: 5,
+    dependencies: [
+      { moduleId: 'life-themes', required: true, dataFields: ['themes', 'patterns'] },
+      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] },
+      { moduleId: 'strengths', required: true, dataFields: ['topStrengths', 'strengthsSummary'] },
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] }
+    ],
+    // Dreams is now Step 4 within Vision
+    stages: ['time-horizon', 'future-imagery', 'core-aspirations', 'dreams-matrix', 'vision-statement'],
+    requiredForCompletion: ['time-horizon', 'core-aspirations', 'dreams-matrix', 'vision-statement'],
+    estimatedMinutes: 45,
+  },
+  swot: {
+    id: 'swot',
+    name: 'SWOT Analysis',
+    nameKo: 'SWOT 분석',
+    description: 'Strategic self-analysis with priority strategies',
+    descriptionKo: '전략적 자기분석과 우선순위 전략을 수립합니다',
+    route: '/discover/swot',
+    part: 'strategic-analysis',
+    order: 6,
+    dependencies: [
+      { moduleId: 'vision', required: true, dataFields: ['visionStatement', 'dreams'] },
+      { moduleId: 'values', required: true, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: true, dataFields: ['topStrengths'] },
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
+      { moduleId: 'life-themes', required: false, dataFields: ['themes'] }
+    ],
+    stages: ['analysis', 'strategy', 'prioritization', 'goals', 'action', 'reflection'],
+    requiredForCompletion: ['analysis', 'strategy', 'prioritization'],
+    estimatedMinutes: 60,
+  },
+  goals: {
+    id: 'goals',
+    name: 'Goal Setting (OKR)',
+    nameKo: '목표 설정 (OKR)',
+    description: 'OKR-based role-focused goal setting with life roles',
+    descriptionKo: 'OKR 기반 역할 중심 목표 설정을 진행합니다',
+    route: '/discover/goals',
+    part: 'goal-setting',
+    order: 7,
+    dependencies: [
+      { moduleId: 'swot', required: true, dataFields: ['strategies', 'priorityStrategies'] },
+      { moduleId: 'vision', required: true, dataFields: ['visionStatement', 'timeHorizon'] },
+      { moduleId: 'values', required: true, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }
+    ],
+    stages: ['roles', 'objectives', 'key-results', 'actions', 'reflection'],
+    requiredForCompletion: ['roles', 'objectives', 'key-results'],
+    estimatedMinutes: 45,
+  },
+  errc: {
+    id: 'errc',
+    name: 'ERRC Action Plan',
+    nameKo: 'ERRC 실행 계획',
+    description: 'Strategic life optimization with Wellbeing Wheel assessment',
+    descriptionKo: '웰빙 휠 진단과 함께 전략적 인생 최적화를 실행합니다',
+    route: '/discover/errc',
+    part: 'goal-setting',
+    order: 8,
+    dependencies: [
+      { moduleId: 'goals', required: true, dataFields: ['roles', 'objectives', 'keyResults'] },
+      { moduleId: 'swot', required: true, dataFields: ['strategies', 'errc'] },
+      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
+      { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] },
+    ],
+    stages: ['wellbeing_before', 'canvas', 'actions', 'progress', 'journal', 'wellbeing_after', 'results'],
+    requiredForCompletion: ['wellbeing_before', 'canvas', 'wellbeing_after'],
+    estimatedMinutes: 60,
   },
 };
 
-// Module dependency order for sequential completion
-export const MODULE_ORDER: ModuleId[] = [
-  'values',
-  'strengths',
-  'enneagram',
-  'life-themes',
-  'vision',
-  'swot',
-  'goals',
-  'dreams',
-  'errc',
-];
+// ============================================================================
+// Linear Progression Functions (Strict Enforcement)
+// ============================================================================
 
-// Get prerequisites for a module
-export function getModulePrerequisites(moduleId: ModuleId): ModuleId[] {
-  const config = MODULE_CONFIGS[moduleId];
-  return config.dependencies
-    .filter(dep => dep.required)
-    .map(dep => dep.moduleId);
+/**
+ * Get the index of a module in the linear progression
+ */
+export function getModuleIndex(moduleId: ModuleId): number {
+  return MODULE_ORDER.indexOf(moduleId);
 }
 
-// Get optional data sources for a module
-export function getOptionalDataSources(moduleId: ModuleId): ModuleId[] {
-  const config = MODULE_CONFIGS[moduleId];
-  return config.dependencies
-    .filter(dep => !dep.required)
-    .map(dep => dep.moduleId);
+/**
+ * Get all modules that must be completed before starting this module
+ * (Linear progression: ALL previous modules required)
+ */
+export function getLinearPrerequisites(moduleId: ModuleId): ModuleId[] {
+  const moduleIndex = getModuleIndex(moduleId);
+  if (moduleIndex <= 0) return [];
+  return MODULE_ORDER.slice(0, moduleIndex);
 }
 
-// Check if module can be started based on prerequisites
-export function canStartModule(
+/**
+ * Check if a module can be started based on LINEAR progression
+ * (All previous modules must be completed)
+ */
+export function canStartModuleLinear(
   moduleId: ModuleId,
   completedModules: Set<ModuleId>
 ): { canStart: boolean; missingPrerequisites: ModuleId[] } {
-  const prerequisites = getModulePrerequisites(moduleId);
-  const missing = prerequisites.filter(prereq => !completedModules.has(prereq));
+  const moduleIndex = getModuleIndex(moduleId);
+
+  // First module can always start
+  if (moduleIndex === 0) {
+    return { canStart: true, missingPrerequisites: [] };
+  }
+
+  // Check all previous modules are completed
+  const requiredModules = MODULE_ORDER.slice(0, moduleIndex);
+  const missing = requiredModules.filter(m => !completedModules.has(m));
 
   return {
     canStart: missing.length === 0,
@@ -195,7 +305,76 @@ export function canStartModule(
   };
 }
 
-// Data injection types for cross-module data flow
+/**
+ * Get the next module to complete in the linear progression
+ */
+export function getNextModule(completedModules: Set<ModuleId>): ModuleId | null {
+  for (const moduleId of MODULE_ORDER) {
+    if (!completedModules.has(moduleId)) {
+      return moduleId;
+    }
+  }
+  return null; // All completed
+}
+
+/**
+ * Get progress percentage based on completed modules
+ */
+export function getOverallProgress(completedModules: Set<ModuleId>): number {
+  return Math.round((completedModules.size / MODULE_ORDER.length) * 100);
+}
+
+/**
+ * Get current part based on next module to complete
+ */
+export function getCurrentPart(completedModules: Set<ModuleId>): ModulePart | null {
+  const nextModule = getNextModule(completedModules);
+  if (!nextModule) return null;
+  return MODULE_PARTS[nextModule];
+}
+
+// ============================================================================
+// Legacy Compatibility Functions (Deprecated)
+// ============================================================================
+
+/**
+ * @deprecated Use getLinearPrerequisites for linear progression
+ * Get prerequisites for a module based on config (not linear)
+ */
+export function getModulePrerequisites(moduleId: ModuleId): ModuleId[] {
+  const config = MODULE_CONFIGS[moduleId];
+  return config.dependencies
+    .filter(dep => dep.required)
+    .map(dep => dep.moduleId);
+}
+
+/**
+ * @deprecated Use canStartModuleLinear for linear progression
+ * Get optional data sources for a module
+ */
+export function getOptionalDataSources(moduleId: ModuleId): ModuleId[] {
+  const config = MODULE_CONFIGS[moduleId];
+  return config.dependencies
+    .filter(dep => !dep.required)
+    .map(dep => dep.moduleId);
+}
+
+/**
+ * @deprecated Use canStartModuleLinear for linear progression
+ * Check if module can be started based on prerequisites (not linear)
+ */
+export function canStartModule(
+  moduleId: ModuleId,
+  completedModules: Set<ModuleId>
+): { canStart: boolean; missingPrerequisites: ModuleId[] } {
+  // Redirect to linear enforcement
+  return canStartModuleLinear(moduleId, completedModules);
+}
+
+// ============================================================================
+// Data Types for Cross-Module Integration
+// ============================================================================
+
 export interface ValuesData {
   terminalTop3: string[];
   instrumentalTop3: string[];
@@ -205,16 +384,67 @@ export interface ValuesData {
 }
 
 export interface StrengthsData {
-  topStrengths: Array<{ name: string; description: string; score?: number }>;
+  topStrengths: Array<{ name: string; description: string; category?: string; evidence?: string }>;
   strengthsSummary: string;
   conversationInsights?: string[];
 }
 
+export interface EnneagramData {
+  type: number; // 1-9
+  wing: number; // 1-9
+  instinct: 'sp' | 'so' | 'sx';
+  confidence: 'high' | 'medium' | 'low';
+  description?: string;
+}
+
+export interface LifeThemesData {
+  themes: Array<{
+    theme: string;
+    description: string;
+    rank: number;
+    patterns: string[];
+    evidenceFromQuestions: string[];
+  }>;
+  roleModels: string[];
+  favoriteMedia: string[];
+  hobbies: string[];
+  mottos: string[];
+  favoriteSubjects: string[];
+  earlyMemories: string[];
+}
+
 export interface VisionData {
   timeHorizon: '3-year' | '5-year' | '10-year';
-  coreAspiration: string;
+  futureImagery: string;
+  coreAspirations: string[];
   visionStatement: string;
   roleVisions?: Record<string, string>;
+  // Dreams integrated as Step 4
+  dreams: Array<{
+    id: string;
+    dream: string;
+    category: string;
+    lifeStage: 'immediate' | '1-3years' | '5years' | '10years+';
+    wellbeingDimension?: string;
+    createdAt: string;
+  }>;
+  dreamsByLifeStage: {
+    immediate: string[];
+    '1-3years': string[];
+    '5years': string[];
+    '10years+': string[];
+  };
+  dreamsByWellbeing: {
+    physical: string[];
+    emotional: string[];
+    intellectual: string[];
+    social: string[];
+    spiritual: string[];
+    occupational: string[];
+    economic: string[];
+  };
+  dreamsAnalysis?: string;
+  dreamsCompleted: boolean;
 }
 
 export interface SwotData {
@@ -223,11 +453,18 @@ export interface SwotData {
   opportunities: string[];
   threats: string[];
   strategies: {
-    so: string[];
-    wo: string[];
-    st: string[];
-    wt: string[];
+    so: string[]; // Strengths x Opportunities
+    wo: string[]; // Weaknesses x Opportunities
+    st: string[]; // Strengths x Threats
+    wt: string[]; // Weaknesses x Threats
   };
+  priorityStrategies: Array<{
+    strategy: string;
+    type: 'SO' | 'WO' | 'ST' | 'WT';
+    impact: number;
+    feasibility: number;
+    priorityScore: number;
+  }>;
   goals: Array<{
     number: number;
     roleResponsibility: string;
@@ -238,7 +475,7 @@ export interface SwotData {
   errc?: {
     eliminate: string[];
     reduce: string[];
-    reinforce: string[];
+    raise: string[];
     create: string[];
   };
 }
@@ -283,30 +520,134 @@ export interface GoalSettingData {
   totalPercentage: number;
 }
 
-export interface DreamsData {
-  dreams: Array<{
+export interface ErrcData {
+  wellbeingBefore: {
+    physical: number;
+    emotional: number;
+    intellectual: number;
+    social: number;
+    spiritual: number;
+    occupational: number;
+    economic: number;
+  };
+  wellbeingAfter?: {
+    physical: number;
+    emotional: number;
+    intellectual: number;
+    social: number;
+    spiritual: number;
+    occupational: number;
+    economic: number;
+  };
+  canvas: {
+    eliminate: string[];
+    reduce: string[];
+    raise: string[];
+    create: string[];
+  };
+  actions: Array<{
     id: string;
-    title: string;
-    lifeStage: string;
-    wellbeingArea: string;
+    category: 'eliminate' | 'reduce' | 'raise' | 'create';
+    action: string;
+    dueDate?: string;
+    isCompleted: boolean;
   }>;
-  categorizedDreams: Record<string, string[]>;
+  journal: Array<{
+    date: string;
+    entry: string;
+    category?: string;
+  }>;
 }
+
+// ============================================================================
+// Module Data Map (All 8 Modules)
+// ============================================================================
 
 export interface ModuleDataMap {
   values: ValuesData;
   strengths: StrengthsData;
+  enneagram: EnneagramData;
+  'life-themes': LifeThemesData;
   vision: VisionData;
   swot: SwotData;
   goals: GoalSettingData;
-  dreams: DreamsData;
-  enneagram: Record<string, unknown>;
+  errc: ErrcData;
 }
 
-// Cross-module context for data injection
+// ============================================================================
+// Cross-Module Context
+// ============================================================================
+
 export interface CrossModuleContext {
   userId: string;
   availableData: Partial<ModuleDataMap>;
   completedModules: ModuleId[];
   currentModule: ModuleId;
+  nextModule: ModuleId | null;
+  overallProgress: number;
+  currentPart: ModulePart | null;
+}
+
+// ============================================================================
+// Integrated Profile Types (for user_integrated_profiles table)
+// ============================================================================
+
+export interface IntegratedProfile {
+  userId: string;
+
+  // Part 1 Summary
+  topValues: Array<{ type: 'terminal' | 'instrumental' | 'work'; name: string; description?: string }>;
+  topStrengths: Array<{ category?: string; name: string; evidence?: string }>;
+  enneagramType?: number;
+  enneagramWing?: number;
+  enneagramInstinct?: string;
+  lifeThemes: Array<{ theme: string; description?: string; rank: number; patterns?: string[] }>;
+
+  // Part 2 Summary
+  missionStatement?: string;
+  visionStatement?: string;
+  timeHorizon?: string;
+  dreams: Array<{ dream: string; category?: string; lifeStage?: string; wellbeingDimension?: string }>;
+  coreAspirations: string[];
+
+  // Part 3-4 Summary
+  swotSummary: {
+    strengths: string[];
+    weaknesses: string[];
+    opportunities: string[];
+    threats: string[];
+  };
+  priorityStrategies: Array<{ strategy: string; type: string; impact: number; feasibility: number }>;
+  lifeRoles: Array<{ role: string; allocation: number; objectives?: string[] }>;
+  keyObjectives: Array<{ objective: string; role?: string; keyResults?: string[] }>;
+  errcActions: {
+    eliminate: string[];
+    reduce: string[];
+    raise: string[];
+    create: string[];
+  };
+  wellbeingScores?: {
+    physical: number;
+    emotional: number;
+    intellectual: number;
+    social: number;
+    spiritual: number;
+    occupational: number;
+    economic: number;
+  };
+
+  // AI Insights
+  aiCareerInsights?: string;
+  aiStrengthPatterns?: string;
+  aiValueAlignment?: string;
+  aiRecommendedActions: Array<{ action: string; priority: 'high' | 'medium' | 'low'; relatedModules: ModuleId[] }>;
+  aiPersonalitySummary?: string;
+  aiGrowthAreas: Array<{ area: string; suggestion: string }>;
+
+  // Metadata
+  modulesCompleted: ModuleId[];
+  profileCompleteness: number;
+  lastAiAnalysisAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

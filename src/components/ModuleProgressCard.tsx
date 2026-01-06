@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Heart, Target, Eye, Grid3X3, Sparkles, User,
+  Heart, Target, Eye, Grid3X3, User, Lightbulb, Zap,
   Lock, CheckCircle2, Clock, ArrowRight, AlertCircle
 } from 'lucide-react';
 import { ModuleId, ModuleStatus, MODULE_CONFIGS } from '@/lib/types/modules';
@@ -21,11 +21,12 @@ interface ModuleProgressCardProps {
 const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   values: Heart,
   strengths: Target,
+  enneagram: User,
+  'life-themes': Lightbulb,
   vision: Eye,
   swot: Grid3X3,
-  goals: Target,
-  dreams: Sparkles,
-  enneagram: User,
+  goals: CheckCircle2,
+  errc: Zap,
 };
 
 const STATUS_COLORS: Record<ModuleStatus, { bg: string; text: string; border: string }> = {
@@ -203,7 +204,8 @@ interface ModuleProgressGridProps {
 }
 
 export function ModuleProgressGrid({ modules, compact = false }: ModuleProgressGridProps) {
-  const moduleOrder: ModuleId[] = ['values', 'strengths', 'vision', 'swot', 'goals', 'dreams', 'enneagram'];
+  // Updated to new 8-module linear order (dreams removed, integrated into vision)
+  const moduleOrder: ModuleId[] = ['values', 'strengths', 'enneagram', 'life-themes', 'vision', 'swot', 'goals', 'errc'];
 
   return (
     <div className={`grid gap-4 ${compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>

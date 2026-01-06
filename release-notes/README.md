@@ -12,13 +12,48 @@ release-notes/
 ├── v2.0/                       # Version 2.x Documentation
 │   ├── README.md               # Major feature release details
 │   ├── UPGRADE_NOTES.md        # Technical upgrade guide
-│   ├── v2.8.8.md               # Goal setting horizon + AI suggestions
-│   └── ...                     # Previous v2.x releases
+│   └── ...                     # v2.x releases
+├── v3.0/                       # Version 3.x Documentation (NEW)
+│   ├── v3.0.0.md               # Major Rebase - Linear progression
+│   └── v3.1.0.md               # Phase 2 enhancements
 ```
 
 ## 🚀 Version Overview
 
-### [v2.8.8](v2.0/v2.8.8.md) - Current Release
+### [v3.1.0](v3.0/v3.1.0.md) - Current Release
+**Release Date**: January 6, 2026
+**Type**: Feature Release - Phase 2 Enhancements
+
+**Key Highlights:**
+- 🎯 **Mission Statement Module** - 4-step mission crafting workflow
+- 💼 **Career Options Module** - Holland Code assessment + AI suggestions
+- 🔓 **Admin Bypass** - ADMIN/SUPER_ADMIN access all modules
+- 🤖 **AI Endpoint Fixes** - 13 endpoints fixed (model names, validation)
+- 🎨 **Unified Components** - ModuleShell, ModuleHeader, ActivitySidebar
+- 🔧 **SWOT Auto-fill** - AI pre-populates from completed modules
+
+**Breaking Changes**: No (compatible with v3.0)
+**Migration Required**: Yes - 2 new database tables
+
+---
+
+### [v3.0.0](v3.0/v3.0.0.md) - Major Rebase
+**Release Date**: January 6, 2026
+**Type**: Major Release - Breaking Changes
+
+**Key Highlights:**
+- 📊 **Linear Module Progression** - 8 modules in strict sequence
+- 🔗 **Dreams → Vision Integration** - Dreams now Vision Step 4
+- 🧠 **Cross-Module Data Integration** - Full AI context from all modules
+- 👤 **Integrated User Profile** - Aggregated profile from all modules
+- 🎨 **Modern Minimalist UI** - Consistent design system
+
+**Breaking Changes**: Yes (see migration guide)
+**Migration Required**: Yes - 4 database migrations
+
+---
+
+### [v2.8.8](v2.0/v2.8.8.md)
 **Release Date**: January 6, 2026
 **Type**: Patch Release + UX Enhancements
 

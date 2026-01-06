@@ -20,7 +20,22 @@ release-notes/
 
 ## 🚀 Version Overview
 
-### [v3.1.0](v3.0/v3.1.0.md) - Current Release
+### [v3.1.1](v3.0/v3.1.1.md) - Current Release
+**Release Date**: January 6, 2026
+**Type**: Patch Release - Consent System + Bug Fixes
+
+**Key Highlights:**
+- 📋 **User Consent System** - Privacy policy + research participation agreement
+- 🔧 **RLS Policy Fix** - Admin module bypass now working
+- 🌐 **Translation Fix** - 8 → 10 modules display corrected
+- ⚙️ **Auto-Deploy** - GitHub webhook for Render configured
+
+**Breaking Changes**: No
+**Migration Required**: Yes - consent table + RLS policies
+
+---
+
+### [v3.1.0](v3.0/v3.1.0.md)
 **Release Date**: January 6, 2026
 **Type**: Feature Release - Phase 2 Enhancements
 
@@ -329,5 +344,5 @@ v1.0.0 (2025-01-15)
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
 **🔄 Last Updated**: January 6, 2026
-**📊 Current Version**: v2.8.8
+**📊 Current Version**: v3.1.1
 **👥 Maintained By**: WFED 119 Development Team

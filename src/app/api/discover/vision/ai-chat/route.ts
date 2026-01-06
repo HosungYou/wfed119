@@ -3,10 +3,6 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 /**
  * POST /api/discover/vision/ai-chat
  *
@@ -17,6 +13,30 @@ const anthropic = new Anthropic({
  */
 export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
+
+  // Validate API key early
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const errorStream = new ReadableStream({
+      start(controller) {
+        const errorData = JSON.stringify({
+          type: 'error',
+          message: 'AI service is not configured. Please set ANTHROPIC_API_KEY in environment variables.'
+        });
+        controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
+        controller.close();
+      }
+    });
+    return new Response(errorStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  }
+
+  const anthropic = new Anthropic({ apiKey });
 
   try {
     const supabase = await createServerSupabaseClient();

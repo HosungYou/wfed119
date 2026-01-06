@@ -3,10 +3,6 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 /**
  * POST /api/discover/vision/validate
  *
@@ -15,6 +11,25 @@ const anthropic = new Anthropic({
  * - 4가지 기준: Concise, Clear, Inspiring, Unique
  */
 export async function POST(req: NextRequest) {
+  // Validate API key early
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    // Return a basic validation without AI
+    const body = await req.json();
+    const { statement } = body;
+    const wordCount = statement?.trim().split(/\s+/).length || 0;
+
+    return NextResponse.json({
+      passed: wordCount <= 6,
+      feedback: wordCount <= 6
+        ? `Your vision statement has ${wordCount} words. AI validation is not available, but the word count looks good!`
+        : `Your vision statement has ${wordCount} words. Please reduce to 6 or fewer words.`,
+      suggestions: wordCount > 6 ? ['Try removing unnecessary adjectives or articles to reduce word count.'] : []
+    });
+  }
+
+  const anthropic = new Anthropic({ apiKey });
+
   try {
     const supabase = await createServerSupabaseClient();
 

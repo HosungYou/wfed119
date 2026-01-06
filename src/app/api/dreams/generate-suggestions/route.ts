@@ -170,8 +170,10 @@ function analyzeDreamPatterns(dreams: any[]) {
 // Generate AI suggestions using Claude
 async function generateAISuggestions(context: any) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY not configured');
+  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    // Return fallback suggestions without AI
+    console.warn('[Dreams AI] API key not configured, returning fallback suggestions');
+    return generateFallbackSuggestions(context);
   }
 
   const anthropic = new Anthropic({ apiKey });
@@ -278,4 +280,88 @@ Example format:
 ]`;
 
   return prompt;
+}
+
+// Fallback suggestions when AI is not available
+function generateFallbackSuggestions(context: any) {
+  const { dreamAnalysis, values, strengths } = context;
+  const gapCategories = dreamAnalysis?.gaps || ['learning', 'experience'];
+
+  const fallbackDreams = [
+    {
+      title: "Learn a new skill that aligns with your strengths",
+      description: "Take an online course or workshop in an area that interests you",
+      life_stage: "30s",
+      wellbeing_area: "intellectual",
+      related_values: values?.top_terminal?.slice(0, 2) || ["Growth", "Knowledge"],
+      why: "Continuous learning keeps you engaged and growing"
+    },
+    {
+      title: "Build a meaningful relationship in your community",
+      description: "Join a local group or volunteer organization to connect with others",
+      life_stage: "40s",
+      wellbeing_area: "relationship",
+      related_values: values?.top_terminal?.slice(0, 2) || ["Connection", "Service"],
+      why: "Strong relationships are key to wellbeing"
+    },
+    {
+      title: "Establish a regular exercise routine",
+      description: "Commit to 30 minutes of physical activity, 3 times per week",
+      life_stage: "30s",
+      wellbeing_area: "physical",
+      related_values: ["Health", "Discipline"],
+      why: "Physical health supports all other life areas"
+    },
+    {
+      title: "Create a financial safety net",
+      description: "Build an emergency fund covering 3-6 months of expenses",
+      life_stage: "30s",
+      wellbeing_area: "financial",
+      related_values: ["Security", "Peace of mind"],
+      why: "Financial stability reduces stress and enables other dreams"
+    },
+    {
+      title: "Explore a new creative hobby",
+      description: "Try painting, writing, music, or another creative outlet",
+      life_stage: "40s",
+      wellbeing_area: "leisure",
+      related_values: ["Creativity", "Self-expression"],
+      why: "Creative activities bring joy and fulfillment"
+    },
+    {
+      title: "Define your life purpose",
+      description: "Reflect on what gives your life meaning and direction",
+      life_stage: "50s",
+      wellbeing_area: "spiritual",
+      related_values: ["Meaning", "Purpose"],
+      why: "A clear sense of purpose guides important decisions"
+    },
+    {
+      title: "Optimize your living space",
+      description: "Create a home environment that supports your wellbeing",
+      life_stage: "40s",
+      wellbeing_area: "environment",
+      related_values: ["Comfort", "Peace"],
+      why: "Your environment affects your daily mood and productivity"
+    },
+    {
+      title: "Achieve a career milestone",
+      description: "Set a specific professional goal for the next 2-3 years",
+      life_stage: "30s",
+      wellbeing_area: "career",
+      related_values: ["Achievement", "Growth"],
+      why: "Career progress brings financial and personal satisfaction"
+    }
+  ];
+
+  // Prioritize dreams based on gap categories
+  const sortedDreams = fallbackDreams.sort((a, b) => {
+    const aIsGap = gapCategories.includes(a.wellbeing_area);
+    const bIsGap = gapCategories.includes(b.wellbeing_area);
+    if (aIsGap && !bIsGap) return -1;
+    if (!aIsGap && bIsGap) return 1;
+    return 0;
+  });
+
+  return sortedDreams.slice(0, 8);
 }

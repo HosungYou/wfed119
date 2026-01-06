@@ -125,11 +125,17 @@ BEGIN
   END IF;
 
   -- Get required modules (all modules before this one)
-  v_required_modules := ARRAY(
-    SELECT m FROM unnest(ARRAY['values', 'strengths', 'enneagram', 'life-themes', 'vision', 'swot', 'goals', 'errc']) AS m
-    WITH ORDINALITY AS t(m, ord)
-    WHERE t.ord < v_module_index
-  );
+  -- Use simple CASE-based approach instead of WITH ORDINALITY for compatibility
+  v_required_modules := CASE v_module_index
+    WHEN 2 THEN ARRAY['values']
+    WHEN 3 THEN ARRAY['values', 'strengths']
+    WHEN 4 THEN ARRAY['values', 'strengths', 'enneagram']
+    WHEN 5 THEN ARRAY['values', 'strengths', 'enneagram', 'life-themes']
+    WHEN 6 THEN ARRAY['values', 'strengths', 'enneagram', 'life-themes', 'vision']
+    WHEN 7 THEN ARRAY['values', 'strengths', 'enneagram', 'life-themes', 'vision', 'swot']
+    WHEN 8 THEN ARRAY['values', 'strengths', 'enneagram', 'life-themes', 'vision', 'swot', 'goals']
+    ELSE ARRAY[]::TEXT[]
+  END;
 
   -- Get completed modules for user
   v_completed_modules := ARRAY(

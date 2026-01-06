@@ -104,11 +104,23 @@ export default function GoalObjectivesPage() {
       const swotRes = await fetch('/api/swot/session');
       if (swotRes.ok) {
         const swotData = await swotRes.json();
+        const normalize = (items: unknown[]): string[] =>
+          items
+            .map((item) => {
+              if (typeof item === 'string') return item;
+              if (item && typeof item === 'object' && 'text' in item) {
+                const value = (item as { text?: unknown }).text;
+                return typeof value === 'string' ? value : '';
+              }
+              return '';
+            })
+            .filter((value) => value.trim().length > 0);
+
         setSwotStrategies({
-          so: swotData.so_strategies || [],
-          wo: swotData.wo_strategies || [],
-          st: swotData.st_strategies || [],
-          wt: swotData.wt_strategies || [],
+          so: normalize(swotData.so_strategies || []),
+          wo: normalize(swotData.wo_strategies || []),
+          st: normalize(swotData.st_strategies || []),
+          wt: normalize(swotData.wt_strategies || []),
         });
       }
 

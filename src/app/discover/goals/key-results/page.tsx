@@ -196,6 +196,9 @@ export default function GoalKeyResultsPage() {
 
       const data = await res.json();
       if (data?.suggestion) {
+        if (typeof data.suggestion !== 'string') {
+          throw new Error('AI suggestion response is invalid.');
+        }
         updateKeyResult(obj.id, index, { key_result_text: data.suggestion });
       }
     } catch (err) {
@@ -215,9 +218,9 @@ export default function GoalKeyResultsPage() {
 
   const roleCount = roles.length;
   const objectiveCount = roles.reduce((sum, role) =>
-    sum + (role.goal_objectives?.filter(obj => obj.objective_text.trim()).length || 0), 0);
+    sum + (role.goal_objectives?.filter(obj => (obj.objective_text || '').trim()).length || 0), 0);
   const keyResultCount = Object.values(keyResults)
-    .reduce((sum, list) => sum + list.filter(kr => kr.key_result_text.trim()).length, 0);
+    .reduce((sum, list) => sum + list.filter(kr => (kr.key_result_text || '').trim()).length, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8 px-4">
@@ -322,7 +325,7 @@ export default function GoalKeyResultsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-purple-600 font-medium">
-                      {keyResults[obj.id]?.filter(kr => kr.key_result_text.trim()).length || 0} KR
+                      {keyResults[obj.id]?.filter(kr => (kr.key_result_text || '').trim()).length || 0} KR
                     </span>
                     {expandedObjective === obj.id ? (
                       <ChevronUp className="w-5 h-5 text-gray-400" />

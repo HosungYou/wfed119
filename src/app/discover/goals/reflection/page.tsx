@@ -81,14 +81,14 @@ export default function GoalReflectionPage() {
 
       const roleCount = rolesData.length;
       const objectiveCount = rolesData.reduce((sum, role) =>
-        sum + (role.goal_objectives?.filter((obj: { objective_text: string }) => obj.objective_text.trim()).length || 0), 0);
+        sum + (role.goal_objectives?.filter((obj: { objective_text: string }) => (obj.objective_text || '').trim()).length || 0), 0);
       const keyResultCount = rolesData.reduce((sum, role) =>
         sum + (role.goal_objectives?.reduce((objSum: number, obj: { goal_key_results?: { key_result_text: string }[] }) =>
-          objSum + (obj.goal_key_results?.filter(kr => kr.key_result_text.trim()).length || 0), 0) || 0), 0);
+          objSum + (obj.goal_key_results?.filter(kr => (kr.key_result_text || '').trim()).length || 0), 0) || 0), 0);
       const actionCount = rolesData.reduce((sum, role) =>
         sum + (role.goal_objectives?.reduce((objSum: number, obj: { goal_key_results?: { goal_action_plans?: { action_text: string }[] }[] }) =>
           objSum + (obj.goal_key_results?.reduce((krSum: number, kr) =>
-            krSum + (kr.goal_action_plans?.filter(ap => ap.action_text.trim()).length || 0), 0) || 0), 0) || 0), 0);
+            krSum + (kr.goal_action_plans?.filter(ap => (ap.action_text || '').trim()).length || 0), 0) || 0), 0) || 0), 0);
 
       setSummary({
         roleCount,

@@ -220,6 +220,9 @@ export default function GoalObjectivesPage() {
 
       const data = await res.json();
       if (data?.suggestion) {
+        if (typeof data.suggestion !== 'string') {
+          throw new Error('AI suggestion response is invalid.');
+        }
         updateObjective(role.id, objIndex, data.suggestion);
       }
     } catch (err) {
@@ -268,7 +271,7 @@ export default function GoalObjectivesPage() {
     : [];
   const roleCount = roles.length;
   const objectiveCount = Object.values(objectives)
-    .reduce((sum, list) => sum + list.filter(obj => obj.objective_text.trim()).length, 0);
+    .reduce((sum, list) => sum + list.filter(obj => (obj.objective_text || '').trim()).length, 0);
 
   if (loading) {
     return (
@@ -398,7 +401,7 @@ export default function GoalObjectivesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-purple-600 font-medium">
-                    {objectives[role.id]?.filter(o => o.objective_text.trim()).length || 0} objectives
+                    {objectives[role.id]?.filter(o => (o.objective_text || '').trim()).length || 0} objectives
                   </span>
                   {expandedRole === role.id ? (
                     <ChevronUp className="w-5 h-5 text-gray-400" />

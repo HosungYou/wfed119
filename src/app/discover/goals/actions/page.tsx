@@ -198,6 +198,9 @@ export default function GoalActionsPage() {
 
       const data = await res.json();
       if (data?.suggestion) {
+        if (typeof data.suggestion !== 'string') {
+          throw new Error('AI suggestion response is invalid.');
+        }
         updateAction(kr.id, index, { action_text: data.suggestion });
       }
     } catch (err) {
@@ -217,12 +220,12 @@ export default function GoalActionsPage() {
 
   const roleCount = roles.length;
   const objectiveCount = roles.reduce((sum, role) =>
-    sum + (role.goal_objectives?.filter(obj => obj.objective_text.trim()).length || 0), 0);
+    sum + (role.goal_objectives?.filter(obj => (obj.objective_text || '').trim()).length || 0), 0);
   const keyResultCount = roles.reduce((sum, role) =>
     sum + (role.goal_objectives?.reduce((objSum, obj) =>
-      objSum + (obj.goal_key_results?.filter(kr => kr.key_result_text.trim()).length || 0), 0) || 0), 0);
+      objSum + (obj.goal_key_results?.filter(kr => (kr.key_result_text || '').trim()).length || 0), 0) || 0), 0);
   const actionCount = Object.values(actionPlans)
-    .reduce((sum, list) => sum + list.filter(ap => ap.action_text.trim()).length, 0);
+    .reduce((sum, list) => sum + list.filter(ap => (ap.action_text || '').trim()).length, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8 px-4">
@@ -327,7 +330,7 @@ export default function GoalActionsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-purple-600 font-medium">
-                        {actionPlans[kr.id]?.filter(ap => ap.action_text.trim()).length || 0} actions
+                        {actionPlans[kr.id]?.filter(ap => (ap.action_text || '').trim()).length || 0} actions
                       </span>
                       {expandedKR === kr.id ? (
                         <ChevronUp className="w-5 h-5 text-gray-400" />

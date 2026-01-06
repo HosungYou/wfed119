@@ -85,7 +85,10 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join(' ');
     }
 
-    const suggestion = await aiService.generateGoalSuggestion(prompt);
+    const rawSuggestion = await aiService.generateGoalSuggestion(prompt);
+    const suggestion = typeof rawSuggestion === 'string'
+      ? rawSuggestion
+      : JSON.stringify(rawSuggestion);
 
     return NextResponse.json({ suggestion });
   } catch (error) {

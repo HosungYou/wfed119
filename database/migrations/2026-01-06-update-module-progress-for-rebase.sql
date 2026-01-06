@@ -7,7 +7,29 @@
 --   - Update module ordering for linear progression
 
 -- ============================================================================
--- Step 1: Update module_id CHECK constraint
+-- Step 1: Delete 'dreams' module progress records FIRST (before constraint)
+-- ============================================================================
+
+-- IMPORTANT: Must delete 'dreams' rows BEFORE adding the new constraint
+-- Otherwise the constraint will fail with "violated by some row" error
+
+-- Delete 'dreams' module_progress records
+DELETE FROM public.module_progress WHERE module_id = 'dreams';
+
+-- Verify deletion
+DO $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM public.module_progress WHERE module_id = 'dreams';
+  IF v_count > 0 THEN
+    RAISE EXCEPTION 'Failed to delete dreams records. % records remaining.', v_count;
+  END IF;
+  RAISE NOTICE 'Successfully deleted all dreams module_progress records.';
+END $$;
+
+-- ============================================================================
+-- Step 2: Update module_id CHECK constraint
 -- ============================================================================
 
 -- Drop existing constraint
@@ -28,29 +50,6 @@ ADD CONSTRAINT module_progress_module_id_check CHECK (
     'errc'          -- 8: Part 4 - Action Optimization
   )
 );
-
--- ============================================================================
--- Step 2: Migrate existing 'dreams' module progress to 'vision'
--- ============================================================================
-
--- Note: Dreams data will be migrated to vision_statements table separately
--- Here we just need to handle the progress records
-
--- Update any 'dreams' progress records to mark them as migrated
-UPDATE public.module_progress
-SET
-  metadata = jsonb_set(
-    COALESCE(metadata, '{}'::jsonb),
-    '{migrated_from}',
-    '"dreams"'
-  ),
-  updated_at = NOW()
-WHERE module_id = 'dreams';
-
--- Delete 'dreams' module_progress records (data is preserved in metadata)
--- Actually, let's keep them but they won't match the constraint anymore
--- So we need to delete them after constraint update
-DELETE FROM public.module_progress WHERE module_id = 'dreams';
 
 -- ============================================================================
 -- Step 3: Update helper function with new module ordering

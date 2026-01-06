@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 export async function POST(request: NextRequest) {
   try {
+    // Check for API key first
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: 'AI service not configured. Please set ANTHROPIC_API_KEY.' },
+        { status: 503 }
+      );
+    }
+
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     const body = await request.json();
     const { strengths, weaknesses, opportunities, threats } = body;
 
@@ -58,7 +66,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
 }`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 2000,
       messages: [
         {

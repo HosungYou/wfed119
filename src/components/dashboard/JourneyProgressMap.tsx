@@ -15,7 +15,7 @@ import {
 import { useTranslation } from '@/lib/i18n';
 
 // ============================================================================
-// Module Icons Map (8 modules)
+// Module Icons Map (10 modules)
 // ============================================================================
 
 const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
@@ -24,20 +24,24 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   enneagram: User,
   'life-themes': Lightbulb,
   vision: Eye,
+  mission: Target,           // NEW: Mission Statement
+  'career-options': User,    // NEW: Career Options
   swot: Grid3X3,
   goals: CheckCircle2,
   errc: Zap,
 };
 
-// Module colors for visual distinction
+// Module colors for visual distinction (10 modules)
 const MODULE_COLORS: Record<ModuleId, { bg: string; bgLight: string; text: string; border: string }> = {
   values: { bg: 'bg-rose-500', bgLight: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
   strengths: { bg: 'bg-blue-500', bgLight: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
   enneagram: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
   'life-themes': { bg: 'bg-amber-500', bgLight: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
   vision: { bg: 'bg-purple-500', bgLight: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+  mission: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },           // NEW
+  'career-options': { bg: 'bg-indigo-500', bgLight: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }, // NEW
   swot: { bg: 'bg-orange-500', bgLight: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
-  goals: { bg: 'bg-indigo-500', bgLight: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' },
+  goals: { bg: 'bg-cyan-500', bgLight: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' },
   errc: { bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
 };
 
@@ -289,10 +293,10 @@ export function JourneyProgressMap({
       <div className="animate-pulse">
         <div className="h-8 bg-gray-200 rounded-full w-48 mb-6 mx-auto" />
         <div className="flex justify-center items-center gap-2">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(10)].map((_, i) => (
             <React.Fragment key={i}>
               <div className="w-12 h-12 bg-gray-200 rounded-full" />
-              {i < 7 && <div className="w-8 h-1 bg-gray-200 rounded" />}
+              {i < 9 && <div className="w-8 h-1 bg-gray-200 rounded" />}
             </React.Fragment>
           ))}
         </div>
@@ -411,8 +415,8 @@ export function JourneyProgressMap({
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             {language === 'ko'
-              ? '8개의 모듈을 순서대로 완료하세요'
-              : 'Complete 8 modules in sequence'}
+              ? '10개의 모듈을 순서대로 완료하세요'
+              : 'Complete 10 modules in sequence'}
           </p>
         </div>
         <div className="text-right">

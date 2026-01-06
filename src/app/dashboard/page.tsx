@@ -100,7 +100,7 @@ export default function DashboardPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900">나의 여정</h2>
           <p className="text-gray-600 mt-1">
-            LifeCraft 8단계 모듈을 통해 자기 발견과 목표 설정을 완성하세요.
+            LifeCraft 10단계 모듈을 통해 자기 발견과 목표 설정을 완성하세요.
           </p>
         </div>
 

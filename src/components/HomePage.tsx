@@ -14,7 +14,7 @@ import { MODULE_ORDER, MODULE_CONFIGS, getNextModule, ModuleId } from '@/lib/typ
 import { useTranslation } from '@/lib/i18n';
 import LanguageToggle from '@/components/LanguageToggle';
 
-// Part data for the journey overview
+// Part data for the journey overview (10 modules total)
 const JOURNEY_PARTS = [
   {
     id: 'self-discovery',
@@ -26,7 +26,7 @@ const JOURNEY_PARTS = [
   },
   {
     id: 'vision-mission',
-    modules: ['vision'] as ModuleId[],
+    modules: ['vision', 'mission', 'career-options'] as ModuleId[],
     icon: Eye,
     color: 'from-purple-500 to-pink-500',
     bgColor: 'bg-purple-50',
@@ -344,7 +344,7 @@ export const HomePage: React.FC = () => {
         <section className="mb-20">
           <div className="text-center mb-10">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {language === 'ko' ? '8개의 모듈' : '8 Modules'}
+              {language === 'ko' ? '10개의 모듈' : '10 Modules'}
             </h3>
             <p className="text-gray-600">
               {language === 'ko'
@@ -382,8 +382,8 @@ export const HomePage: React.FC = () => {
           </h3>
           <p className="text-gray-600 mb-8 max-w-xl mx-auto">
             {language === 'ko'
-              ? '무료로 시작하여 나만의 커리어 로드맵을 만들어보세요. 8단계 여정이 당신의 잠재력을 발견하는 데 도움을 드릴 것입니다.'
-              : 'Start for free and create your own career roadmap. The 8-step journey will help you discover your potential.'}
+              ? '무료로 시작하여 나만의 커리어 로드맵을 만들어보세요. 10단계 여정이 당신의 잠재력을 발견하는 데 도움을 드릴 것입니다.'
+              : 'Start for free and create your own career roadmap. The 10-step journey will help you discover your potential.'}
           </p>
           {isAuthenticated ? (
             <Link

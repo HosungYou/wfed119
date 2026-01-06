@@ -2,357 +2,242 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, CheckCircle2, Circle, ArrowRight, LayoutDashboard, Target, Heart, Sparkles } from 'lucide-react';
+import { Loader2, ArrowRight, Home, CheckCircle, Circle, Eye, Heart, Target, Sparkles } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
+import { useLanguage } from '@/lib/i18n';
+import { ModuleShell, ModuleCard, ModuleButton } from '@/components/modules';
 
-interface ModuleProgress {
-  values: {
-    completed: boolean;
-    progress: number;
-    details: {
-      terminal: boolean;
-      instrumental: boolean;
-      work: boolean;
-    };
-  };
-  strengths: {
-    completed: boolean;
-    progress: number;
-  };
+interface ModuleStatus {
+  values: boolean;
+  strengths: boolean;
+  enneagram: boolean;
+  lifeThemes: boolean;
   vision: {
-    completed: boolean;
-    progress: number;
+    started: boolean;
     currentStep: number;
+    completed: boolean;
   };
 }
 
 export default function VisionModuleLanding() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
-  const [moduleProgress, setModuleProgress] = useState<ModuleProgress | null>(null);
-  const { startModule } = useModuleProgress('vision');
+  const [status, setStatus] = useState<ModuleStatus | null>(null);
+  const { startModule, canStartModule } = useModuleProgress('vision');
 
   useEffect(() => {
-    startModule();
-    fetchModuleProgress();
-  }, [startModule]);
+    checkStatus();
+  }, []);
 
-  async function fetchModuleProgress() {
+  async function checkStatus() {
     try {
-      // Fetch prerequisites check
-      const prereqResponse = await fetch('/api/discover/vision/check-prerequisites');
-      const prereqData = await prereqResponse.json();
+      const prereqRes = await fetch('/api/discover/vision/check-prerequisites');
+      const prereqData = await prereqRes.json();
 
-      // Fetch vision session to check progress
-      const sessionResponse = await fetch('/api/discover/vision/session');
-      const sessionData = await sessionResponse.json();
+      const sessionRes = await fetch('/api/discover/vision/session');
+      const sessionData = await sessionRes.json();
 
-      setModuleProgress({
-        values: {
-          completed: prereqData.values || false,
-          progress: prereqData.values ? 100 : 0,
-          details: {
-            terminal: prereqData.valuesDetails?.terminal || false,
-            instrumental: prereqData.valuesDetails?.instrumental || false,
-            work: prereqData.valuesDetails?.work || false,
-          }
-        },
-        strengths: {
-          completed: prereqData.strengths || false,
-          progress: prereqData.strengths ? 100 : 0,
-        },
+      setStatus({
+        values: prereqData.values || false,
+        strengths: prereqData.strengths || false,
+        enneagram: prereqData.enneagram || false,
+        lifeThemes: prereqData.lifeThemes || false,
         vision: {
-          completed: sessionData.is_completed || false,
-          progress: ((sessionData.current_step || 0) / 3) * 100,
+          started: sessionData.current_step > 0,
           currentStep: sessionData.current_step || 0,
-        }
+          completed: sessionData.is_completed || false,
+        },
       });
-
       setLoading(false);
     } catch (error) {
-      console.error('[Vision Landing] Error fetching progress:', error);
+      console.error('[Vision Landing] Error:', error);
       setLoading(false);
+    }
+  }
+
+  async function handleStart() {
+    await startModule();
+    router.push('/discover/vision/time-horizon');
+  }
+
+  async function handleContinue() {
+    const step = status?.vision.currentStep || 1;
+    const routes = ['time-horizon', 'future-imagery', 'core-aspirations', 'step4-dreams', 'vision-statement'];
+    router.push(`/discover/vision/${routes[step - 1] || routes[0]}`);
+  }
+
+  async function handleRestart() {
+    if (!confirm(language === 'ko'
+      ? '새로 시작하시겠습니까? 현재 진행 상황이 초기화됩니다.'
+      : 'Start fresh? Your current progress will be reset.')) {
+      return;
+    }
+    try {
+      await fetch('/api/discover/vision/session', { method: 'DELETE' });
+      await startModule();
+      router.push('/discover/vision/time-horizon');
+    } catch (error) {
+      console.error('[Vision Landing] Reset error:', error);
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading module status...</p>
+          <p className="text-gray-600">
+            {language === 'ko' ? '로딩 중...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  const canProceed = moduleProgress?.values.completed && moduleProgress?.strengths.completed;
-  const hasStartedVision = (moduleProgress?.vision.currentStep || 0) > 0;
-
-  async function startNewSession() {
-    if (!confirm('Are you sure you want to start a new vision session? This will reset your current progress.')) {
-      return;
-    }
-
-    try {
-      // Reset vision session
-      await fetch('/api/discover/vision/session', {
-        method: 'DELETE'
-      });
-
-      alert('Session reset successfully! Starting fresh.');
-      router.push('/discover/vision/time-horizon');
-    } catch (error) {
-      console.error('[Vision Landing] Error resetting session:', error);
-      alert('Failed to reset session. Please try again.');
-    }
-  }
+  const hasStarted = status?.vision.started;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
-      <div className="max-w-4xl mx-auto py-8">
-        {/* Header */}
+    <ModuleShell moduleId="vision" showProgress={false}>
+      <div className="max-w-3xl mx-auto">
+        {/* Module Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🎯</span>
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Eye className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-3">
-            Vision Statement Module
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            {language === 'ko' ? '비전 & 꿈' : 'Vision & Dreams'}
           </h1>
-          <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">
-            Craft your personal vision statement through a guided 3-step process with AI assistance.
+          <p className="text-gray-600 text-lg max-w-xl mx-auto">
+            {language === 'ko'
+              ? '당신의 가치관과 강점을 바탕으로 미래 비전과 꿈의 매트릭스를 작성합니다.'
+              : 'Craft your future vision and dreams matrix based on your values and strengths.'}
           </p>
         </div>
 
-        {/* Overall Progress Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Your Progress</h2>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-purple-600 transition-colors"
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-sm font-medium">Dashboard</span>
-            </button>
-          </div>
+        {/* Prerequisites Card */}
+        <ModuleCard className="mb-6" padding="normal">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {language === 'ko' ? '선수 모듈 상태' : 'Prerequisites Status'}
+          </h2>
 
-          {/* Module Progress Grid */}
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            {/* Values Module */}
-            <div className={`p-4 rounded-xl border-2 transition-all ${
-              moduleProgress?.values.completed
-                ? 'bg-green-50 border-green-300'
-                : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Heart className={`w-5 h-5 ${moduleProgress?.values.completed ? 'text-green-600' : 'text-gray-400'}`} />
-                  <h3 className="font-semibold text-sm">Values</h3>
-                </div>
-                {moduleProgress?.values.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-
-              {moduleProgress?.values.completed ? (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-green-700">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Terminal Values</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-green-700">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Instrumental Values</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-green-700">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Work Values</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500">Not completed</p>
-              )}
-            </div>
-
-            {/* Strengths Module */}
-            <div className={`p-4 rounded-xl border-2 transition-all ${
-              moduleProgress?.strengths.completed
-                ? 'bg-green-50 border-green-300'
-                : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Target className={`w-5 h-5 ${moduleProgress?.strengths.completed ? 'text-green-600' : 'text-gray-400'}`} />
-                  <h3 className="font-semibold text-sm">Strengths</h3>
-                </div>
-                {moduleProgress?.strengths.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-
-              {moduleProgress?.strengths.completed ? (
-                <p className="text-xs text-green-700">✓ Discovery completed</p>
-              ) : (
-                <p className="text-xs text-gray-500">Not completed</p>
-              )}
-            </div>
-
-            {/* Vision Module */}
-            <div className={`p-4 rounded-xl border-2 transition-all ${
-              moduleProgress?.vision.completed
-                ? 'bg-purple-50 border-purple-300'
-                : moduleProgress?.vision.currentStep > 0
-                ? 'bg-blue-50 border-blue-300'
-                : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className={`w-5 h-5 ${
-                    moduleProgress?.vision.completed ? 'text-purple-600' :
-                    moduleProgress?.vision.currentStep > 0 ? 'text-blue-600' :
-                    'text-gray-400'
-                  }`} />
-                  <h3 className="font-semibold text-sm">Vision</h3>
-                </div>
-                {moduleProgress?.vision.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-purple-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-
-              {moduleProgress?.vision.completed ? (
-                <p className="text-xs text-purple-700">✓ Vision complete</p>
-              ) : moduleProgress?.vision.currentStep > 0 ? (
-                <div>
-                  <p className="text-xs text-blue-700 mb-2">Step {moduleProgress.vision.currentStep}/3</p>
-                  <div className="bg-blue-200 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-full transition-all"
-                      style={{ width: `${moduleProgress.vision.progress}%` }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500">Not started</p>
-              )}
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-              <span>Overall Readiness</span>
-              <span className="font-semibold">
-                {canProceed ? '100%' : `${Math.round(((moduleProgress?.values.progress || 0) + (moduleProgress?.strengths.progress || 0)) / 2)}%`}
-              </span>
-            </div>
-            <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { key: 'values', icon: Heart, label: language === 'ko' ? '가치관' : 'Values', done: status?.values },
+              { key: 'strengths', icon: Target, label: language === 'ko' ? '강점' : 'Strengths', done: status?.strengths },
+              { key: 'enneagram', icon: Sparkles, label: language === 'ko' ? '에니어그램' : 'Enneagram', done: status?.enneagram },
+              { key: 'life-themes', icon: Sparkles, label: language === 'ko' ? '생애주제' : 'Life Themes', done: status?.lifeThemes },
+            ].map((item) => (
               <div
-                className="bg-gradient-to-r from-purple-600 to-blue-600 h-full transition-all duration-500"
-                style={{ width: canProceed ? '100%' : `${Math.round(((moduleProgress?.values.progress || 0) + (moduleProgress?.strengths.progress || 0)) / 2)}%` }}
-              />
-            </div>
+                key={item.key}
+                className={`p-3 rounded-lg border-2 text-center ${
+                  item.done ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 mx-auto mb-1 ${item.done ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className="text-xs font-medium block truncate">{item.label}</span>
+                {item.done ? (
+                  <CheckCircle className="w-4 h-4 text-green-600 mx-auto mt-1" />
+                ) : (
+                  <Circle className="w-4 h-4 text-gray-300 mx-auto mt-1" />
+                )}
+              </div>
+            ))}
           </div>
 
-          {canProceed && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <p className="text-sm text-green-800">
-                ✓ You're all set! Your values and strengths data will personalize your vision discovery.
+          {!status?.lifeThemes && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                {language === 'ko'
+                  ? '💡 이전 모듈을 완료하면 더 개인화된 비전을 작성할 수 있습니다.'
+                  : '💡 Complete previous modules for a more personalized vision experience.'}
               </p>
             </div>
           )}
-        </div>
+        </ModuleCard>
 
-        {/* Prerequisites Info */}
-        {!canProceed && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
-            <h3 className="font-semibold text-blue-900 mb-3">💡 Why complete Values & Strengths first?</h3>
-            <p className="text-sm text-blue-800 leading-relaxed mb-4">
-              Your vision statement is most powerful when built on your core values and unique strengths.
-              The AI coach uses this data to provide personalized guidance and meaningful questions.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {!moduleProgress?.values.completed && (
-                <a
-                  href="/discover/values"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Heart className="w-4 h-4" />
-                  Start Values Discovery
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              )}
-              {!moduleProgress?.strengths.completed && (
-                <a
-                  href="/discover/strengths"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Target className="w-4 h-4" />
-                  Start Strengths Discovery
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              )}
-            </div>
+        {/* Steps Overview */}
+        <ModuleCard className="mb-6" padding="normal">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {language === 'ko' ? '5단계 과정' : '5-Step Process'}
+          </h2>
+
+          <div className="space-y-3">
+            {[
+              { step: 1, title: language === 'ko' ? '시간 지평선' : 'Time Horizon', desc: language === 'ko' ? '3년, 5년, 10년 중 선택' : 'Choose 3, 5, or 10 years' },
+              { step: 2, title: language === 'ko' ? '미래 이미지' : 'Future Imagery', desc: language === 'ko' ? '미래의 당신을 상상합니다' : 'Visualize your future self' },
+              { step: 3, title: language === 'ko' ? '핵심 열망' : 'Core Aspirations', desc: language === 'ko' ? '가장 중요한 열망을 정의합니다' : 'Define your most important aspirations' },
+              { step: 4, title: language === 'ko' ? '꿈 매트릭스' : 'Dreams Matrix', desc: language === 'ko' ? '7가지 웰빙 영역별 꿈 작성' : 'Map dreams across 7 wellbeing dimensions' },
+              { step: 5, title: language === 'ko' ? '비전 선언문' : 'Vision Statement', desc: language === 'ko' ? 'AI와 함께 비전 선언문 작성' : 'Craft your vision statement with AI' },
+            ].map((item) => (
+              <div
+                key={item.step}
+                className={`flex items-center gap-4 p-3 rounded-lg ${
+                  status?.vision.currentStep >= item.step
+                    ? 'bg-purple-50 border border-purple-200'
+                    : 'bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                  status?.vision.currentStep > item.step
+                    ? 'bg-purple-500 text-white'
+                    : status?.vision.currentStep === item.step
+                    ? 'bg-purple-100 text-purple-700 border-2 border-purple-500'
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {status?.vision.currentStep > item.step ? '✓' : item.step}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.title}</p>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </ModuleCard>
 
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          {/* Primary Action */}
-          <button
-            onClick={() => router.push(
-              hasStartedVision
-                ? `/discover/vision/step${moduleProgress?.vision.currentStep}`
-                : '/discover/vision/time-horizon'
-            )}
-            className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+        {/* Actions */}
+        <div className="space-y-3">
+          {hasStarted ? (
+            <>
+              <ModuleButton
+                onClick={handleContinue}
+                size="large"
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                {language === 'ko' ? `계속하기 (${status?.vision.currentStep}단계)` : `Continue (Step ${status?.vision.currentStep})`}
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </ModuleButton>
+              <ModuleButton
+                onClick={handleRestart}
+                variant="secondary"
+                className="w-full"
+              >
+                {language === 'ko' ? '새로 시작' : 'Start Fresh'}
+              </ModuleButton>
+            </>
+          ) : (
+            <ModuleButton
+              onClick={handleStart}
+              size="large"
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              disabled={!canStartModule}
+            >
+              {language === 'ko' ? '비전 작성 시작' : 'Start Vision Journey'}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </ModuleButton>
+          )}
+
+          <ModuleButton
+            onClick={() => router.push('/')}
+            variant="ghost"
+            className="w-full"
           >
-            <Sparkles className="w-6 h-6" />
-            {hasStartedVision ? `Continue Vision Statement (Step ${moduleProgress?.vision.currentStep})` :
-             canProceed ? 'Start Vision Statement' :
-             'Start Vision Statement Anyway'}
-            <ArrowRight className="w-6 h-6" />
-          </button>
-
-          {!canProceed && !hasStartedVision && (
-            <p className="text-center text-sm text-gray-500">
-              You can start now, but we recommend completing Values & Strengths first for the best experience.
-            </p>
-          )}
-
-          {/* Secondary Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Go to Dashboard
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-            >
-              Back to Home
-            </button>
-          </div>
-
-          {/* Start New Session (only show if has started) */}
-          {hasStartedVision && (
-            <button
-              onClick={startNewSession}
-              className="w-full px-6 py-3 bg-white border-2 border-red-300 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors"
-            >
-              Start New Session
-            </button>
-          )}
+            <Home className="w-4 h-4 mr-2" />
+            {language === 'ko' ? '홈으로' : 'Back to Home'}
+          </ModuleButton>
         </div>
       </div>
-    </div>
+    </ModuleShell>
   );
 }

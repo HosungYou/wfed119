@@ -46,6 +46,8 @@ export default function GoalObjectivesPage() {
   const [swotStrategies, setSwotStrategies] = useState<SwotStrategies | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [showStrategies, setShowStrategies] = useState(false);
+  const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
     isOpen: false,
     roleId: null,
@@ -79,6 +81,15 @@ export default function GoalObjectivesPage() {
       // Set first role as expanded
       if (rolesData.length > 0) {
         setExpandedRole(rolesData[0].id);
+      }
+
+      // Fetch goal session duration
+      const sessionRes = await fetch('/api/goals/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData?.duration_months === 3 || sessionData?.duration_months === 6 || sessionData?.duration_months === 12) {
+          setDurationMonths(sessionData.duration_months);
+        }
       }
 
       // Fetch SWOT strategies
@@ -172,6 +183,41 @@ export default function GoalObjectivesPage() {
         };
       }),
     }));
+  }
+
+  async function handleSuggestObjective(role: Role, objIndex: number) {
+    const key = `${role.id}-${objIndex}`;
+    setAiLoading(prev => ({ ...prev, [key]: true }));
+    setError(null);
+
+    try {
+      const obj = objectives[role.id]?.[objIndex];
+      const res = await fetch('/api/goals/ai/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'objective',
+          roleName: role.role_name,
+          roleDescription: role.role_description,
+          swotStrategies: obj?.related_swot_strategies || [],
+          durationMonths,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate suggestion.');
+      }
+
+      const data = await res.json();
+      if (data?.suggestion) {
+        updateObjective(role.id, objIndex, data.suggestion);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI suggestion failed.');
+    } finally {
+      setAiLoading(prev => ({ ...prev, [key]: false }));
+    }
   }
 
   async function handleSave() {
@@ -331,6 +377,15 @@ export default function GoalObjectivesPage() {
                             rows={2}
                             className="w-full border border-gray-200 rounded-lg p-3 text-gray-700 focus:border-purple-500 outline-none resize-none"
                           />
+                          <div className="mt-2">
+                            <button
+                              onClick={() => handleSuggestObjective(role, index)}
+                              className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
+                              disabled={aiLoading[`${role.id}-${index}`]}
+                            >
+                              {aiLoading[`${role.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                            </button>
+                          </div>
                         </div>
                         {objectives[role.id].length > 1 && (
                           <button

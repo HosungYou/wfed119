@@ -282,7 +282,7 @@ export const HomePage: React.FC = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <ModuleCard
                   title="Goal Setting (OKR)"
-                  description="OKR-based role-focused goal setting with 7 principles"
+                  description="OKR-based role-focused goal setting with core principles"
                   icon={<Target className="w-6 h-6" />}
                   color="primary"
                   duration="30-40 minutes"

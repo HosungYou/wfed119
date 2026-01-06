@@ -12,11 +12,7 @@ interface Reflection {
 
 const REFLECTION_ORDER: ReflectionType[] = [
   'identity_alignment',
-  'deliberation',
-  'incompleteness',
-  'diversity',
   'connectivity',
-  'feasibility',
   'execution_ease',
 ];
 
@@ -110,6 +106,7 @@ export default function GoalReflectionPage() {
     }
   }
 
+  const totalPrinciples = REFLECTION_ORDER.length;
   const completedCount = REFLECTION_ORDER.filter(type => reflections[type].trim().length >= 20).length;
 
   if (loading) {
@@ -138,8 +135,8 @@ export default function GoalReflectionPage() {
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">5. Seven Principles of Goal Setting</h1>
-              <p className="text-sm text-gray-500">Reflect on each principle and record your thoughts</p>
+              <h1 className="text-2xl font-bold text-gray-900">5. Core Principles of Goal Setting</h1>
+              <p className="text-sm text-gray-500">Focus on the three most impactful principles</p>
             </div>
           </div>
         </div>
@@ -148,12 +145,12 @@ export default function GoalReflectionPage() {
         <div className="bg-white rounded-xl shadow-md p-4 mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Reflection Progress</span>
-            <span className="text-sm text-purple-600 font-bold">{completedCount}/7</span>
+            <span className="text-sm text-purple-600 font-bold">{completedCount}/{totalPrinciples}</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-              style={{ width: `${(completedCount / 7) * 100}%` }}
+              style={{ width: `${(completedCount / totalPrinciples) * 100}%` }}
             />
           </div>
         </div>
@@ -226,7 +223,7 @@ export default function GoalReflectionPage() {
                       }`}>
                         {reflections[type].length} chars / min. 20
                       </span>
-                      {index < 6 && (
+                      {index < totalPrinciples - 1 && (
                         <button
                           onClick={() => setExpandedPrinciple(REFLECTION_ORDER[index + 1])}
                           className="text-sm text-purple-600 hover:text-purple-700"
@@ -246,7 +243,7 @@ export default function GoalReflectionPage() {
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 mb-6 text-white">
           <h2 className="font-bold text-lg mb-2">Goal Setting Complete!</h2>
           <p className="text-sm text-purple-100 mb-4">
-            Through OKR-based goal setting, you have established specific goals and action plans for each role in your life.
+            You have established OKR-based goals and action plans focused on core alignment, connection, and execution ease.
             Regularly review your progress and adjust as needed.
           </p>
           <div className="grid grid-cols-3 gap-3 text-center">
@@ -255,7 +252,7 @@ export default function GoalReflectionPage() {
               <div className="text-xs">Framework</div>
             </div>
             <div className="bg-white/20 rounded-lg p-2">
-              <div className="text-xl font-bold">7</div>
+              <div className="text-xl font-bold">3</div>
               <div className="text-xs">Principles</div>
             </div>
             <div className="bg-white/20 rounded-lg p-2">

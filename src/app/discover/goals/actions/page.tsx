@@ -41,6 +41,8 @@ export default function GoalActionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [actionPlans, setActionPlans] = useState<Record<string, ActionPlan[]>>({});
   const [expandedKR, setExpandedKR] = useState<string | null>(null);
+  const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchData();
@@ -51,6 +53,14 @@ export default function GoalActionsPage() {
       const res = await fetch('/api/goals/roles');
       const rolesData = await res.json();
       setRoles(rolesData);
+
+      const sessionRes = await fetch('/api/goals/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData?.duration_months === 3 || sessionData?.duration_months === 6 || sessionData?.duration_months === 12) {
+          setDurationMonths(sessionData.duration_months);
+        }
+      }
 
       // Initialize action plans from key results
       const apMap: Record<string, ActionPlan[]> = {};
@@ -152,6 +162,39 @@ export default function GoalActionsPage() {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSuggestAction(role: Role, kr: KeyResult, index: number) {
+    const key = `${kr.id}-${index}`;
+    setAiLoading(prev => ({ ...prev, [key]: true }));
+    setError(null);
+
+    try {
+      const res = await fetch('/api/goals/ai/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'action',
+          roleName: role.role_name,
+          keyResultText: kr.key_result_text,
+          durationMonths,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate suggestion.');
+      }
+
+      const data = await res.json();
+      if (data?.suggestion) {
+        updateAction(kr.id, index, { action_text: data.suggestion });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI suggestion failed.');
+    } finally {
+      setAiLoading(prev => ({ ...prev, [key]: false }));
     }
   }
 
@@ -269,6 +312,13 @@ export default function GoalActionsPage() {
                                 ap.is_completed ? 'line-through text-gray-400' : ''
                               }`}
                             />
+                            <button
+                              onClick={() => handleSuggestAction(role, kr, index)}
+                              className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
+                              disabled={aiLoading[`${kr.id}-${index}`]}
+                            >
+                              {aiLoading[`${kr.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                            </button>
 
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-gray-400" />

@@ -64,7 +64,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { swot_analysis_id, status } = body;
+    const { swot_analysis_id, status, duration_months } = body;
+
+    const allowedDurations = new Set([3, 6, 12]);
+    if (duration_months !== undefined && !allowedDurations.has(Number(duration_months))) {
+      return NextResponse.json({ error: 'duration_months must be 3, 6, or 12' }, { status: 400 });
+    }
 
     // Check if session exists
     const { data: existingSession } = await supabase
@@ -79,6 +84,7 @@ export async function POST(req: NextRequest) {
       // Update existing session
       const updateData: Partial<GoalSettingSession> = {};
       if (status) updateData.status = status as GoalSessionStatus;
+      if (duration_months !== undefined) updateData.duration_months = Number(duration_months);
       if (status === 'completed') updateData.completed_at = new Date().toISOString();
 
       const { data, error } = await supabase
@@ -117,6 +123,7 @@ export async function POST(req: NextRequest) {
           user_id: auth.userId,
           swot_analysis_id: swot_analysis_id,
           status: 'in_progress',
+          duration_months: duration_months ? Number(duration_months) : 6,
         })
         .select()
         .single();

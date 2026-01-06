@@ -41,6 +41,65 @@ export interface ResponseValidation {
 }
 
 export class AIService {
+  async generateGoalSuggestion(prompt: string): Promise<string> {
+    const systemPrompt = [
+      'You are a goal-setting coach for personal OKRs.',
+      'Return a single concise suggestion in the same language as the prompt.',
+      'Do not add bullet points or extra commentary.',
+    ].join(' ');
+
+    if (anthropic) {
+      try {
+        const completion = await anthropic.messages.create({
+          model: "claude-3-haiku-20240307",
+          messages: [{ role: 'user', content: prompt }],
+          system: systemPrompt,
+          max_tokens: 120,
+          temperature: 0.4,
+        });
+
+        const response = completion.content[0];
+        if (response.type === 'text') {
+          return response.text.trim();
+        }
+        throw new Error('Unexpected response format from Claude');
+      } catch (error) {
+        console.error('Claude Goal Suggestion Error:', error);
+        if (openai) {
+          return this.generateOpenAIGoalSuggestion(systemPrompt, prompt);
+        }
+        throw error;
+      }
+    }
+
+    if (openai) {
+      return this.generateOpenAIGoalSuggestion(systemPrompt, prompt);
+    }
+
+    throw new Error('No AI service configured. Please add ANTHROPIC_API_KEY or OPENAI_API_KEY to your environment.');
+  }
+
+  private async generateOpenAIGoalSuggestion(systemPrompt: string, prompt: string): Promise<string> {
+    if (!openai) {
+      throw new Error('OpenAI client not initialized.');
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.4,
+      max_completion_tokens: 120,
+    }, {
+      timeout: 6000,
+    });
+
+    return completion.choices[0].message.content?.trim()
+      || 'Suggestion unavailable. Please try again.';
+  }
+
   private validateUserResponse(message: string, stage: SessionContext['stage']): ResponseValidation {
     // Check if response is too short
     if (message.length < 30) {

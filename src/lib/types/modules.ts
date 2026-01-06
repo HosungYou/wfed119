@@ -95,7 +95,7 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
   goals: {
     id: 'goals',
     name: 'Goal Setting (OKR)',
-    description: 'OKR-based role-focused goal setting with 7 principles',
+    description: 'OKR-based role-focused goal setting with core principles',
     route: '/discover/goals',
     dependencies: [
       { moduleId: 'swot', required: true, dataFields: ['strategies', 'goals'] },

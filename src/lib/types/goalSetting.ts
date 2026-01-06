@@ -20,6 +20,7 @@ export interface GoalSettingSession {
   user_id: string;
   swot_analysis_id: string;
   status: GoalSessionStatus;
+  duration_months: number;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -121,10 +122,12 @@ export interface GoalSettingSessionFull extends GoalSettingSession {
 // Session
 export interface CreateGoalSessionRequest {
   swot_analysis_id: string;
+  duration_months?: number;
 }
 
 export interface UpdateGoalSessionRequest {
   status?: GoalSessionStatus;
+  duration_months?: number;
 }
 
 // Roles
@@ -236,10 +239,8 @@ export type GoalSettingStage =
 
 export const DEFAULT_ROLES = [
   { role_number: 1, role_name: 'Wellbeing/Self-Care', is_wellbeing: true },
-  { role_number: 2, role_name: 'Family', is_wellbeing: false },
-  { role_number: 3, role_name: 'Career/Work', is_wellbeing: false },
-  { role_number: 4, role_name: 'Social Relationships', is_wellbeing: false },
-  { role_number: 5, role_name: 'Personal Growth', is_wellbeing: false },
+  { role_number: 2, role_name: 'Career/Work', is_wellbeing: false },
+  { role_number: 3, role_name: 'Personal Growth', is_wellbeing: false },
 ];
 
 export const REFLECTION_LABELS: Record<ReflectionType, { title: string; description: string }> = {

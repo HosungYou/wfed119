@@ -29,11 +29,11 @@ interface GoalProgress {
 }
 
 const STAGES = [
-  { id: 'roles', name: 'Role Setup', icon: Users, description: 'Define 5-7 life roles' },
+  { id: 'roles', name: 'Role Setup', icon: Users, description: 'Define 2-7 life roles' },
   { id: 'objectives', name: 'Objectives', icon: Target, description: 'Set OKR-based goals' },
   { id: 'key-results', name: 'Key Results', icon: Compass, description: 'Define measurable outcomes' },
   { id: 'actions', name: 'Action Plans', icon: ClipboardCheck, description: 'Create specific action items' },
-  { id: 'reflection', name: '7 Principles', icon: Sparkles, description: 'Reflect on goal-setting principles' },
+  { id: 'reflection', name: '3 Principles', icon: Sparkles, description: 'Reflect on core goal-setting principles' },
 ];
 
 export default function GoalSettingModuleLanding() {
@@ -41,6 +41,7 @@ export default function GoalSettingModuleLanding() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<GoalProgress | null>(null);
   const [canStart, setCanStart] = useState(false);
+  const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
   const { startModule } = useModuleProgress('goals');
 
   useEffect(() => {
@@ -76,6 +77,9 @@ export default function GoalSettingModuleLanding() {
       };
 
       setProgress(goalProgress);
+      if (goalsData?.duration_months === 3 || goalsData?.duration_months === 6 || goalsData?.duration_months === 12) {
+        setDurationMonths(goalsData.duration_months);
+      }
       // SWOT must be completed to start Goal Setting
       setCanStart(goalProgress.swot.completed || goalProgress.swot.hasStrategies);
       setLoading(false);
@@ -111,7 +115,7 @@ export default function GoalSettingModuleLanding() {
       const res = await fetch('/api/goals/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ swot_analysis_id: swotData.id }),
+        body: JSON.stringify({ swot_analysis_id: swotData.id, duration_months: durationMonths }),
       });
 
       if (res.ok) {
@@ -125,7 +129,13 @@ export default function GoalSettingModuleLanding() {
   function handleContinue() {
     const currentStage = getStageProgress();
     const routes = ['roles', 'objectives', 'key-results', 'actions', 'reflection'];
-    router.push(`/discover/goals/${routes[Math.min(currentStage, routes.length - 1)]}`);
+    fetch('/api/goals/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ duration_months: durationMonths }),
+    }).finally(() => {
+      router.push(`/discover/goals/${routes[Math.min(currentStage, routes.length - 1)]}`);
+    });
   }
 
   if (loading) {
@@ -237,22 +247,39 @@ export default function GoalSettingModuleLanding() {
           </div>
         </div>
 
-        {/* 7 Principles Card */}
+        {/* Core Principles Card */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg p-6 mb-6 text-white">
-          <h2 className="text-lg font-semibold mb-4">7 Principles of Goal Setting</h2>
+          <h2 className="text-lg font-semibold mb-4">Core Principles of Goal Setting</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              'Identity',
-              'Deliberation',
-              'Incompleteness',
-              'Diversity',
-              'Connection',
-              'Feasibility',
+              'Identity Alignment',
+              'Bigger Picture',
               'Ease of Execution',
             ].map((principle, i) => (
               <div key={i} className="bg-white/20 rounded-lg px-3 py-2 text-sm text-center">
                 {i + 1}. {principle}
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Duration Selector */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Goal Horizon</h2>
+          <p className="text-sm text-gray-600 mb-4">Choose a realistic time frame for this OKR cycle.</p>
+          <div className="flex flex-wrap gap-3">
+            {[3, 6, 12].map((months) => (
+              <button
+                key={months}
+                onClick={() => setDurationMonths(months as 3 | 6 | 12)}
+                className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                  durationMonths === months
+                    ? 'bg-purple-600 text-white border-purple-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-purple-400'
+                }`}
+              >
+                {months} months
+              </button>
             ))}
           </div>
         </div>

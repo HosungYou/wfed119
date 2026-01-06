@@ -84,8 +84,8 @@ export default function GoalRolesPage() {
       setError('The Wellbeing role cannot be deleted.');
       return;
     }
-    if (roles.length <= 3) {
-      setError('At least 3 roles are required.');
+    if (roles.length <= 2) {
+      setError('At least 2 roles are required.');
       return;
     }
     // Show confirmation dialog
@@ -177,7 +177,7 @@ export default function GoalRolesPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">1. Role Setup</h1>
-              <p className="text-sm text-gray-500">Define 5-7 important roles in your life</p>
+              <p className="text-sm text-gray-500">Define 2-7 important roles in your life</p>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function GoalRolesPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-800">
             <strong>Tip:</strong> The first role is always &quot;Wellbeing/Self-Care&quot;.
-            Add other roles like Family, Career, Social Relationships, etc.
+            Add only the roles that feel most important right now (e.g., Career, Family, Personal Growth).
             The sum of allocations must equal 100%.
           </p>
         </div>

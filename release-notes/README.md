@@ -12,25 +12,25 @@ release-notes/
 ├── v2.0/                       # Version 2.x Documentation
 │   ├── README.md               # Major feature release details
 │   ├── UPGRADE_NOTES.md        # Technical upgrade guide
-│   ├── v2.8.7.md               # Supabase auth + Vision/Enneagram fixes
+│   ├── v2.8.8.md               # Goal setting horizon + AI suggestions
 │   └── ...                     # Previous v2.x releases
 ```
 
 ## 🚀 Version Overview
 
-### [v2.8.7](v2.0/v2.8.7.md) - Current Release
-**Release Date**: January 5, 2026
-**Type**: Patch Release + Critical Bug Fixes
+### [v2.8.8](v2.0/v2.8.8.md) - Current Release
+**Release Date**: January 6, 2026
+**Type**: Patch Release + UX Enhancements
 
 **Key Highlights:**
-- 🔐 **Supabase Auth Unification** with new `/login` and removed NextAuth
-- 🧭 **Vision API Promotion** from `discover 2` to `discover` with real Supabase tables
-- 🧠 **Enneagram Persistence** across all stages with scoring + export
-- 💬 **Streaming Chat Persistence** to `conversation_messages` and `strength_profiles`
-- 🧰 **Admin RLS Fixes** using service role for stats/export endpoints
+- 🧭 **Goal Horizon Selector** for 3/6/12 month OKR cycles
+- ✨ **Reflection Simplified** to 3 core principles
+- 🤖 **AI Suggestions** for Objectives, Key Results, and Actions
+- 🧩 **Role Setup Simplified** with fewer defaults and 2-7 range
+- 🧾 **Goal Session Column** added for duration persistence
 
-**Breaking Changes**: Yes - NextAuth removed; Supabase auth env vars required
-**Migration Required**: Yes - apply new migrations + Supabase env config
+**Breaking Changes**: No
+**Migration Required**: Yes - apply goal duration migration
 
 ### [v2.2.2](v2.2.2.md)
 **Release Date**: September 18, 2025
@@ -202,7 +202,15 @@ release-notes/
 ## 📅 Release History
 
 ```
-v2.8.7 (2026-01-05) ← Current Release
+v2.8.8 (2026-01-06) ← Current Release
+└── Goal Setting Flexibility
+    ├── Goal horizon selection (3/6/12 months)
+    ├── Reflection reduced to 3 principles
+    ├── AI suggestions for OKR stages
+    ├── Role setup simplified (2-7 roles)
+    └── Duration persistence on sessions
+
+v2.8.7 (2026-01-05)
 └── Supabase Auth + Persistence Fixes
     ├── Supabase OAuth login + NextAuth removal
     ├── Vision API promotion to /api/discover/vision
@@ -285,6 +293,6 @@ v1.0.0 (2025-01-15)
 
 **📝 Note**: Each version folder contains detailed release notes, upgrade instructions, and version-specific documentation. Always refer to the specific version documentation for accurate technical details and migration guidance.
 
-**🔄 Last Updated**: January 5, 2026
-**📊 Current Version**: v2.8.7
+**🔄 Last Updated**: January 6, 2026
+**📊 Current Version**: v2.8.8
 **👥 Maintained By**: WFED 119 Development Team

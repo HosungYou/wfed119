@@ -37,6 +37,8 @@ export default function GoalKeyResultsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [keyResults, setKeyResults] = useState<Record<string, KeyResult[]>>({});
   const [expandedObjective, setExpandedObjective] = useState<string | null>(null);
+  const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchData();
@@ -47,6 +49,14 @@ export default function GoalKeyResultsPage() {
       const res = await fetch('/api/goals/roles');
       const rolesData = await res.json();
       setRoles(rolesData);
+
+      const sessionRes = await fetch('/api/goals/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData?.duration_months === 3 || sessionData?.duration_months === 6 || sessionData?.duration_months === 12) {
+          setDurationMonths(sessionData.duration_months);
+        }
+      }
 
       // Initialize key results from objectives
       const krMap: Record<string, KeyResult[]> = {};
@@ -150,6 +160,39 @@ export default function GoalKeyResultsPage() {
       setError(err instanceof Error ? err.message : 'Saving...가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSuggestKeyResult(role: Role, obj: Objective, index: number) {
+    const key = `${obj.id}-${index}`;
+    setAiLoading(prev => ({ ...prev, [key]: true }));
+    setError(null);
+
+    try {
+      const res = await fetch('/api/goals/ai/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'key_result',
+          roleName: role.role_name,
+          objectiveText: obj.objective_text,
+          durationMonths,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate suggestion.');
+      }
+
+      const data = await res.json();
+      if (data?.suggestion) {
+        updateKeyResult(obj.id, index, { key_result_text: data.suggestion });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI suggestion failed.');
+    } finally {
+      setAiLoading(prev => ({ ...prev, [key]: false }));
     }
   }
 
@@ -264,6 +307,15 @@ export default function GoalKeyResultsPage() {
                           rows={2}
                           className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:border-purple-500 outline-none resize-none"
                         />
+                        <div>
+                          <button
+                            onClick={() => handleSuggestKeyResult(role, obj, index)}
+                            className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
+                            disabled={aiLoading[`${obj.id}-${index}`]}
+                          >
+                            {aiLoading[`${obj.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                          </button>
+                        </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>

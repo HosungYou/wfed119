@@ -20,7 +20,7 @@
       "subtitle": "AI-Powered Career Coaching",
       "title1": "Discover Yourself",
       "title2": "Design Your Future",
-      "description": "Discover your values, strengths, and personality through 8 modules. Build a clear vision and actionable goals."
+      "description": "Discover your values, strengths, and personality through 10 modules. Build a clear vision and actionable goals."
     },
     "cta": {
       "continueModule": "Continue {moduleName}",
@@ -29,7 +29,7 @@
     },
     "journey": {
       "title": "4-Part Journey",
-      "subtitle": "Complete 8 modules in sequence",
+      "subtitle": "Complete 10 modules in sequence",
       "flow": {
         "selfDiscovery": "Self-Discovery",
         "vision": "Vision",
@@ -41,7 +41,7 @@
       "title": "My Progress",
       "modulesCompleted": "{count} module completed",
       "modulesCompletedPlural": "{count} modules completed",
-      "outOf": "/ 8 total",
+      "outOf": "/ 10 total",
       "myJourney": "My Journey"
     },
     "parts": {
@@ -54,10 +54,10 @@
       },
       "2": {
         "number": "2",
-        "title": "Vision Setting",
+        "title": "Vision & Mission",
         "englishTitle": "Envision",
-        "description": "Design your dreams and vision statement",
-        "modules": "0/1 module"
+        "description": "Design your vision, mission, and career options",
+        "modules": "0/3 modules"
       },
       "3": {
         "number": "3",
@@ -134,6 +134,16 @@
       "name": "Vision Design",
       "shortName": "Vision",
       "description": "Create your vision statement and dream matrix"
+    },
+    "mission": {
+      "name": "Mission Statement",
+      "shortName": "Mission",
+      "description": "Define your life purpose and mission statement"
+    },
+    "career-options": {
+      "name": "Career Options",
+      "shortName": "Career",
+      "description": "Explore career paths aligned with your strengths and values"
     },
     "swot": {
       "name": "SWOT Analysis",

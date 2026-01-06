@@ -9,9 +9,14 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
+  hasConsent: boolean | null;
+  consentLoading: boolean;
+  needsConsent: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  checkConsent: () => Promise<boolean>;
+  markConsentComplete: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasConsent, setHasConsent] = useState<boolean | null>(null);
+  const [consentLoading, setConsentLoading] = useState(false);
 
   // Memoize supabase client to avoid recreation
   const supabase = useMemo(() => createSupabaseClient(), []);
@@ -135,14 +142,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
+  // Check if user has consent
+  const checkConsent = useCallback(async (): Promise<boolean> => {
+    if (!user) {
+      setHasConsent(null);
+      return false;
+    }
+
+    setConsentLoading(true);
+    try {
+      const res = await fetch('/api/auth/consent');
+      if (!res.ok) {
+        setHasConsent(false);
+        return false;
+      }
+
+      const data = await res.json();
+      const consentStatus = !!data.hasConsent;
+      setHasConsent(consentStatus);
+      return consentStatus;
+    } catch (error) {
+      console.error('[AuthContext] Error checking consent:', error);
+      setHasConsent(false);
+      return false;
+    } finally {
+      setConsentLoading(false);
+    }
+  }, [user]);
+
+  // Mark consent as complete (after successful consent submission)
+  const markConsentComplete = useCallback(() => {
+    setHasConsent(true);
+  }, []);
+
+  // Check consent when user changes
+  useEffect(() => {
+    if (user && hasConsent === null) {
+      checkConsent();
+    } else if (!user) {
+      setHasConsent(null);
+    }
+  }, [user, hasConsent, checkConsent]);
+
+  // Compute if user needs consent
+  const needsConsent = !!user && hasConsent === false && !consentLoading;
+
   const value: AuthContextType = {
     user,
     session,
     loading,
     isAuthenticated: !!user,
+    hasConsent,
+    consentLoading,
+    needsConsent,
     signInWithGoogle,
     signOut,
     refreshSession,
+    checkConsent,
+    markConsentComplete,
   };
 
   return (

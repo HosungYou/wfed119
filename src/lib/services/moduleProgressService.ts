@@ -40,9 +40,42 @@ import {
 
 export class ModuleProgressService {
   private userId: string;
+  private isAdminRole: boolean | null = null; // Cached admin check
 
   constructor(userId: string) {
     this.userId = userId;
+  }
+
+  // ============================================================================
+  // Admin Role Check
+  // ============================================================================
+
+  /**
+   * Check if the user has ADMIN or SUPER_ADMIN role
+   * Admins can access all modules without lock restrictions
+   */
+  async checkIsAdmin(): Promise<boolean> {
+    // Return cached result if available
+    if (this.isAdminRole !== null) {
+      return this.isAdminRole;
+    }
+
+    const supabase = await createServerSupabaseClient();
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', this.userId)
+      .single();
+
+    if (error || !data) {
+      console.warn('[ModuleProgressService] Could not fetch user role:', error);
+      this.isAdminRole = false;
+      return false;
+    }
+
+    this.isAdminRole = data.role === 'ADMIN' || data.role === 'SUPER_ADMIN';
+    return this.isAdminRole;
   }
 
   // ============================================================================
@@ -174,6 +207,7 @@ export class ModuleProgressService {
   /**
    * Check if user can start a module (LINEAR progression enforcement)
    * ALL previous modules must be completed
+   * ADMIN/SUPER_ADMIN users bypass lock restrictions
    */
   async canStartModule(moduleId: ModuleId): Promise<{
     canStart: boolean;
@@ -181,6 +215,7 @@ export class ModuleProgressService {
     completedModules: ModuleId[];
     nextModule: ModuleId | null;
     overallProgress: number;
+    isAdmin?: boolean;
   }> {
     const allProgress = await this.getAllProgress();
     const completedModules = new Set(
@@ -189,9 +224,23 @@ export class ModuleProgressService {
         .map(p => p.moduleId)
     );
 
-    const result = canStartModuleLinear(moduleId, completedModules);
     const nextMod = getNextModule(completedModules);
     const progress = getOverallProgress(completedModules);
+
+    // Admin bypass: allow access to all modules
+    const isAdmin = await this.checkIsAdmin();
+    if (isAdmin) {
+      return {
+        canStart: true,
+        missingPrerequisites: [],
+        completedModules: Array.from(completedModules),
+        nextModule: nextMod,
+        overallProgress: progress,
+        isAdmin: true,
+      };
+    }
+
+    const result = canStartModuleLinear(moduleId, completedModules);
 
     return {
       ...result,
@@ -231,6 +280,7 @@ export class ModuleProgressService {
 
   /**
    * Get journey status with all module states
+   * ADMIN/SUPER_ADMIN users see all modules as unlocked
    */
   async getJourneyStatus(): Promise<{
     modules: Array<{
@@ -247,6 +297,7 @@ export class ModuleProgressService {
     overallProgress: number;
     currentPart: string | null;
     nextModule: ModuleId | null;
+    isAdmin?: boolean;
   }> {
     const allProgress = await this.getAllProgress();
     const progressMap = new Map(allProgress.map(p => [p.moduleId, p]));
@@ -261,6 +312,9 @@ export class ModuleProgressService {
     const progress = getOverallProgress(completedModules);
     const part = getCurrentPart(completedModules);
 
+    // Check admin status for bypass
+    const isAdmin = await this.checkIsAdmin();
+
     const modules = MODULE_ORDER.map((moduleId, index) => {
       const config = MODULE_CONFIGS[moduleId];
       const moduleProgress = progressMap.get(moduleId);
@@ -271,7 +325,8 @@ export class ModuleProgressService {
         name: config.name,
         nameKo: config.nameKo,
         status: moduleProgress?.status || 'not_started',
-        isLocked: !canStart && moduleProgress?.status !== 'completed',
+        // Admin bypass: all modules unlocked for admin users
+        isLocked: isAdmin ? false : (!canStart && moduleProgress?.status !== 'completed'),
         isNext: moduleId === nextMod,
         order: index + 1,
         part: MODULE_PARTS[moduleId],
@@ -284,6 +339,7 @@ export class ModuleProgressService {
       overallProgress: progress,
       currentPart: part,
       nextModule: nextMod,
+      isAdmin,
     };
   }
 

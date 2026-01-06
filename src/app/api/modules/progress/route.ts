@@ -8,6 +8,7 @@ import { ModuleId, ModuleStatus, MODULE_CONFIGS, canStartModule } from '@/lib/ty
  * Get user's module progress (all or specific module)
  *
  * Optimized: Calculate canStart in memory instead of DB queries per module
+ * ADMIN/SUPER_ADMIN users bypass lock restrictions (canStart: true for all)
  */
 export async function GET(req: NextRequest) {
   try {
@@ -26,6 +27,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
+    // Check admin status for bypass
+    const isAdmin = await service.checkIsAdmin();
+
     // Get all progress first (single DB call)
     const allProgress = await service.getAllProgress();
 
@@ -43,8 +47,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         moduleId,
         progress,
-        canStart: canStart.canStart,
-        missingPrerequisites: canStart.missingPrerequisites,
+        // Admin bypass: always allow access
+        canStart: isAdmin ? true : canStart.canStart,
+        missingPrerequisites: isAdmin ? [] : canStart.missingPrerequisites,
+        isAdmin,
         config: {
           name: config.name,
           description: config.description,
@@ -68,8 +74,9 @@ export async function GET(req: NextRequest) {
           completionPercentage: 0,
           lastUpdatedAt: null,
         },
-        canStart: canStart.canStart,
-        missingPrerequisites: canStart.missingPrerequisites,
+        // Admin bypass: always allow access
+        canStart: isAdmin ? true : canStart.canStart,
+        missingPrerequisites: isAdmin ? [] : canStart.missingPrerequisites,
         config: {
           name: config.name,
           description: config.description,
@@ -83,6 +90,7 @@ export async function GET(req: NextRequest) {
       userId: user.id,
       modules: progressMap,
       completedModules: Array.from(completedModulesSet),
+      isAdmin,
     });
   } catch (error) {
     console.error('[API] GET /api/modules/progress error:', error);

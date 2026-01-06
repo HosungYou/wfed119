@@ -46,6 +46,7 @@ export default function GoalObjectivesPage() {
   const [swotStrategies, setSwotStrategies] = useState<SwotStrategies | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [showStrategies, setShowStrategies] = useState(false);
+  const [showWhy, setShowWhy] = useState(false);
   const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
@@ -63,7 +64,14 @@ export default function GoalObjectivesPage() {
     try {
       // Fetch roles
       const rolesRes = await fetch('/api/goals/roles');
+      if (!rolesRes.ok) {
+        const data = await rolesRes.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to load roles.');
+      }
       const rolesData = await rolesRes.json();
+      if (!Array.isArray(rolesData)) {
+        throw new Error('Roles data is invalid.');
+      }
       setRoles(rolesData);
 
       // Initialize objectives from roles
@@ -107,6 +115,7 @@ export default function GoalObjectivesPage() {
       setLoading(false);
     } catch (error) {
       console.error('[Goal Objectives] Error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load objectives.');
       setLoading(false);
     }
   }
@@ -257,6 +266,9 @@ export default function GoalObjectivesPage() {
   const allStrategies = swotStrategies
     ? [...swotStrategies.so, ...swotStrategies.wo, ...swotStrategies.st, ...swotStrategies.wt]
     : [];
+  const roleCount = roles.length;
+  const objectiveCount = Object.values(objectives)
+    .reduce((sum, list) => sum + list.filter(obj => obj.objective_text.trim()).length, 0);
 
   if (loading) {
     return (
@@ -288,6 +300,35 @@ export default function GoalObjectivesPage() {
               <p className="text-sm text-gray-500">Set inspiring objectives for each role</p>
             </div>
           </div>
+        </div>
+
+        {/* Goal Summary */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Goal Horizon: <span className="font-semibold text-gray-900">{durationMonths} months</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Roles: <span className="font-semibold text-gray-900">{roleCount}</span></span>
+            <span>Objectives: <span className="font-semibold text-gray-900">{objectiveCount}</span></span>
+            <span>Key Results: <span className="font-semibold text-gray-900">0</span></span>
+            <span>Actions: <span className="font-semibold text-gray-900">0</span></span>
+          </div>
+        </div>
+
+        {/* Why This Matters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <button
+            onClick={() => setShowWhy(prev => !prev)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="font-medium text-gray-900">Why this matters</span>
+            <span className="text-sm text-gray-500">{showWhy ? 'Hide' : 'Show'}</span>
+          </button>
+          {showWhy && (
+            <p className="mt-3 text-sm text-gray-600">
+              Clear objectives keep each role focused and give you direction before you define metrics or actions.
+            </p>
+          )}
         </div>
 
         {/* SWOT Strategies Reference */}
@@ -326,11 +367,15 @@ export default function GoalObjectivesPage() {
                 onClick={() => setError(null)}
                 className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
               >
-                닫기
+                Close
               </button>
             </div>
           </div>
         )}
+
+        <div className="text-xs text-gray-500 mb-4">
+          Optional: Use AI Suggest to draft a starting point, then edit in your own words.
+        </div>
 
         {/* Roles & Objectives */}
         <div className="space-y-4 mb-6">
@@ -383,7 +428,7 @@ export default function GoalObjectivesPage() {
                               className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
                               disabled={aiLoading[`${role.id}-${index}`]}
                             >
-                              {aiLoading[`${role.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                              {aiLoading[`${role.id}-${index}`] ? 'AI...' : 'AI Suggest'}
                             </button>
                           </div>
                         </div>
@@ -462,7 +507,7 @@ export default function GoalObjectivesPage() {
               </>
             ) : (
               <>
-                Next: Key Results
+                Save & Continue
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

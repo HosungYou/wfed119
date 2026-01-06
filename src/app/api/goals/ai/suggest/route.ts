@@ -24,6 +24,10 @@ const normalizeDuration = (value?: number) => {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: 'AI service is not configured.' }, { status: 503 });
+    }
+
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
     const auth = checkDevAuth(session);

@@ -43,6 +43,7 @@ export default function GoalActionsPage() {
   const [expandedKR, setExpandedKR] = useState<string | null>(null);
   const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [showWhy, setShowWhy] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -51,7 +52,14 @@ export default function GoalActionsPage() {
   async function fetchData() {
     try {
       const res = await fetch('/api/goals/roles');
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to load roles.');
+      }
       const rolesData = await res.json();
+      if (!Array.isArray(rolesData)) {
+        throw new Error('Roles data is invalid.');
+      }
       setRoles(rolesData);
 
       const sessionRes = await fetch('/api/goals/session');
@@ -90,6 +98,7 @@ export default function GoalActionsPage() {
       setLoading(false);
     } catch (error) {
       console.error('[Goal Actions] Error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load action plans.');
       setLoading(false);
     }
   }
@@ -159,7 +168,7 @@ export default function GoalActionsPage() {
       router.push('/discover/goals/reflection');
     } catch (err) {
       console.error('[Goal Actions] Error saving:', err);
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setError(err instanceof Error ? err.message : 'An error occurred while saving. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -206,6 +215,15 @@ export default function GoalActionsPage() {
     );
   }
 
+  const roleCount = roles.length;
+  const objectiveCount = roles.reduce((sum, role) =>
+    sum + (role.goal_objectives?.filter(obj => obj.objective_text.trim()).length || 0), 0);
+  const keyResultCount = roles.reduce((sum, role) =>
+    sum + (role.goal_objectives?.reduce((objSum, obj) =>
+      objSum + (obj.goal_key_results?.filter(kr => kr.key_result_text.trim()).length || 0), 0) || 0), 0);
+  const actionCount = Object.values(actionPlans)
+    .reduce((sum, list) => sum + list.filter(ap => ap.action_text.trim()).length, 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8 px-4">
       <div className="max-w-3xl mx-auto">
@@ -224,18 +242,50 @@ export default function GoalActionsPage() {
               <ClipboardCheck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">4. 실행 계획 (Initiatives)</h1>
-              <p className="text-sm text-gray-500">핵심 결과를 달성하기 위한 구체적인 행동을 계획하세요</p>
+              <h1 className="text-2xl font-bold text-gray-900">4. Action Plans</h1>
+              <p className="text-sm text-gray-500">Plan specific actions to achieve each key result</p>
             </div>
           </div>
+        </div>
+
+        {/* Goal Summary */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Goal Horizon: <span className="font-semibold text-gray-900">{durationMonths} months</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Roles: <span className="font-semibold text-gray-900">{roleCount}</span></span>
+            <span>Objectives: <span className="font-semibold text-gray-900">{objectiveCount}</span></span>
+            <span>Key Results: <span className="font-semibold text-gray-900">{keyResultCount}</span></span>
+            <span>Actions: <span className="font-semibold text-gray-900">{actionCount}</span></span>
+          </div>
+        </div>
+
+        {/* Why This Matters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <button
+            onClick={() => setShowWhy(prev => !prev)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="font-medium text-gray-900">Why this matters</span>
+            <span className="text-sm text-gray-500">{showWhy ? 'Hide' : 'Show'}</span>
+          </button>
+          {showWhy && (
+            <p className="mt-3 text-sm text-gray-600">
+              Action plans make progress real. Small, scheduled steps create momentum and reduce procrastination.
+            </p>
+          )}
         </div>
 
         {/* Info Card */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <strong>Tip:</strong> 실행 계획은 &quot;첫 번째 작은 발걸음&quot;부터 시작하세요.
-            Starting with small, easy actions and gradually expanding is effective.
+            <strong>Tip:</strong> Start with the first small step. Build momentum with actions that are easy to begin.
           </p>
+        </div>
+
+        <div className="text-xs text-gray-500 mb-4">
+          Optional: Use AI Suggest for a starter action, then tailor it to your routine.
         </div>
 
         {/* Error Message */}
@@ -248,7 +298,7 @@ export default function GoalActionsPage() {
                 onClick={() => setError(null)}
                 className="text-xs text-red-600 hover:text-red-700 mt-1 underline"
               >
-                닫기
+                Close
               </button>
             </div>
           </div>
@@ -271,13 +321,13 @@ export default function GoalActionsPage() {
                       <div className="text-left">
                         <p className="text-xs text-purple-600 font-medium">{role.role_name}</p>
                         <h3 className="font-medium text-gray-900 line-clamp-1">
-                          {kr.key_result_text || '(핵심 결과 없음)'}
+                          {kr.key_result_text || '(No key result)'}
                         </h3>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-purple-600 font-medium">
-                        {actionPlans[kr.id]?.filter(ap => ap.action_text.trim()).length || 0} 행동
+                        {actionPlans[kr.id]?.filter(ap => ap.action_text.trim()).length || 0} actions
                       </span>
                       {expandedKR === kr.id ? (
                         <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -307,7 +357,7 @@ export default function GoalActionsPage() {
                               type="text"
                               value={ap.action_text}
                               onChange={(e) => updateAction(kr.id, index, { action_text: e.target.value })}
-                              placeholder="예: 매일 밤 10시에 알람 설정하기"
+                              placeholder="e.g., Set a 10pm reminder each night"
                               className={`w-full border border-gray-200 rounded-lg p-2 text-sm focus:border-purple-500 outline-none ${
                                 ap.is_completed ? 'line-through text-gray-400' : ''
                               }`}
@@ -317,7 +367,7 @@ export default function GoalActionsPage() {
                               className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
                               disabled={aiLoading[`${kr.id}-${index}`]}
                             >
-                              {aiLoading[`${kr.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                              {aiLoading[`${kr.id}-${index}`] ? 'AI...' : 'AI Suggest'}
                             </button>
 
                             <div className="flex items-center gap-2">
@@ -366,7 +416,7 @@ export default function GoalActionsPage() {
             className="px-6 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
-            이전
+            Back
           </button>
 
           <button
@@ -381,11 +431,11 @@ export default function GoalActionsPage() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                저장 중...
+                Saving...
               </>
             ) : (
               <>
-                다음: 7가지 원칙
+                Save & Continue
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

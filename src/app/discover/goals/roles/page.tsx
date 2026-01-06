@@ -26,6 +26,8 @@ export default function GoalRolesPage() {
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [durationMonths, setDurationMonths] = useState<3 | 6 | 12 | null>(null);
+  const [showWhy, setShowWhy] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
     isOpen: false,
     roleIndex: null,
@@ -39,22 +41,33 @@ export default function GoalRolesPage() {
   async function fetchRoles() {
     try {
       const res = await fetch('/api/goals/roles');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.length > 0) {
-          setRoles(data);
-        } else {
-          // Initialize with default roles
-          setRoles(DEFAULT_ROLES.map((r, i) => ({
-            ...r,
-            role_description: '',
-            percentage_allocation: i === 0 ? 20 : 16, // Wellbeing gets slightly more
-          })));
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to load roles.');
+      }
+      const data = await res.json();
+      if (data.length > 0) {
+        setRoles(data);
+      } else {
+        // Initialize with default roles
+        setRoles(DEFAULT_ROLES.map((r, i) => ({
+          ...r,
+          role_description: '',
+          percentage_allocation: i === 0 ? 20 : 16, // Wellbeing gets slightly more
+        })));
+      }
+
+      const sessionRes = await fetch('/api/goals/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData?.duration_months === 3 || sessionData?.duration_months === 6 || sessionData?.duration_months === 12) {
+          setDurationMonths(sessionData.duration_months);
         }
       }
       setLoading(false);
     } catch (error) {
       console.error('[Goal Roles] Error fetching:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load roles.');
       setLoading(false);
     }
   }
@@ -67,7 +80,7 @@ export default function GoalRolesPage() {
 
   function addRole() {
     if (roles.length >= 7) {
-      setError('최대 7개의 역할만 설정할 수 있습니다.');
+      setError('You can add up to 7 roles.');
       return;
     }
     setRoles(prev => [...prev, {
@@ -149,6 +162,7 @@ export default function GoalRolesPage() {
   }
 
   const validation = validateRoleAllocation(roles);
+  const roleCount = roles.length;
 
   if (loading) {
     return (
@@ -180,6 +194,35 @@ export default function GoalRolesPage() {
               <p className="text-sm text-gray-500">Define 2-7 important roles in your life</p>
             </div>
           </div>
+        </div>
+
+        {/* Goal Summary */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Goal Horizon: <span className="font-semibold text-gray-900">{durationMonths ? `${durationMonths} months` : 'Not set'}</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Roles: <span className="font-semibold text-gray-900">{roleCount}</span></span>
+            <span>Objectives: <span className="font-semibold text-gray-900">0</span></span>
+            <span>Key Results: <span className="font-semibold text-gray-900">0</span></span>
+            <span>Actions: <span className="font-semibold text-gray-900">0</span></span>
+          </div>
+        </div>
+
+        {/* Why This Matters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <button
+            onClick={() => setShowWhy(prev => !prev)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="font-medium text-gray-900">Why this matters</span>
+            <span className="text-sm text-gray-500">{showWhy ? 'Hide' : 'Show'}</span>
+          </button>
+          {showWhy && (
+            <p className="mt-3 text-sm text-gray-600">
+              Roles keep your goals balanced across life domains. A short list makes it easier to focus, adjust, and follow through.
+            </p>
+          )}
         </div>
 
         {/* Info Card */}
@@ -316,7 +359,7 @@ export default function GoalRolesPage() {
               </>
             ) : (
               <>
-                Next: Objectives
+                Save & Continue
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

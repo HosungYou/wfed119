@@ -21,6 +21,14 @@ export default function GoalReflectionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState({
+    roleCount: 0,
+    objectiveCount: 0,
+    keyResultCount: 0,
+    actionCount: 0,
+    durationMonths: 6,
+  });
+  const [showWhy, setShowWhy] = useState(false);
   const [reflections, setReflections] = useState<Record<ReflectionType, string>>({
     identity_alignment: '',
     deliberation: '',
@@ -34,6 +42,7 @@ export default function GoalReflectionPage() {
 
   useEffect(() => {
     fetchReflections();
+    fetchSummary();
   }, []);
 
   async function fetchReflections() {
@@ -51,6 +60,45 @@ export default function GoalReflectionPage() {
     } catch (error) {
       console.error('[Goal Reflections] Error:', error);
       setLoading(false);
+    }
+  }
+
+  async function fetchSummary() {
+    try {
+      let duration = summary.durationMonths;
+      const sessionRes = await fetch('/api/goals/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        if (sessionData?.duration_months === 3 || sessionData?.duration_months === 6 || sessionData?.duration_months === 12) {
+          duration = sessionData.duration_months;
+        }
+      }
+
+      const rolesRes = await fetch('/api/goals/roles');
+      if (!rolesRes.ok) return;
+      const rolesData = await rolesRes.json();
+      if (!Array.isArray(rolesData)) return;
+
+      const roleCount = rolesData.length;
+      const objectiveCount = rolesData.reduce((sum, role) =>
+        sum + (role.goal_objectives?.filter((obj: { objective_text: string }) => obj.objective_text.trim()).length || 0), 0);
+      const keyResultCount = rolesData.reduce((sum, role) =>
+        sum + (role.goal_objectives?.reduce((objSum: number, obj: { goal_key_results?: { key_result_text: string }[] }) =>
+          objSum + (obj.goal_key_results?.filter(kr => kr.key_result_text.trim()).length || 0), 0) || 0), 0);
+      const actionCount = rolesData.reduce((sum, role) =>
+        sum + (role.goal_objectives?.reduce((objSum: number, obj: { goal_key_results?: { goal_action_plans?: { action_text: string }[] }[] }) =>
+          objSum + (obj.goal_key_results?.reduce((krSum: number, kr) =>
+            krSum + (kr.goal_action_plans?.filter(ap => ap.action_text.trim()).length || 0), 0) || 0), 0) || 0), 0);
+
+      setSummary({
+        roleCount,
+        objectiveCount,
+        keyResultCount,
+        actionCount,
+        durationMonths: duration,
+      });
+    } catch (error) {
+      console.error('[Goal Reflections] Summary error:', error);
     }
   }
 
@@ -139,6 +187,35 @@ export default function GoalReflectionPage() {
               <p className="text-sm text-gray-500">Focus on the three most impactful principles</p>
             </div>
           </div>
+        </div>
+
+        {/* Goal Summary */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Goal Horizon: <span className="font-semibold text-gray-900">{summary.durationMonths} months</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Roles: <span className="font-semibold text-gray-900">{summary.roleCount}</span></span>
+            <span>Objectives: <span className="font-semibold text-gray-900">{summary.objectiveCount}</span></span>
+            <span>Key Results: <span className="font-semibold text-gray-900">{summary.keyResultCount}</span></span>
+            <span>Actions: <span className="font-semibold text-gray-900">{summary.actionCount}</span></span>
+          </div>
+        </div>
+
+        {/* Why This Matters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <button
+            onClick={() => setShowWhy(prev => !prev)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="font-medium text-gray-900">Why this matters</span>
+            <span className="text-sm text-gray-500">{showWhy ? 'Hide' : 'Show'}</span>
+          </button>
+          {showWhy && (
+            <p className="mt-3 text-sm text-gray-600">
+              A short reflection helps you spot gaps and make sure your goals align with who you are and how you work best.
+            </p>
+          )}
         </div>
 
         {/* Progress */}
@@ -289,7 +366,7 @@ export default function GoalReflectionPage() {
             ) : (
               <>
                 <CheckCircle2 className="w-5 h-5" />
-                Complete Goal Setting
+                Save & Complete
               </>
             )}
           </button>

@@ -42,6 +42,7 @@ export default function GoalSettingModuleLanding() {
   const [progress, setProgress] = useState<GoalProgress | null>(null);
   const [canStart, setCanStart] = useState(false);
   const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
+  const [resetting, setResetting] = useState(false);
   const { startModule } = useModuleProgress('goals');
 
   useEffect(() => {
@@ -138,6 +139,27 @@ export default function GoalSettingModuleLanding() {
     });
   }
 
+  async function handleReset() {
+    const confirmed = window.confirm('Start fresh? This will delete your current Goal Setting session and all related data.');
+    if (!confirmed) return;
+
+    setResetting(true);
+    try {
+      const res = await fetch('/api/goals/session', { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to reset session.');
+      }
+      setDurationMonths(6);
+      await fetchProgress();
+    } catch (error) {
+      console.error('[Goal Setting] Error resetting:', error);
+      alert(error instanceof Error ? error.message : 'Failed to reset session.');
+    } finally {
+      setResetting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
@@ -196,17 +218,24 @@ export default function GoalSettingModuleLanding() {
               const Icon = stage.icon;
               const isCompleted = index < currentStage;
               const isCurrent = index === currentStage;
+              const isClickable = progress?.goals.exists;
 
               return (
-                <div
+                <button
                   key={stage.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                  onClick={() => {
+                    if (isClickable) {
+                      router.push(`/discover/goals/${stage.id}`);
+                    }
+                  }}
+                  className={`flex items-center gap-4 p-4 rounded-xl transition-all w-full text-left ${
                     isCompleted
                       ? 'bg-green-50 border border-green-200'
                       : isCurrent
                         ? 'bg-purple-50 border border-purple-200'
                         : 'bg-gray-50 border border-gray-200'
-                  }`}
+                  } ${isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-default'}`}
+                  type="button"
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     isCompleted
@@ -241,7 +270,7 @@ export default function GoalSettingModuleLanding() {
                       In Progress
                     </span>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -285,7 +314,7 @@ export default function GoalSettingModuleLanding() {
         </div>
 
         {/* Action Button */}
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-3">
           {canStart ? (
             progress?.goals.exists ? (
               <button
@@ -310,6 +339,16 @@ export default function GoalSettingModuleLanding() {
               className="bg-gray-300 text-gray-500 font-semibold px-8 py-3 rounded-full shadow-lg flex items-center gap-2 cursor-not-allowed"
             >
               Complete SWOT Analysis to Start
+            </button>
+          )}
+
+          {progress?.goals.exists && (
+            <button
+              onClick={handleReset}
+              className="text-sm text-gray-600 hover:text-gray-900 underline"
+              disabled={resetting}
+            >
+              {resetting ? 'Resetting...' : 'Start Fresh (Reset Goal Setting)'}
             </button>
           )}
         </div>

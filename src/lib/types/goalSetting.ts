@@ -2,13 +2,13 @@
  * Goal Setting Module Types (OKR-based)
  *
  * Based on LifeCraft Chapter 10: 7 Principles of Goal Setting
- * - 정체성 반영 (Identity Alignment)
- * - 충분한 숙고 (Deliberation)
- * - 미완성 (Embrace Incompleteness)
- * - 다양성 (Multiple Roles)
- * - 연계성 (Bigger Picture)
- * - 실현 가능성 (Feasibility)
- * - 실행 용이성 (Ease of Execution)
+ * - Identity Alignment
+ * - Deliberation
+ * - Embrace Incompleteness
+ * - Multiple Roles
+ * - Bigger Picture
+ * - Feasibility
+ * - Ease of Execution
  */
 
 // ============================================================================
@@ -86,13 +86,13 @@ export interface GoalReflection {
 }
 
 export type ReflectionType =
-  | 'identity_alignment'    // 1. 정체성 반영
-  | 'deliberation'          // 2. 충분한 숙고
-  | 'incompleteness'        // 3. 미완성
-  | 'diversity'             // 4. 다양성
-  | 'connectivity'          // 5. 연계성
-  | 'feasibility'           // 6. 실현 가능성
-  | 'execution_ease';       // 7. 실행 용이성
+  | 'identity_alignment'    // 1. Identity Alignment
+  | 'deliberation'          // 2. Deliberation
+  | 'incompleteness'        // 3. Embrace Incompleteness
+  | 'diversity'             // 4. Multiple Roles
+  | 'connectivity'          // 5. Bigger Picture
+  | 'feasibility'           // 6. Feasibility
+  | 'execution_ease';       // 7. Ease of Execution
 
 // ============================================================================
 // Frontend Types (camelCase for React components)

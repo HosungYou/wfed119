@@ -39,6 +39,7 @@ export default function GoalKeyResultsPage() {
   const [expandedObjective, setExpandedObjective] = useState<string | null>(null);
   const [durationMonths, setDurationMonths] = useState<3 | 6 | 12>(6);
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [showWhy, setShowWhy] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -47,7 +48,14 @@ export default function GoalKeyResultsPage() {
   async function fetchData() {
     try {
       const res = await fetch('/api/goals/roles');
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to load roles.');
+      }
       const rolesData = await res.json();
+      if (!Array.isArray(rolesData)) {
+        throw new Error('Roles data is invalid.');
+      }
       setRoles(rolesData);
 
       const sessionRes = await fetch('/api/goals/session');
@@ -86,6 +94,7 @@ export default function GoalKeyResultsPage() {
       setLoading(false);
     } catch (error) {
       console.error('[Goal Key Results] Error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load key results.');
       setLoading(false);
     }
   }
@@ -157,7 +166,7 @@ export default function GoalKeyResultsPage() {
       router.push('/discover/goals/actions');
     } catch (err) {
       console.error('[Goal Key Results] Error saving:', err);
-      setError(err instanceof Error ? err.message : 'Saving...가 발생했습니다. 다시 시도해주세요.');
+      setError(err instanceof Error ? err.message : 'An error occurred while saving. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -204,6 +213,12 @@ export default function GoalKeyResultsPage() {
     );
   }
 
+  const roleCount = roles.length;
+  const objectiveCount = roles.reduce((sum, role) =>
+    sum + (role.goal_objectives?.filter(obj => obj.objective_text.trim()).length || 0), 0);
+  const keyResultCount = Object.values(keyResults)
+    .reduce((sum, list) => sum + list.filter(kr => kr.key_result_text.trim()).length, 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8 px-4">
       <div className="max-w-3xl mx-auto">
@@ -223,9 +238,38 @@ export default function GoalKeyResultsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">3. Key Results</h1>
-              <p className="text-sm text-gray-500">각 목표에 대해 측정 가능한 핵심 결과를 정의하세요</p>
+              <p className="text-sm text-gray-500">Define measurable key results for each objective</p>
             </div>
           </div>
+        </div>
+
+        {/* Goal Summary */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Goal Horizon: <span className="font-semibold text-gray-900">{durationMonths} months</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Roles: <span className="font-semibold text-gray-900">{roleCount}</span></span>
+            <span>Objectives: <span className="font-semibold text-gray-900">{objectiveCount}</span></span>
+            <span>Key Results: <span className="font-semibold text-gray-900">{keyResultCount}</span></span>
+            <span>Actions: <span className="font-semibold text-gray-900">0</span></span>
+          </div>
+        </div>
+
+        {/* Why This Matters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <button
+            onClick={() => setShowWhy(prev => !prev)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="font-medium text-gray-900">Why this matters</span>
+            <span className="text-sm text-gray-500">{showWhy ? 'Hide' : 'Show'}</span>
+          </button>
+          {showWhy && (
+            <p className="mt-3 text-sm text-gray-600">
+              Key Results turn objectives into measurable outcomes so you can track progress and stay honest about impact.
+            </p>
+          )}
         </div>
 
         {/* Info Card */}
@@ -234,6 +278,10 @@ export default function GoalKeyResultsPage() {
             <strong>Tip:</strong> Key Results (KRs) are specific metrics that measure whether objectives are achieved.
             Set 1-3 KRs per objective with clear deadlines and success criteria.
           </p>
+        </div>
+
+        <div className="text-xs text-gray-500 mb-4">
+          Optional: Use AI Suggest to draft a measurable result, then adjust to fit your timeline.
         </div>
 
         {/* Error Message */}
@@ -268,7 +316,7 @@ export default function GoalKeyResultsPage() {
                     <div className="text-left">
                       <p className="text-xs text-purple-600 font-medium">{role.role_name}</p>
                       <h3 className="font-medium text-gray-900 line-clamp-1">
-                        {obj.objective_text || '(목표 없음)'}
+                        {obj.objective_text || '(No objective)'}
                       </h3>
                     </div>
                   </div>
@@ -303,7 +351,7 @@ export default function GoalKeyResultsPage() {
                         <textarea
                           value={kr.key_result_text}
                           onChange={(e) => updateKeyResult(obj.id, index, { key_result_text: e.target.value })}
-                          placeholder="예: 매일 7시간 이상 수면하기"
+                          placeholder="e.g., Sleep at least 7 hours per night"
                           rows={2}
                           className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:border-purple-500 outline-none resize-none"
                         />
@@ -313,23 +361,23 @@ export default function GoalKeyResultsPage() {
                             className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-700 hover:bg-purple-50"
                             disabled={aiLoading[`${obj.id}-${index}`]}
                           >
-                            {aiLoading[`${obj.id}-${index}`] ? 'AI...' : 'AI 제안'}
+                            {aiLoading[`${obj.id}-${index}`] ? 'AI...' : 'AI Suggest'}
                           </button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">성공 기준</label>
+                            <label className="text-xs text-gray-500 block mb-1">Success Criteria</label>
                             <input
                               type="text"
                               value={kr.success_criteria}
                               onChange={(e) => updateKeyResult(obj.id, index, { success_criteria: e.target.value })}
-                              placeholder="예: 30일 중 25일 이상 달성"
+                              placeholder="e.g., Achieved 25 out of 30 days"
                               className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:border-purple-500 outline-none"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">목표 달성일</label>
+                            <label className="text-xs text-gray-500 block mb-1">Target Date</label>
                             <div className="relative">
                               <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                               <input
@@ -350,7 +398,7 @@ export default function GoalKeyResultsPage() {
                         className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-purple-400 hover:text-purple-600 text-sm flex items-center justify-center gap-1"
                       >
                         <Plus className="w-4 h-4" />
-                        핵심 결과 추가 (최대 3개)
+                        Add Key Result (max 3)
                       </button>
                     )}
                   </div>
@@ -386,7 +434,7 @@ export default function GoalKeyResultsPage() {
               </>
             ) : (
               <>
-                Next: Action Plans
+                Save & Continue
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

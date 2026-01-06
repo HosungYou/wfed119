@@ -12,6 +12,7 @@ import {
   MODULE_PARTS, PART_NAMES, ModulePart,
   getOverallProgress, getNextModule
 } from '@/lib/types/modules';
+import { useTranslation } from '@/lib/i18n';
 
 // ============================================================================
 // Module Icons Map (8 modules)
@@ -59,6 +60,7 @@ interface ModuleNodeProps {
   isLocked: boolean;
   isNext: boolean;
   completionPercentage: number;
+  language: string;
 }
 
 interface JourneyProgressMapProps {
@@ -77,6 +79,7 @@ function ModuleNode({
   isLocked,
   isNext,
   completionPercentage,
+  language,
 }: ModuleNodeProps) {
   const config = MODULE_CONFIGS[moduleId];
   const Icon = MODULE_ICONS[moduleId];
@@ -84,6 +87,8 @@ function ModuleNode({
 
   const isCompleted = status === 'completed';
   const isInProgress = status === 'in_progress';
+
+  const moduleName = language === 'ko' ? config.nameKo : config.name;
 
   return (
     <Link
@@ -184,18 +189,18 @@ function ModuleNode({
           }
         `}
       >
-        {config.nameKo}
+        {moduleName}
       </span>
 
       {/* Status label */}
       {isInProgress && (
         <span className="mt-1 text-[10px] sm:text-xs text-gray-500">
-          {completionPercentage}% 완료
+          {completionPercentage}% {language === 'ko' ? '완료' : 'complete'}
         </span>
       )}
       {isNext && !isInProgress && !isLocked && (
         <span className={`mt-1 text-[10px] sm:text-xs ${colors.text} font-medium`}>
-          다음 단계
+          {language === 'ko' ? '다음 단계' : 'Next Step'}
         </span>
       )}
     </Link>
@@ -236,16 +241,20 @@ function PartLabel({
   part,
   moduleIds,
   completedCount,
+  language,
 }: {
   part: ModulePart;
   moduleIds: ModuleId[];
   completedCount: number;
+  language: string;
 }) {
   const colors = PART_COLORS[part];
   const partName = PART_NAMES[part];
   const totalCount = moduleIds.length;
   const isComplete = completedCount === totalCount;
   const isStarted = completedCount > 0;
+
+  const displayName = language === 'ko' ? partName.ko : partName.en;
 
   return (
     <div
@@ -259,7 +268,7 @@ function PartLabel({
         }
       `}
     >
-      {partName.ko} ({completedCount}/{totalCount})
+      {displayName} ({completedCount}/{totalCount})
     </div>
   );
 }
@@ -273,6 +282,7 @@ export function JourneyProgressMap({
   showPartLabels = true,
 }: JourneyProgressMapProps) {
   const { modules, completedModules, loading } = useAllModulesProgress();
+  const { language } = useTranslation();
 
   if (loading) {
     return (
@@ -313,7 +323,7 @@ export function JourneyProgressMap({
       <div className="w-full">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-gray-700">
-            여정 진행률
+            {language === 'ko' ? '여정 진행률' : 'Journey Progress'}
           </span>
           <span className="text-sm font-bold text-primary-600">
             {overallProgress}%
@@ -326,8 +336,12 @@ export function JourneyProgressMap({
           />
         </div>
         <div className="mt-2 flex justify-between text-xs text-gray-500">
-          <span>{completedModules.length}개 완료</span>
-          <span>{MODULE_ORDER.length - completedModules.length}개 남음</span>
+          <span>
+            {completedModules.length} {language === 'ko' ? '개 완료' : 'completed'}
+          </span>
+          <span>
+            {MODULE_ORDER.length - completedModules.length} {language === 'ko' ? '개 남음' : 'remaining'}
+          </span>
         </div>
       </div>
     );
@@ -340,9 +354,11 @@ export function JourneyProgressMap({
         {/* Progress Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">나의 여정</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              {language === 'ko' ? '나의 여정' : 'My Journey'}
+            </h3>
             <p className="text-sm text-gray-500">
-              {completedModules.length}개 모듈 완료 / {MODULE_ORDER.length}개 중
+              {completedModules.length} {language === 'ko' ? '개 모듈 완료' : 'modules completed'} / {MODULE_ORDER.length} {language === 'ko' ? '개 중' : 'total'}
             </p>
           </div>
           <div className="text-3xl font-bold text-primary-600">{overallProgress}%</div>
@@ -368,6 +384,7 @@ export function JourneyProgressMap({
                   isLocked={isLocked}
                   isNext={isNext}
                   completionPercentage={completionPercentage}
+                  language={language}
                 />
                 {index < MODULE_ORDER.length - 1 && (
                   <ConnectorLine
@@ -389,14 +406,20 @@ export function JourneyProgressMap({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">LifeCraft 여정</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {language === 'ko' ? 'LifeCraft 여정' : 'LifeCraft Journey'}
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
-            8개의 모듈을 순서대로 완료하세요
+            {language === 'ko'
+              ? '8개의 모듈을 순서대로 완료하세요'
+              : 'Complete 8 modules in sequence'}
           </p>
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-primary-600">{overallProgress}%</div>
-          <p className="text-sm text-gray-500">전체 진행률</p>
+          <p className="text-sm text-gray-500">
+            {language === 'ko' ? '전체 진행률' : 'Overall Progress'}
+          </p>
         </div>
       </div>
 
@@ -424,6 +447,7 @@ export function JourneyProgressMap({
                 part={part}
                 moduleIds={partModules}
                 completedCount={completedCount}
+                language={language}
               />
             );
           })}
@@ -451,6 +475,7 @@ export function JourneyProgressMap({
                   isLocked={isLocked}
                   isNext={isNext}
                   completionPercentage={completionPercentage}
+                  language={language}
                 />
                 {index < MODULE_ORDER.length - 1 && (
                   <ConnectorLine
@@ -467,7 +492,7 @@ export function JourneyProgressMap({
       {/* Next Step CTA */}
       {nextModuleId && (
         <div className="mt-6 pt-6 border-t border-gray-100">
-          <NextStepCTA moduleId={nextModuleId} />
+          <NextStepCTA moduleId={nextModuleId} language={language} />
         </div>
       )}
 
@@ -476,10 +501,16 @@ export function JourneyProgressMap({
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">모든 모듈을 완료했습니다!</span>
+            <span className="font-medium">
+              {language === 'ko'
+                ? '모든 모듈을 완료했습니다!'
+                : 'All modules completed!'}
+            </span>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            대시보드에서 통합 프로필과 인사이트를 확인하세요.
+            {language === 'ko'
+              ? '대시보드에서 통합 프로필과 인사이트를 확인하세요.'
+              : 'Check your integrated profile and insights on the dashboard.'}
           </p>
         </div>
       )}
@@ -491,7 +522,7 @@ export function JourneyProgressMap({
 // Next Step CTA Component
 // ============================================================================
 
-function NextStepCTA({ moduleId }: { moduleId: ModuleId }) {
+function NextStepCTA({ moduleId, language }: { moduleId: ModuleId; language: string }) {
   const config = MODULE_CONFIGS[moduleId];
   const colors = MODULE_COLORS[moduleId];
   const Icon = MODULE_ICONS[moduleId];
@@ -500,6 +531,9 @@ function NextStepCTA({ moduleId }: { moduleId: ModuleId }) {
   const moduleData = modules[moduleId];
   const isInProgress = moduleData?.progress?.status === 'in_progress';
   const completionPercentage = moduleData?.progress?.completionPercentage || 0;
+
+  const moduleName = language === 'ko' ? config.nameKo : config.name;
+  const moduleDescription = language === 'ko' ? config.descriptionKo : config.description;
 
   return (
     <Link
@@ -521,16 +555,18 @@ function NextStepCTA({ moduleId }: { moduleId: ModuleId }) {
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <span className={`text-sm font-medium ${colors.text}`}>
-            {isInProgress ? '계속하기' : '다음 단계'}
+            {isInProgress
+              ? (language === 'ko' ? '계속하기' : 'Continue')
+              : (language === 'ko' ? '다음 단계' : 'Next Step')}
           </span>
         </div>
-        <h3 className="text-lg font-bold text-gray-900">{config.nameKo}</h3>
-        <p className="text-sm text-gray-600">{config.descriptionKo}</p>
+        <h3 className="text-lg font-bold text-gray-900">{moduleName}</h3>
+        <p className="text-sm text-gray-600">{moduleDescription}</p>
 
         {isInProgress && completionPercentage > 0 && (
           <div className="mt-2">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>진행률</span>
+              <span>{language === 'ko' ? '진행률' : 'Progress'}</span>
               <span>{completionPercentage}%</span>
             </div>
             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">

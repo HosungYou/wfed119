@@ -1,0 +1,165 @@
+{
+  "common": {
+    "appName": "LifeCraft",
+    "tagline": "AI-Powered Career Coaching",
+    "dashboard": "Dashboard",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "continue": "Continue",
+    "start": "Start",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "locked": "Locked",
+    "notStarted": "Not Started",
+    "modules": "modules",
+    "of": "of",
+    "viewDashboard": "View Dashboard"
+  },
+  "home": {
+    "hero": {
+      "subtitle": "AI-Powered Career Coaching",
+      "title1": "Discover Yourself",
+      "title2": "Design Your Future",
+      "description": "Discover your values, strengths, and personality through 8 modules. Build a clear vision and actionable goals."
+    },
+    "cta": {
+      "continueModule": "Continue {moduleName}",
+      "startJourney": "Start Your Journey",
+      "viewDashboard": "View Dashboard"
+    },
+    "journey": {
+      "title": "4-Part Journey",
+      "subtitle": "Complete 8 modules in sequence",
+      "flow": {
+        "selfDiscovery": "Self-Discovery",
+        "vision": "Vision",
+        "strategy": "Strategy",
+        "action": "Action"
+      }
+    },
+    "progress": {
+      "title": "My Progress",
+      "modulesCompleted": "{count} module completed",
+      "modulesCompletedPlural": "{count} modules completed",
+      "outOf": "/ 8 total",
+      "myJourney": "My Journey"
+    },
+    "parts": {
+      "1": {
+        "number": "1",
+        "title": "Self-Discovery",
+        "englishTitle": "Know Yourself",
+        "description": "Discover your values, strengths, personality, and life themes",
+        "modules": "0/4 modules"
+      },
+      "2": {
+        "number": "2",
+        "title": "Vision Setting",
+        "englishTitle": "Envision",
+        "description": "Design your dreams and vision statement",
+        "modules": "0/1 module"
+      },
+      "3": {
+        "number": "3",
+        "title": "Strategic Analysis",
+        "englishTitle": "Strategize",
+        "description": "SWOT analysis and priority strategies",
+        "modules": "0/1 module"
+      },
+      "4": {
+        "number": "4",
+        "title": "Goal Setting",
+        "englishTitle": "Act",
+        "description": "OKR-based goal setting and action planning",
+        "modules": "0/2 modules"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "journeyProgress": {
+      "title": "Your Journey",
+      "subtitle": "Complete modules in sequence to unlock the next",
+      "part": "Part {number}",
+      "currentModule": "Current",
+      "nextUp": "Next Up"
+    },
+    "nextStep": {
+      "title": "Continue Your Journey",
+      "continueModule": "Continue {moduleName}",
+      "startModule": "Start {moduleName}"
+    },
+    "completedModules": {
+      "title": "Completed Modules",
+      "noModules": "No modules completed yet",
+      "expand": "Show Details",
+      "collapse": "Hide Details"
+    },
+    "integratedProfile": {
+      "title": "Your LifeCraft Profile",
+      "subtitle": "Insights from your completed modules",
+      "noData": "Complete modules to see your integrated profile",
+      "topValues": "Top Values",
+      "topStrengths": "Top Strengths",
+      "lifeThemes": "Life Themes",
+      "aiInsights": "AI Insights",
+      "growthAreas": "Growth Areas",
+      "recommendedActions": "Recommended Actions",
+      "completeness": "Profile Completeness"
+    }
+  },
+  "modules": {
+    "values": {
+      "name": "Values Discovery",
+      "shortName": "Values",
+      "description": "Discover your core values that guide your decisions"
+    },
+    "strengths": {
+      "name": "Strengths Discovery",
+      "shortName": "Strengths",
+      "description": "Identify your unique strengths through AI conversation"
+    },
+    "enneagram": {
+      "name": "Enneagram Assessment",
+      "shortName": "Enneagram",
+      "description": "Understand your personality type and growth path"
+    },
+    "life-themes": {
+      "name": "Life Themes",
+      "shortName": "Life Themes",
+      "description": "Explore recurring themes in your life story"
+    },
+    "vision": {
+      "name": "Vision Design",
+      "shortName": "Vision",
+      "description": "Create your vision statement and dream matrix"
+    },
+    "swot": {
+      "name": "SWOT Analysis",
+      "shortName": "SWOT",
+      "description": "Strategic analysis of your strengths, weaknesses, opportunities, and threats"
+    },
+    "goals": {
+      "name": "Goal Setting",
+      "shortName": "Goals",
+      "description": "Set OKR-based goals for each life role"
+    },
+    "errc": {
+      "name": "ERRC Strategy",
+      "shortName": "ERRC",
+      "description": "Eliminate, Reduce, Raise, Create actions for life optimization"
+    }
+  },
+  "parts": {
+    "self-discovery": "Self-Discovery",
+    "vision-mission": "Vision & Mission",
+    "strategic-analysis": "Strategic Analysis",
+    "goal-setting": "Goal Setting"
+  },
+  "language": {
+    "en": "English",
+    "ko": "Korean",
+    "toggle": "Language"
+  }
+}

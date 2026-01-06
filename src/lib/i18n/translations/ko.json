@@ -1,0 +1,165 @@
+{
+  "common": {
+    "appName": "LifeCraft",
+    "tagline": "AI 기반 커리어 코칭",
+    "dashboard": "대시보드",
+    "signIn": "로그인",
+    "signOut": "로그아웃",
+    "continue": "계속하기",
+    "start": "시작하기",
+    "completed": "완료",
+    "inProgress": "진행 중",
+    "locked": "잠김",
+    "notStarted": "시작 전",
+    "modules": "모듈",
+    "of": "/",
+    "viewDashboard": "대시보드 보기"
+  },
+  "home": {
+    "hero": {
+      "subtitle": "AI 기반 커리어 코칭",
+      "title1": "나를 발견하고",
+      "title2": "미래를 설계하세요",
+      "description": "8단계 모듈을 통해 자신의 가치관, 강점, 성격을 발견하고, 명확한 비전과 실행 가능한 목표를 수립하세요."
+    },
+    "cta": {
+      "continueModule": "{moduleName} 계속하기",
+      "startJourney": "여정 시작하기",
+      "viewDashboard": "대시보드 보기"
+    },
+    "journey": {
+      "title": "4단계 여정",
+      "subtitle": "순서대로 8개의 모듈을 완료하세요",
+      "flow": {
+        "selfDiscovery": "자기발견",
+        "vision": "비전",
+        "strategy": "전략",
+        "action": "실행"
+      }
+    },
+    "progress": {
+      "title": "나의 진행 상황",
+      "modulesCompleted": "{count}개 모듈 완료",
+      "modulesCompletedPlural": "{count}개 모듈 완료",
+      "outOf": "/ 8개 중",
+      "myJourney": "나의 여정"
+    },
+    "parts": {
+      "1": {
+        "number": "1",
+        "title": "자기 발견",
+        "englishTitle": "Know Yourself",
+        "description": "가치관, 강점, 성격, 삶의 주제 발견",
+        "modules": "0/4 모듈"
+      },
+      "2": {
+        "number": "2",
+        "title": "비전 설정",
+        "englishTitle": "Envision",
+        "description": "꿈과 비전 선언문 작성",
+        "modules": "0/1 모듈"
+      },
+      "3": {
+        "number": "3",
+        "title": "전략 분석",
+        "englishTitle": "Strategize",
+        "description": "SWOT 분석 및 우선순위 전략",
+        "modules": "0/1 모듈"
+      },
+      "4": {
+        "number": "4",
+        "title": "목표 설정",
+        "englishTitle": "Act",
+        "description": "OKR 목표 설정 및 실행 계획",
+        "modules": "0/2 모듈"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "대시보드",
+    "welcome": "다시 오신 것을 환영합니다",
+    "journeyProgress": {
+      "title": "나의 여정",
+      "subtitle": "순서대로 모듈을 완료하여 다음 단계를 잠금 해제하세요",
+      "part": "Part {number}",
+      "currentModule": "현재",
+      "nextUp": "다음"
+    },
+    "nextStep": {
+      "title": "여정 계속하기",
+      "continueModule": "{moduleName} 계속하기",
+      "startModule": "{moduleName} 시작하기"
+    },
+    "completedModules": {
+      "title": "완료된 모듈",
+      "noModules": "아직 완료된 모듈이 없습니다",
+      "expand": "상세 보기",
+      "collapse": "접기"
+    },
+    "integratedProfile": {
+      "title": "나의 LifeCraft 프로필",
+      "subtitle": "완료된 모듈에서 얻은 인사이트",
+      "noData": "모듈을 완료하면 통합 프로필을 확인할 수 있습니다",
+      "topValues": "핵심 가치관",
+      "topStrengths": "핵심 강점",
+      "lifeThemes": "라이프 테마",
+      "aiInsights": "AI 인사이트",
+      "growthAreas": "성장 영역",
+      "recommendedActions": "추천 행동",
+      "completeness": "프로필 완성도"
+    }
+  },
+  "modules": {
+    "values": {
+      "name": "가치관 탐색",
+      "shortName": "가치관",
+      "description": "의사결정을 이끄는 핵심 가치관을 발견하세요"
+    },
+    "strengths": {
+      "name": "강점 발견",
+      "shortName": "강점",
+      "description": "AI 대화를 통해 고유한 강점을 발견하세요"
+    },
+    "enneagram": {
+      "name": "에니어그램 진단",
+      "shortName": "에니어그램",
+      "description": "성격 유형과 성장 방향을 이해하세요"
+    },
+    "life-themes": {
+      "name": "라이프 테마",
+      "shortName": "라이프 테마",
+      "description": "삶의 이야기에서 반복되는 주제를 탐색하세요"
+    },
+    "vision": {
+      "name": "비전 설계",
+      "shortName": "비전",
+      "description": "비전 선언문과 꿈 매트릭스를 작성하세요"
+    },
+    "swot": {
+      "name": "SWOT 분석",
+      "shortName": "SWOT",
+      "description": "강점, 약점, 기회, 위협에 대한 전략적 분석"
+    },
+    "goals": {
+      "name": "목표 설정",
+      "shortName": "목표",
+      "description": "삶의 역할별 OKR 기반 목표를 설정하세요"
+    },
+    "errc": {
+      "name": "ERRC 전략",
+      "shortName": "ERRC",
+      "description": "삶 최적화를 위한 제거, 감소, 증가, 창조 행동"
+    }
+  },
+  "parts": {
+    "self-discovery": "자기 발견",
+    "vision-mission": "비전 및 미션",
+    "strategic-analysis": "전략 분석",
+    "goal-setting": "목표 설정"
+  },
+  "language": {
+    "en": "English",
+    "ko": "한국어",
+    "toggle": "언어"
+  }
+}

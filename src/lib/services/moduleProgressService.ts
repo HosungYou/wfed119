@@ -24,6 +24,8 @@ import {
   EnneagramData,
   LifeThemesData,
   VisionData,
+  MissionData,
+  CareerOptionsData,
   SwotData,
   GoalSettingData,
   ErrcData,
@@ -477,6 +479,10 @@ export class ModuleProgressService {
         return this.getLifeThemesData();
       case 'vision':
         return this.getVisionData();
+      case 'mission':
+        return this.getMissionData();
+      case 'career-options':
+        return this.getCareerOptionsData();
       case 'swot':
         return this.getSwotData();
       case 'goals':
@@ -705,6 +711,126 @@ export class ModuleProgressService {
       dreamsByWellbeing,
       dreamsAnalysis: data.dreams_analysis,
       dreamsCompleted: data.dreams_completed || false,
+    };
+  }
+
+  /**
+   * Get Mission module data
+   */
+  async getMissionData(): Promise<MissionData | null> {
+    const supabase = await createServerSupabaseClient();
+
+    const { data } = await supabase
+      .from('mission_statements')
+      .select('*')
+      .eq('user_id', this.userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data) return null;
+
+    // Parse values used
+    let valuesUsed: MissionData['valuesUsed'] = [];
+    if (data.values_used && Array.isArray(data.values_used)) {
+      valuesUsed = data.values_used;
+    }
+
+    // Parse purpose answers
+    const purposeAnswers: MissionData['purposeAnswers'] = {
+      whatDoYouDo: data.purpose_what || '',
+      forWhom: data.purpose_for_whom || '',
+      howDoYouDoIt: data.purpose_how || '',
+      whatImpact: data.purpose_impact || '',
+      whyDoesItMatter: data.purpose_why || '',
+    };
+
+    // Parse draft versions
+    let draftVersions: MissionData['draftVersions'] = [];
+    if (data.draft_versions && Array.isArray(data.draft_versions)) {
+      draftVersions = data.draft_versions;
+    } else if (data.draft_text) {
+      draftVersions = [{
+        version: 1,
+        text: data.draft_text,
+        createdAt: data.created_at,
+        aiGenerated: data.ai_generated || false,
+      }];
+    }
+
+    return {
+      valuesUsed,
+      purposeAnswers,
+      draftVersions,
+      finalStatement: data.final_statement || data.mission_statement || '',
+      completedAt: data.completed_at,
+    };
+  }
+
+  /**
+   * Get Career Options module data
+   */
+  async getCareerOptionsData(): Promise<CareerOptionsData | null> {
+    const supabase = await createServerSupabaseClient();
+
+    const { data } = await supabase
+      .from('career_explorations')
+      .select('*')
+      .eq('user_id', this.userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data) return null;
+
+    // Parse Holland code
+    const hollandCode: CareerOptionsData['hollandCode'] = {
+      primary: data.holland_primary || 'S',
+      secondary: data.holland_secondary,
+      tertiary: data.holland_tertiary,
+      scores: data.holland_scores || {
+        realistic: 0,
+        investigative: 0,
+        artistic: 0,
+        social: 0,
+        enterprising: 0,
+        conventional: 0,
+      },
+    };
+
+    // Parse suggested careers
+    let suggestedCareers: CareerOptionsData['suggestedCareers'] = [];
+    if (data.suggested_careers && Array.isArray(data.suggested_careers)) {
+      suggestedCareers = data.suggested_careers;
+    }
+
+    // Parse explored careers
+    let exploredCareers: CareerOptionsData['exploredCareers'] = [];
+    if (data.explored_careers && Array.isArray(data.explored_careers)) {
+      exploredCareers = data.explored_careers;
+    }
+
+    // Parse comparison matrix
+    const comparisonMatrix: CareerOptionsData['comparisonMatrix'] = data.comparison_matrix || {
+      careers: [],
+      criteria: [],
+      rankings: [],
+    };
+
+    // Parse top career choices
+    let topCareerChoices: CareerOptionsData['topCareerChoices'] = [];
+    if (data.top_career_choices && Array.isArray(data.top_career_choices)) {
+      topCareerChoices = data.top_career_choices;
+    }
+
+    return {
+      hollandCode,
+      suggestedCareers,
+      exploredCareers,
+      comparisonMatrix,
+      topCareerChoices,
+      notes: data.notes,
+      completedAt: data.completed_at,
     };
   }
 
@@ -1015,6 +1141,23 @@ export class ModuleProgressService {
       }
     }
 
+    if (completedModules.includes('mission')) {
+      const missionData = await this.getMissionData();
+      if (missionData) {
+        profileData.mission_statement = missionData.finalStatement;
+      }
+    }
+
+    if (completedModules.includes('career-options')) {
+      const careerData = await this.getCareerOptionsData();
+      if (careerData) {
+        profileData.career_options = {
+          hollandCode: careerData.hollandCode,
+          topChoices: careerData.topCareerChoices,
+        };
+      }
+    }
+
     if (completedModules.includes('swot')) {
       const swotData = await this.getSwotData();
       if (swotData) {
@@ -1156,6 +1299,20 @@ ${lt.themes.slice(0, 3).map(t => `- ${t.theme}: ${t.description}`).join('\n')}`)
       parts.push(`User's Vision Statement (${v.timeHorizon}):
 ${v.visionStatement}
 Core Aspirations: ${v.coreAspirations.join(', ')}`);
+    }
+
+    if (context.availableData.mission) {
+      const m = context.availableData.mission;
+      parts.push(`User's Mission Statement:
+${m.finalStatement}`);
+    }
+
+    if (context.availableData['career-options']) {
+      const c = context.availableData['career-options'];
+      if (c.topCareerChoices && c.topCareerChoices.length > 0) {
+        parts.push(`User's Top Career Choices:
+${c.topCareerChoices.map(choice => `- ${choice.career}: ${choice.reason}`).join('\n')}`);
+      }
     }
 
     if (context.availableData.swot) {

@@ -120,9 +120,17 @@ export async function POST(req: NextRequest) {
 
         } catch (error) {
           console.error('[AI Chat] Streaming error:', error);
+
+          // Provide more detailed error message
+          const errorMessage = error instanceof Error
+            ? `AI 응답 생성 중 오류가 발생했습니다: ${error.message}`
+            : 'AI 응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
           const errorData = JSON.stringify({
             type: 'error',
-            message: 'AI 응답 생성 중 오류가 발생했습니다.'
+            message: errorMessage,
+            retryable: true,
+            suggestion: '페이지를 새로고침하거나 잠시 후 다시 시도해주세요.'
           });
           controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
         } finally {
@@ -392,36 +400,62 @@ Examples of refined visions:
 function formatValues(values: any): string {
   if (!values) return '정보 없음';
 
-  const parts: string[] = [];
+  try {
+    const parts: string[] = [];
 
-  if (values.terminal?.top3?.length > 0) {
-    parts.push(`궁극적 가치: ${values.terminal.top3.join(', ')}`);
-  }
-  if (values.instrumental?.top3?.length > 0) {
-    parts.push(`수단적 가치: ${values.instrumental.top3.join(', ')}`);
-  }
-  if (values.work?.top3?.length > 0) {
-    parts.push(`직업 가치: ${values.work.top3.join(', ')}`);
-  }
+    // Handle different data structures
+    if (values.terminal?.top3?.length > 0) {
+      parts.push(`궁극적 가치: ${values.terminal.top3.join(', ')}`);
+    } else if (values.terminalTop3?.length > 0) {
+      parts.push(`궁극적 가치: ${values.terminalTop3.join(', ')}`);
+    }
 
-  return parts.length > 0 ? parts.join(' | ') : '정보 없음';
+    if (values.instrumental?.top3?.length > 0) {
+      parts.push(`수단적 가치: ${values.instrumental.top3.join(', ')}`);
+    } else if (values.instrumentalTop3?.length > 0) {
+      parts.push(`수단적 가치: ${values.instrumentalTop3.join(', ')}`);
+    }
+
+    if (values.work?.top3?.length > 0) {
+      parts.push(`직업 가치: ${values.work.top3.join(', ')}`);
+    } else if (values.workTop3?.length > 0) {
+      parts.push(`직업 가치: ${values.workTop3.join(', ')}`);
+    }
+
+    return parts.length > 0 ? parts.join(' | ') : '정보 없음';
+  } catch (error) {
+    console.error('[AI Chat] Error formatting values:', error);
+    return '정보 없음';
+  }
 }
 
 /**
  * Strengths 포맷팅 (문자열로 변환)
  */
-function formatStrengths(strengths: any[]): string {
-  if (!strengths || strengths.length === 0) return '정보 없음';
+function formatStrengths(strengths: any): string {
+  if (!strengths) return '정보 없음';
 
-  return strengths
-    .slice(0, 5)
-    .map((s: any, idx: number) => {
-      const name = typeof s === 'string'
-        ? s
-        : (s.name || s.strength || s.strengths?.name || '알 수 없음');
-      return `${idx + 1}. ${name}`;
-    })
-    .join(', ');
+  try {
+    // Handle if strengths is wrapped in an object with topStrengths
+    const strengthsArray = Array.isArray(strengths)
+      ? strengths
+      : strengths.topStrengths || [];
+
+    if (strengthsArray.length === 0) return '정보 없음';
+
+    return strengthsArray
+      .slice(0, 5)
+      .map((s: any, idx: number) => {
+        const name = typeof s === 'string'
+          ? s
+          : (s.name || s.strength || s.strengths?.name || '알 수 없음');
+        return `${idx + 1}. ${name}`;
+      })
+      .join(', ');
+  } catch (error) {
+    console.error('[AI Chat] Error formatting strengths:', error);
+    return '정보 없음';
+  }
 }
 
 /**

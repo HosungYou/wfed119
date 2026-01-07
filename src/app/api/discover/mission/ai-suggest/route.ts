@@ -8,6 +8,8 @@ import Anthropic from '@anthropic-ai/sdk';
  * Generate AI-powered mission statement suggestions
  */
 export async function POST(request: NextRequest) {
+  let body: any = null;
+
   try {
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    body = await request.json();
     const { values, purposeAnswers, context, type = 'draft' } = body;
 
     // Check for API key
@@ -46,10 +48,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Mission AI Suggest] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate suggestion' },
-      { status: 500 }
-    );
+
+    // Return fallback instead of 500 error
+    const fallbackMission = generateFallbackMission(body?.values, body?.purposeAnswers);
+    return NextResponse.json({
+      suggestion: fallbackMission,
+      source: 'fallback',
+      error: 'AI service temporarily unavailable. Using template-based suggestion.',
+    });
   }
 }
 
@@ -145,14 +151,28 @@ Provide feedback in JSON format:
     }
 
     if (type === 'feedback') {
-      // Parse JSON for feedback
+      // Parse JSON for feedback with robust error handling
       let cleanedText = content.text.trim();
       if (cleanedText.startsWith('```json')) {
         cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       } else if (cleanedText.startsWith('```')) {
         cleanedText = cleanedText.replace(/```\n?/g, '');
       }
-      return JSON.parse(cleanedText);
+
+      try {
+        return JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error('[Mission AI Suggest] JSON parse error:', parseError, 'Raw text:', cleanedText);
+        // Return a fallback feedback structure
+        return {
+          clarity: { score: 7, feedback: 'Unable to analyze. Please try again.' },
+          values_alignment: { score: 7, feedback: 'Unable to analyze.' },
+          impact: { score: 7, feedback: 'Unable to analyze.' },
+          actionability: { score: 7, feedback: 'Unable to analyze.' },
+          overall: { score: 7, summary: 'AI analysis temporarily unavailable. Please try again.' },
+          suggestions: ['Try refining your mission statement to be more specific.']
+        };
+      }
     }
 
     return content.text.trim();

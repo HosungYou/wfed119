@@ -100,6 +100,10 @@ async function getModuleData(service: Awaited<ReturnType<typeof createModuleProg
       return service.getLifeThemesData();
     case 'vision':
       return service.getVisionData();
+    case 'mission':
+      return service.getMissionData();
+    case 'career-options':
+      return service.getCareerOptionsData();
     case 'swot':
       return service.getSwotData();
     case 'goals':

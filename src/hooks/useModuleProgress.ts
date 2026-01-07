@@ -119,6 +119,9 @@ export function useModuleProgress(moduleId?: ModuleId) {
     completeModule,
     updateStage,
     refresh: fetchProgress,
+    // Convenience aliases
+    canStartModule: progress?.canStart ?? true,  // Default to true to allow starting
+    missingPrerequisites: progress?.missingPrerequisites ?? [],
   };
 }
 

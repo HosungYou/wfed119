@@ -74,3 +74,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/discover/values/session
+ *
+ * Deletes all value results for the current user (reset session)
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createServerSupabaseClient();
+
+    // 1. Authentication check with dev mode support
+    const { data: { user } } = await supabase.auth.getUser();
+    const auth = checkDevAuth(user ? { user } : null);
+
+    if (!requireAuth(auth)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = auth.userId;
+
+    // 2. Delete all value results for this user
+    const { error } = await supabase
+      .from('value_results')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[Values Session] Delete error:', error);
+      return NextResponse.json({ error: 'Failed to delete session' }, { status: 500 });
+    }
+
+    // 3. Also update module_progress to reset values module
+    await supabase
+      .from('module_progress')
+      .delete()
+      .eq('user_id', userId)
+      .eq('module_id', 'values');
+
+    return NextResponse.json({ success: true, message: 'Values session deleted successfully' });
+
+  } catch (error) {
+    console.error('[Values Session] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -100,7 +100,7 @@ Does it meet all four criteria (Concise, Clear, Inspiring, Unique) based on my c
 
     // 3. Claude API 호출
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
       temperature: 0.5,
       system: systemPrompt,

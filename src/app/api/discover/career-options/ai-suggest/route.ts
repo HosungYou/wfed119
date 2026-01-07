@@ -115,7 +115,7 @@ Ensure diverse suggestions across different industries and levels of specializat
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });

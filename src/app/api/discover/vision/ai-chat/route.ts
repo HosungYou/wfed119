@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Claude API 스트리밍 호출
     const stream = await anthropic.messages.stream({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       temperature: 0.7,
       system: systemPrompt,
@@ -496,7 +496,7 @@ async function saveConversationLog(
             type: 'vision_ai',
             vision_statement_id: visionData.id,
             step_number: step,
-            model_used: 'claude-3-5-sonnet-20241022',
+            model_used: 'claude-sonnet-4-20250514',
             tokens_used: tokens,
             response_time_ms: responseTime
           }
@@ -510,7 +510,7 @@ async function saveConversationLog(
             type: 'vision_ai',
             vision_statement_id: visionData.id,
             step_number: step,
-            model_used: 'claude-3-5-sonnet-20241022',
+            model_used: 'claude-sonnet-4-20250514',
             tokens_used: tokens,
             response_time_ms: responseTime
           }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Loader2, ArrowRight, Home, Heart, Star, Briefcase, CheckCircle, Circle } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { useLanguage } from '@/lib/i18n';
-import { ModuleShell, ModuleCard, ModuleButton } from '@/components/modules';
+import { ModuleShell, ModuleCard, ModuleButton, SessionResetButton } from '@/components/modules';
 
 interface ValueStatus {
   terminal: { started: boolean; completed: boolean; count: number };
@@ -262,14 +262,20 @@ export default function ValuesModuleLanding() {
             </ModuleButton>
           )}
 
-          <ModuleButton
-            onClick={() => router.push('/')}
-            variant="ghost"
-            className="w-full"
-          >
-            <Home className="w-4 h-4 mr-2" />
-            {language === 'ko' ? '홈으로' : 'Back to Home'}
-          </ModuleButton>
+          <div className="flex items-center justify-between pt-2">
+            <ModuleButton
+              onClick={() => router.push('/')}
+              variant="ghost"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              {language === 'ko' ? '홈으로' : 'Back to Home'}
+            </ModuleButton>
+
+            <SessionResetButton
+              moduleId="values"
+              moduleName={{ ko: '가치관 발견', en: 'Values Discovery' }}
+            />
+          </div>
         </div>
       </div>
     </ModuleShell>

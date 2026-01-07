@@ -272,7 +272,7 @@ Each item should be 1-2 sentences, specific to this user, and actionable.`;
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });

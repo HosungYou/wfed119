@@ -45,6 +45,11 @@ export async function GET(request: NextRequest) {
         purpose_answers: {},
         draft_versions: [],
         ai_conversation: [],
+        // New fields for life roles module
+        life_roles: [],
+        wellbeing_reflections: {},
+        role_commitments: [],
+        wellbeing_commitments: {},
       })
       .select()
       .single();
@@ -79,7 +84,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     // Validate step if provided
-    if (body.current_step && (body.current_step < 1 || body.current_step > 4)) {
+    if (body.current_step && (body.current_step < 1 || body.current_step > 5)) {
       return NextResponse.json({ error: 'Invalid step' }, { status: 400 });
     }
 
@@ -93,6 +98,11 @@ export async function PATCH(request: NextRequest) {
     if (body.final_statement !== undefined) updateData.final_statement = body.final_statement;
     if (body.ai_conversation !== undefined) updateData.ai_conversation = body.ai_conversation;
     if (body.status !== undefined) updateData.status = body.status;
+    // New fields for life roles module
+    if (body.life_roles !== undefined) updateData.life_roles = body.life_roles;
+    if (body.wellbeing_reflections !== undefined) updateData.wellbeing_reflections = body.wellbeing_reflections;
+    if (body.role_commitments !== undefined) updateData.role_commitments = body.role_commitments;
+    if (body.wellbeing_commitments !== undefined) updateData.wellbeing_commitments = body.wellbeing_commitments;
 
     // Handle completion
     if (body.status === 'completed') {

@@ -2,39 +2,47 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, CheckCircle, Target, Sparkles, Download, Share2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, ClipboardList, HelpCircle, Users, Target } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
-import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
-interface Feedback {
-  clarity: { score: number; feedback: string };
-  values_alignment: { score: number; feedback: string };
-  impact: { score: number; feedback: string };
-  actionability: { score: number; feedback: string };
-  overall: { score: number; summary: string };
-  suggestions: string[];
+interface RoleCommitment {
+  role: string;
+  commitment: string;
+}
+
+interface WellbeingCommitment {
+  dimension: string;
+  commitment: string;
 }
 
 const STEPS = [
   { id: 'step1', label: 'Values Review', labelKo: '가치관 검토' },
-  { id: 'step2', label: 'Purpose Questions', labelKo: '목적 질문' },
-  { id: 'step3', label: 'Mission Draft', labelKo: '사명 초안' },
-  { id: 'step4', label: 'Mission Refinement', labelKo: '사명 완성' },
+  { id: 'step2', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
+  { id: 'step3', label: 'Self-Role Reflection', labelKo: '자기 역할 성찰' },
+  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step5', label: 'Mission Statement', labelKo: '사명 선언문' },
 ];
+
+const SHARPEN_SAW_ROLES = [
+  { key: 'physical', label: 'Physical', labelKo: '신체적' },
+  { key: 'intellectual', label: 'Intellectual', labelKo: '지적' },
+  { key: 'social_emotional', label: 'Social/Emotional', labelKo: '사회적/정서적' },
+  { key: 'spiritual', label: 'Spiritual', labelKo: '영적' },
+  { key: 'financial', label: 'Financial', labelKo: '재정적' },
+];
+
+const AGE_MARKERS = [10, 20, 30, 40, 50, 60, 70, 80];
 
 export default function MissionStep4() {
   const router = useRouter();
   const { language } = useLanguage();
-  const { completeModule } = useModuleProgress('mission');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
   const [session, setSession] = useState<any>(null);
-  const [finalStatement, setFinalStatement] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [roleCommitments, setRoleCommitments] = useState<RoleCommitment[]>([]);
+  const [wellbeingCommitments, setWellbeingCommitments] = useState<Record<string, string>>({});
+  const [currentAge, setCurrentAge] = useState<number>(25);
 
   useEffect(() => {
     loadData();
@@ -52,12 +60,25 @@ export default function MissionStep4() {
 
       setSession(data);
 
-      // Use final statement if exists, otherwise use latest draft
-      if (data.final_statement) {
-        setFinalStatement(data.final_statement);
-        setIsCompleted(data.status === 'completed');
-      } else if (data.draft_versions && data.draft_versions.length > 0) {
-        setFinalStatement(data.draft_versions[data.draft_versions.length - 1].text);
+      // Initialize role commitments from life_roles
+      if (data.life_roles && data.life_roles.length > 0) {
+        const existingCommitments = data.role_commitments || [];
+        const commitments = data.life_roles.map((lr: any) => {
+          const existing = existingCommitments.find((c: any) => c.role === lr.role);
+          return {
+            role: lr.role,
+            commitment: existing?.commitment || '',
+          };
+        });
+        setRoleCommitments(commitments);
+      }
+
+      // Initialize wellbeing commitments
+      if (data.wellbeing_commitments) {
+        setWellbeingCommitments(data.wellbeing_commitments);
+      } else if (data.wellbeing_reflections) {
+        // Pre-fill with reflections as starting point
+        setWellbeingCommitments(data.wellbeing_reflections);
       }
 
       setLoading(false);
@@ -67,43 +88,30 @@ export default function MissionStep4() {
     }
   }
 
-  async function analyzeMission() {
-    if (!finalStatement.trim()) return;
-
-    setAnalyzing(true);
-    try {
-      const res = await fetch('/api/discover/mission/ai-suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          values: session?.values_used,
-          purposeAnswers: session?.purpose_answers,
-          context: { currentDraft: finalStatement },
-          type: 'feedback',
-        }),
-      });
-
-      const data = await res.json();
-      if (data.suggestion) {
-        setFeedback(data.suggestion);
-      }
-    } catch (error) {
-      console.error('[Mission Step 4] Analyze error:', error);
-    } finally {
-      setAnalyzing(false);
-    }
+  function updateRoleCommitment(index: number, commitment: string) {
+    setRoleCommitments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], commitment };
+      return updated;
+    });
   }
 
-  async function saveStatement() {
+  function updateWellbeingCommitment(key: string, value: string) {
+    setWellbeingCommitments(prev => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSave() {
     setSaving(true);
     try {
       await fetch('/api/discover/mission/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_statement: finalStatement }),
+        body: JSON.stringify({
+          role_commitments: roleCommitments,
+          wellbeing_commitments: wellbeingCommitments,
+        }),
       });
-      setIsEditing(false);
-      alert(language === 'ko' ? '저장됨!' : 'Saved!');
+      alert(language === 'ko' ? '저장되었습니다.' : 'Saved!');
     } catch (error) {
       console.error('[Mission Step 4] Save error:', error);
     } finally {
@@ -111,11 +119,15 @@ export default function MissionStep4() {
     }
   }
 
-  async function handleComplete() {
-    if (!finalStatement.trim()) {
+  async function handleNext() {
+    // Validate at least some commitments are filled
+    const filledRoleCommitments = roleCommitments.filter(c => c.commitment.trim()).length;
+    const filledWellbeingCommitments = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
+
+    if (filledRoleCommitments < 2 || filledWellbeingCommitments < 2) {
       alert(language === 'ko'
-        ? '사명 선언문을 완성해주세요.'
-        : 'Please finalize your mission statement.');
+        ? '역할별 헌신과 웰빙 영역별 헌신을 각각 최소 2개씩 작성해주세요.'
+        : 'Please complete at least 2 role commitments and 2 wellbeing commitments.');
       return;
     }
 
@@ -125,34 +137,23 @@ export default function MissionStep4() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          final_statement: finalStatement,
-          status: 'completed',
+          current_step: 5,
+          role_commitments: roleCommitments,
+          wellbeing_commitments: wellbeingCommitments,
         }),
       });
 
-      await completeModule();
-      setIsCompleted(true);
+      router.push('/discover/mission/step5');
     } catch (error) {
-      console.error('[Mission Step 4] Complete error:', error);
-      alert(language === 'ko' ? '완료 실패' : 'Completion failed');
-    } finally {
+      console.error('[Mission Step 4] Save error:', error);
+      alert(language === 'ko' ? '저장 실패' : 'Save failed');
       setSaving(false);
     }
   }
 
-  function getScoreColor(score: number) {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 6) return 'text-yellow-600';
-    return 'text-red-600';
-  }
-
-  function getScoreEmoji(score: number) {
-    if (score >= 8) return '✅';
-    if (score >= 6) return '⚠️';
-    return '❌';
-  }
-
   const activities = createActivitiesFromSteps(STEPS, '/discover/mission', 4, [1, 2, 3]);
+  const filledRoleCount = roleCommitments.filter(c => c.commitment.trim()).length;
+  const filledWellbeingCount = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
 
   if (loading) {
     return (
@@ -162,199 +163,227 @@ export default function MissionStep4() {
     );
   }
 
-  // Completion Screen
-  if (isCompleted) {
-    return (
-      <ModuleShell moduleId="mission" showProgress={false}>
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <div className="w-24 h-24 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-white" />
-          </div>
-
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {language === 'ko' ? '사명 선언문 완성!' : 'Mission Statement Complete!'}
-          </h1>
-
-          <p className="text-gray-600 mb-8">
-            {language === 'ko'
-              ? '축하합니다! 당신의 사명 선언문이 완성되었습니다.'
-              : 'Congratulations! Your personal mission statement is now complete.'}
-          </p>
-
-          <ModuleCard padding="large" className="bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200 mb-8">
-            <Target className="w-8 h-8 text-teal-600 mx-auto mb-4" />
-            <p className="text-xl text-gray-900 leading-relaxed font-medium">
-              "{finalStatement}"
-            </p>
-          </ModuleCard>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <ModuleButton
-              onClick={() => {
-                navigator.clipboard.writeText(finalStatement);
-                alert(language === 'ko' ? '복사됨!' : 'Copied!');
-              }}
-              variant="secondary"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              {language === 'ko' ? '복사하기' : 'Copy'}
-            </ModuleButton>
-            <ModuleButton onClick={() => router.push('/dashboard')}>
-              {language === 'ko' ? '대시보드로 이동' : 'Go to Dashboard'}
-            </ModuleButton>
-            <ModuleButton
-              onClick={() => router.push('/discover/career-options')}
-              variant="secondary"
-            >
-              {language === 'ko' ? '다음 모듈: 경력 탐색' : 'Next: Career Options'}
-            </ModuleButton>
-          </div>
-        </div>
-      </ModuleShell>
-    );
-  }
-
   return (
     <ModuleShell
       moduleId="mission"
       currentStep={4}
-      totalSteps={4}
-      title={language === 'ko' ? '사명 완성' : 'Mission Refinement'}
+      totalSteps={5}
+      title={language === 'ko' ? '역할과 헌신' : 'Roles & Commitment'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Final Statement */}
+        {/* Life Rainbow Visualization */}
         <ModuleCard padding="normal">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              {language === 'ko' ? '최종 사명 선언문' : 'Final Mission Statement'}
-            </h2>
-            <ModuleButton
-              onClick={analyzeMission}
-              variant="secondary"
-              size="small"
-              disabled={analyzing || !finalStatement.trim()}
-            >
-              {analyzing ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              {language === 'ko' ? 'AI 분석' : 'AI Analysis'}
-            </ModuleButton>
+          <h2 className="text-xl font-bold text-gray-900 mb-3">
+            {language === 'ko' ? '3. 삶의 역할 목록 (Life Roles Rainbow)' : '3. List Up All of Your Life Roles (Rainbow)'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {language === 'ko'
+              ? '"톱날 갈기"라 불리는 자기 자신을 위한 역할을 포함하여 현재와 미래의 역할을 최대 8개까지 나열하세요. 미래의 역할을 입력할 때는 "[미래]교수" 또는 "CEO"처럼 작성할 수 있습니다.'
+              : 'List up your current and future roles up to eight on this rainbow including the role to yourself, called "Sharpen the Saw." When you enter future roles, you can put "[future] professor" or "CEO" as your role.'}
+          </p>
+
+          {/* Rainbow Visualization */}
+          <div className="p-6 bg-gradient-to-br from-gray-50 to-teal-50 rounded-lg mb-4">
+            <div className="relative flex justify-center">
+              <svg viewBox="0 0 400 220" className="w-full max-w-md">
+                {/* Age markers */}
+                {AGE_MARKERS.map((age, i) => (
+                  <text
+                    key={age}
+                    x={50 + i * 43}
+                    y={20}
+                    className="text-xs fill-gray-500"
+                    textAnchor="middle"
+                  >
+                    {age}
+                  </text>
+                ))}
+
+                {/* Rainbow arcs */}
+                {[...Array(8)].map((_, i) => (
+                  <path
+                    key={i}
+                    d={`M 50 200 Q 200 ${20 + i * 20} 350 200`}
+                    fill="none"
+                    stroke={i < roleCommitments.length ? `hsl(${170 + i * 15}, 50%, 60%)` : '#e5e7eb'}
+                    strokeWidth="4"
+                    opacity={0.7}
+                  />
+                ))}
+
+                {/* Current age marker */}
+                <line x1={50 + (currentAge / 10) * 43} y1={25} x2={50 + (currentAge / 10) * 43} y2={195} stroke="#0d9488" strokeWidth="2" strokeDasharray="4 2" />
+                <text x={50 + (currentAge / 10) * 43} y={210} className="text-xs fill-teal-600 font-medium" textAnchor="middle">
+                  {language === 'ko' ? '현재' : 'Now'}
+                </text>
+              </svg>
+            </div>
+            <p className="text-center text-sm text-gray-500 mt-2">
+              {language === 'ko'
+                ? 'Life Roles Rainbow (Super, 1980)'
+                : 'Life Roles Rainbow (Super, 1980)'}
+            </p>
           </div>
 
-          {isEditing ? (
-            <div className="space-y-4">
-              <textarea
-                value={finalStatement}
-                onChange={(e) => setFinalStatement(e.target.value)}
-                rows={5}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-lg"
-              />
-              <div className="flex gap-3">
-                <ModuleButton onClick={saveStatement} disabled={saving}>
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  {language === 'ko' ? '저장' : 'Save'}
-                </ModuleButton>
-                <ModuleButton
-                  onClick={() => setIsEditing(false)}
-                  variant="ghost"
-                >
-                  {language === 'ko' ? '취소' : 'Cancel'}
-                </ModuleButton>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="p-6 bg-teal-50 border border-teal-200 rounded-lg cursor-pointer hover:bg-teal-100 transition-colors"
-              onClick={() => setIsEditing(true)}
-            >
-              <p className="text-lg text-gray-900 leading-relaxed">
-                {finalStatement || (language === 'ko' ? '클릭하여 편집...' : 'Click to edit...')}
-              </p>
-              <p className="text-sm text-teal-600 mt-3">
-                {language === 'ko' ? '클릭하여 수정' : 'Click to edit'}
-              </p>
-            </div>
-          )}
+          <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-lg">
+            <span className="font-medium">{language === 'ko' ? '출처: ' : 'Source: '}</span>
+            Super, D. E. (1980). A life-span, life-space approach to career development. <em>Journal of Vocational Behavior, 16</em>(3), 282-298.
+          </div>
         </ModuleCard>
 
-        {/* AI Feedback */}
-        {feedback && (
-          <ModuleCard padding="normal">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              {language === 'ko' ? 'AI 피드백' : 'AI Feedback'}
+        {/* Roles & Commitment Table */}
+        <ModuleCard padding="normal">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="w-5 h-5 text-teal-600" />
+            <h3 className="font-semibold text-gray-900">
+              {language === 'ko' ? '4. 역할 및 헌신 (R&C) 테이블' : '4. Completing Roles and Commitment (R&C) Table'}
             </h3>
+          </div>
+          <p className="text-gray-600 text-sm mb-4">
+            {language === 'ko'
+              ? '"헌신(Commitment)"은 의무나 압박이 아닌 진정한 자기 선택적 참여입니다. 각 역할에 대해 어떻게 헌신할 것인지 1-2문장으로 작성하세요.'
+              : '"Commitment" is not a rigid obligation but a genuine, self-chosen involvement. Describe your commitment for each role in 1-2 sentences.'}
+          </p>
 
-            {/* Overall Score */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-700">
-                  {language === 'ko' ? '종합 점수' : 'Overall Score'}
-                </span>
-                <span className={`text-2xl font-bold ${getScoreColor(feedback.overall.score)}`}>
-                  {feedback.overall.score}/10
-                </span>
-              </div>
-              <p className="text-sm text-gray-600">{feedback.overall.summary}</p>
-            </div>
-
-            {/* Individual Scores */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              {[
-                { key: 'clarity', label: language === 'ko' ? '명확성' : 'Clarity', data: feedback.clarity },
-                { key: 'values_alignment', label: language === 'ko' ? '가치 일치' : 'Values Alignment', data: feedback.values_alignment },
-                { key: 'impact', label: language === 'ko' ? '영향력' : 'Impact', data: feedback.impact },
-                { key: 'actionability', label: language === 'ko' ? '실행 가능성' : 'Actionability', data: feedback.actionability },
-              ].map((item) => (
-                <div key={item.key} className="p-3 bg-white border rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                    <span className={getScoreColor(item.data.score)}>
-                      {getScoreEmoji(item.data.score)} {item.data.score}/10
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">{item.data.feedback}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Suggestions */}
-            {feedback.suggestions && feedback.suggestions.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2">
-                  {language === 'ko' ? '개선 제안' : 'Suggestions'}
-                </h4>
-                <ul className="space-y-2">
-                  {feedback.suggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-teal-500">•</span>
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </ModuleCard>
-        )}
-
-        {/* Values Reference */}
-        <ModuleCard padding="normal" className="bg-gray-50">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            {language === 'ko' ? '선택한 가치관' : 'Selected Values'}
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {session?.values_used?.map((v: any, i: number) => (
-              <span key={i} className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-700">
-                {v.name}
+          {/* Sharpen the Saw Section */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-purple-50 rounded-lg">
+              <Target className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-800">
+                {language === 'ko' ? '톱날 갈기 (자기 관리)' : 'Sharpen the Saw (Self-care)'}
               </span>
-            ))}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 w-1/4">
+                      {language === 'ko' ? '영역' : 'Dimension'}
+                    </th>
+                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                      {language === 'ko' ? '헌신' : 'Commitment'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SHARPEN_SAW_ROLES.map((dim) => (
+                    <tr key={dim.key}>
+                      <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
+                        {language === 'ko' ? dim.labelKo : dim.label}
+                      </td>
+                      <td className="border border-gray-200 p-1 bg-white">
+                        <input
+                          type="text"
+                          value={wellbeingCommitments[dim.key] || ''}
+                          onChange={(e) => updateWellbeingCommitment(dim.key, e.target.value)}
+                          placeholder={language === 'ko' ? '헌신 내용 입력...' : 'Enter commitment...'}
+                          className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Life Roles Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-3 p-2 bg-teal-50 rounded-lg">
+              <Users className="w-4 h-4 text-teal-600" />
+              <span className="text-sm font-medium text-teal-800">
+                {language === 'ko' ? '삶의 역할' : 'Life Roles'}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 w-1/4">
+                      {language === 'ko' ? '역할' : 'Role'}
+                    </th>
+                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                      {language === 'ko' ? '헌신' : 'Commitment'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roleCommitments.map((rc, index) => (
+                    <tr key={index}>
+                      <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
+                        {rc.role}
+                      </td>
+                      <td className="border border-gray-200 p-1 bg-white">
+                        <input
+                          type="text"
+                          value={rc.commitment}
+                          onChange={(e) => updateRoleCommitment(index, e.target.value)}
+                          placeholder={language === 'ko' ? '이 역할에 대한 헌신...' : 'Your commitment to this role...'}
+                          className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ModuleCard>
+
+        {/* Example Reference */}
+        <ModuleCard padding="normal" className="bg-amber-50 border-amber-200">
+          <div className="flex items-start gap-2">
+            <HelpCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-amber-800 mb-2">
+                {language === 'ko' ? '예시' : 'Example'}
+              </h4>
+              <div className="text-sm text-amber-900 space-y-2">
+                <p>
+                  <span className="font-medium">{language === 'ko' ? '신체적: ' : 'Physical: '}</span>
+                  {language === 'ko'
+                    ? '신체적 웰빙과 에너지를 향상시키기 위해 규칙적인 운동에 참여한다.'
+                    : 'Engage in regular exercise to enhance my physical well-being and energy.'}
+                </p>
+                <p>
+                  <span className="font-medium">{language === 'ko' ? '자녀 역할: ' : 'Son/Daughter role: '}</span>
+                  {language === 'ko'
+                    ? '부모님께 정기적으로 연락하고 감사를 표현한다.'
+                    : 'Contact parents regularly and express gratitude.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </ModuleCard>
+
+        {/* Progress Summary */}
+        <ModuleCard padding="normal" className={
+          filledRoleCount >= 2 && filledWellbeingCount >= 2
+            ? 'bg-green-50 border-green-200'
+            : 'bg-gray-50'
+        }>
+          <div className="flex items-center justify-between text-sm">
+            <div className="space-y-1">
+              <p className={filledWellbeingCount >= 2 ? 'text-green-700' : 'text-gray-600'}>
+                {language === 'ko'
+                  ? `웰빙 헌신: ${filledWellbeingCount}/5 완성 (최소 2개)`
+                  : `Wellbeing commitments: ${filledWellbeingCount}/5 (min 2)`}
+              </p>
+              <p className={filledRoleCount >= 2 ? 'text-green-700' : 'text-gray-600'}>
+                {language === 'ko'
+                  ? `역할 헌신: ${filledRoleCount}/${roleCommitments.length} 완성 (최소 2개)`
+                  : `Role commitments: ${filledRoleCount}/${roleCommitments.length} (min 2)`}
+              </p>
+            </div>
+            {filledRoleCount >= 2 && filledWellbeingCount >= 2 && (
+              <span className="text-green-600 text-lg">✓</span>
+            )}
           </div>
         </ModuleCard>
 
         {/* Navigation */}
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <ModuleButton
             onClick={() => router.push('/discover/mission/step3')}
             variant="secondary"
@@ -362,14 +391,23 @@ export default function MissionStep4() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {language === 'ko' ? '이전' : 'Back'}
           </ModuleButton>
-          <ModuleButton
-            onClick={handleComplete}
-            disabled={saving || !finalStatement.trim()}
-            size="large"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-            {language === 'ko' ? '사명 선언문 완성' : 'Complete Mission Statement'}
-          </ModuleButton>
+          <div className="flex gap-3">
+            <ModuleButton
+              onClick={handleSave}
+              variant="ghost"
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {language === 'ko' ? '저장' : 'Save'}
+            </ModuleButton>
+            <ModuleButton
+              onClick={handleNext}
+              disabled={saving || filledRoleCount < 2 || filledWellbeingCount < 2}
+            >
+              {language === 'ko' ? '다음: 사명 선언문' : 'Next: Mission Statement'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </ModuleButton>
+          </div>
         </div>
       </div>
     </ModuleShell>

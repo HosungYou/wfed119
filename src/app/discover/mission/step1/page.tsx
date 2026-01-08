@@ -15,9 +15,10 @@ interface ValueItem {
 
 const STEPS = [
   { id: 'step1', label: 'Values Review', labelKo: '가치관 검토' },
-  { id: 'step2', label: 'Purpose Questions', labelKo: '목적 질문' },
-  { id: 'step3', label: 'Mission Draft', labelKo: '사명 초안' },
-  { id: 'step4', label: 'Mission Refinement', labelKo: '사명 완성' },
+  { id: 'step2', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
+  { id: 'step3', label: 'Self-Role Reflection', labelKo: '자기 역할 성찰' },
+  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step5', label: 'Mission Statement', labelKo: '사명 선언문' },
 ];
 
 export default function MissionStep1() {
@@ -161,7 +162,7 @@ export default function MissionStep1() {
     <ModuleShell
       moduleId="mission"
       currentStep={1}
-      totalSteps={4}
+      totalSteps={5}
       title={language === 'ko' ? '가치관 검토' : 'Values Review'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >

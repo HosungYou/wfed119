@@ -188,15 +188,16 @@ export default function MissionModuleLanding() {
         {/* Steps Overview */}
         <ModuleCard className="mb-6" padding="normal">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {language === 'ko' ? '4단계 과정' : '4-Step Process'}
+            {language === 'ko' ? '5단계 과정' : '5-Step Process'}
           </h2>
 
           <div className="space-y-3">
             {[
               { step: 1, title: language === 'ko' ? '가치관 검토' : 'Values Review', desc: language === 'ko' ? '핵심 가치관을 검토하고 선택합니다' : 'Review and select your core values' },
-              { step: 2, title: language === 'ko' ? '목적 질문' : 'Purpose Questions', desc: language === 'ko' ? '5가지 목적 질문에 답합니다' : 'Answer 5 purpose-defining questions' },
-              { step: 3, title: language === 'ko' ? '사명 초안' : 'Mission Draft', desc: language === 'ko' ? 'AI가 사명 선언문 초안을 도와줍니다' : 'AI helps draft your mission statement' },
-              { step: 4, title: language === 'ko' ? '사명 완성' : 'Mission Refinement', desc: language === 'ko' ? '사명 선언문을 수정하고 완성합니다' : 'Refine and finalize your statement' },
+              { step: 2, title: language === 'ko' ? '삶의 역할 탐색' : 'Life Roles Mapping', desc: language === 'ko' ? '나를 중심으로 삶의 관계와 역할을 매핑합니다' : 'Map relationships and roles around yourself' },
+              { step: 3, title: language === 'ko' ? '자기 역할 성찰' : 'Self-Role Reflection', desc: language === 'ko' ? 'Sharpen the Saw: 5가지 웰빙 차원 성찰' : 'Sharpen the Saw: Reflect on 5 wellbeing dimensions' },
+              { step: 4, title: language === 'ko' ? '역할과 헌신' : 'Roles & Commitment', desc: language === 'ko' ? 'Life Rainbow와 R&C 테이블 작성' : 'Complete Life Rainbow and R&C Table' },
+              { step: 5, title: language === 'ko' ? '사명 선언문' : 'Mission Statement', desc: language === 'ko' ? 'AI와 함께 사명 선언문을 작성합니다' : 'Draft and finalize your mission statement with AI' },
             ].map((item) => (
               <div
                 key={item.step}

@@ -63,29 +63,47 @@ export async function POST(request: NextRequest) {
     let pdfBase64 = '';
 
     const fileType = file.type;
+    const fileName = file.name.toLowerCase();
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    if (fileType === 'application/pdf') {
+    console.log('[Analyze Resume] File info:', { fileName, fileType, size: file.size });
+
+    if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
       // For PDF, we'll send it directly to Claude as a document
       isPdf = true;
       pdfBase64 = buffer.toString('base64');
     } else if (
       fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      fileType === 'application/msword'
+      fileName.endsWith('.docx')
     ) {
-      // Parse Word document
+      // Parse .docx document (mammoth only supports .docx, not .doc)
       try {
         const result = await mammoth.extractRawText({ buffer });
         resumeContent = result.value;
+        if (!resumeContent || resumeContent.trim().length === 0) {
+          return NextResponse.json({
+            error: 'Could not extract text from document. Please try PDF format.'
+          }, { status: 400 });
+        }
       } catch (error) {
-        console.error('[Analyze Resume] Word parsing error:', error);
-        return NextResponse.json({ error: 'Failed to parse Word document' }, { status: 400 });
+        console.error('[Analyze Resume] DOCX parsing error:', error);
+        return NextResponse.json({
+          error: 'Failed to parse Word document. Please save as .docx or PDF format.'
+        }, { status: 400 });
       }
-    } else if (fileType === 'text/plain') {
+    } else if (fileType === 'application/msword' || fileName.endsWith('.doc')) {
+      // Old .doc format is not supported by mammoth
+      return NextResponse.json({
+        error: 'Old .doc format is not supported. Please save your resume as .docx or PDF format and try again.',
+        errorKo: '구형 .doc 형식은 지원되지 않습니다. 이력서를 .docx 또는 PDF 형식으로 저장 후 다시 시도해주세요.'
+      }, { status: 400 });
+    } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
       resumeContent = buffer.toString('utf-8');
     } else {
-      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+      return NextResponse.json({
+        error: `Unsupported file type: ${fileType}. Please use PDF, .docx, or .txt format.`
+      }, { status: 400 });
     }
 
     // Check for API key

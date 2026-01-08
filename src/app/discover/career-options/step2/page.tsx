@@ -194,11 +194,16 @@ export default function CareerOptionsStep2() {
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error('Analysis failed');
-      }
-
       const data = await res.json();
+
+      if (!res.ok) {
+        // Show specific error message from server
+        const errorMsg = language === 'ko' && data.errorKo
+          ? data.errorKo
+          : data.error || 'Analysis failed';
+        setFileError(errorMsg);
+        return;
+      }
 
       if (data.analysis) {
         setAnalysis(data.analysis);
@@ -217,11 +222,14 @@ export default function CareerOptionsStep2() {
       }
     } catch (error) {
       console.error('[Career Step 2] Analysis error:', error);
-      setFileError(
-        language === 'ko'
-          ? '이력서 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
-          : 'Error analyzing resume. Please try again.'
-      );
+      // Only show generic error if no specific error was set
+      if (!fileError) {
+        setFileError(
+          language === 'ko'
+            ? '이력서 분석 중 오류가 발생했습니다. 다시 시도해주세요.'
+            : 'Error analyzing resume. Please try again.'
+        );
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -366,7 +374,12 @@ export default function CareerOptionsStep2() {
                     {language === 'ko' ? '파일 선택' : 'browse files'}
                   </button>
                   <p className="text-xs text-gray-400 mt-2">
-                    PDF, Word (.docx, .doc), Text (.txt) - Max 10MB
+                    PDF, Word (.docx), Text (.txt) - Max 10MB
+                  </p>
+                  <p className="text-xs text-orange-500 mt-1">
+                    {language === 'ko'
+                      ? '* 구형 .doc 파일은 .docx 또는 PDF로 변환해주세요'
+                      : '* Old .doc files need to be saved as .docx or PDF'}
                   </p>
                 </>
               )}

@@ -2,35 +2,69 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Plus, Minus, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Loader2, ArrowRight, ArrowLeft, Sparkles, ExternalLink,
+  Star, TrendingUp, DollarSign, User, Brain, CheckCircle
+} from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
-interface ExploredCareer {
+interface Career {
   title: string;
+  titleKo?: string;
   description: string;
-  pros: string[];
-  cons: string[];
-  requirements: string;
-  notes: string;
-  interestLevel: number;
-  userAdded: boolean;
+  descriptionKo?: string;
+  hollandFit: string;
+  valuesFit: string;
+  strengthsFit: string;
+  personalityFit?: string;
+  resumeFit?: string;
+  growthOutlook: string;
+  salaryRange: string;
+  matchScore: number;
+  onetCode?: string;
+  onetLink?: string;
+  selected?: boolean;
 }
 
 const STEPS = [
   { id: 'step1', label: 'Holland Assessment', labelKo: 'Holland 적성 검사' },
-  { id: 'step2', label: 'AI Career Suggestions', labelKo: 'AI 경력 추천' },
-  { id: 'step3', label: 'Career Research', labelKo: '경력 조사' },
+  { id: 'step2', label: 'Resume AI Review', labelKo: '이력서 AI 분석' },
+  { id: 'step3', label: 'AI Career Suggestions', labelKo: 'AI 경력 추천' },
   { id: 'step4', label: 'Career Comparison', labelKo: '경력 비교' },
 ];
+
+const HOLLAND_TYPES: Record<string, { name: string; nameKo: string }> = {
+  R: { name: 'Realistic', nameKo: '현실형' },
+  I: { name: 'Investigative', nameKo: '탐구형' },
+  A: { name: 'Artistic', nameKo: '예술형' },
+  S: { name: 'Social', nameKo: '사회형' },
+  E: { name: 'Enterprising', nameKo: '기업형' },
+  C: { name: 'Conventional', nameKo: '관습형' },
+};
+
+const ENNEAGRAM_TYPES: Record<number, { name: string; nameKo: string }> = {
+  1: { name: 'The Reformer', nameKo: '개혁가' },
+  2: { name: 'The Helper', nameKo: '조력자' },
+  3: { name: 'The Achiever', nameKo: '성취자' },
+  4: { name: 'The Individualist', nameKo: '개인주의자' },
+  5: { name: 'The Investigator', nameKo: '탐구자' },
+  6: { name: 'The Loyalist', nameKo: '충성가' },
+  7: { name: 'The Enthusiast', nameKo: '열정가' },
+  8: { name: 'The Challenger', nameKo: '도전자' },
+  9: { name: 'The Peacemaker', nameKo: '평화주의자' },
+};
 
 export default function CareerOptionsStep3() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [careers, setCareers] = useState<ExploredCareer[]>([]);
-  const [expandedIndex, setExpandedIndex] = useState<number>(0);
+  const [session, setSession] = useState<any>(null);
+  const [careers, setCareers] = useState<Career[]>([]);
+  const [context, setContext] = useState<any>(null);
+  const [enneagram, setEnneagram] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -38,88 +72,112 @@ export default function CareerOptionsStep3() {
 
   async function loadData() {
     try {
-      const res = await fetch('/api/discover/career-options/session');
-      const data = await res.json();
+      // Load career session
+      const sessionRes = await fetch('/api/discover/career-options/session');
+      const sessionData = await sessionRes.json();
 
-      if (data.current_step < 3) {
-        router.push(`/discover/career-options/step${data.current_step}`);
+      if (sessionData.current_step < 3) {
+        router.push(`/discover/career-options/step${sessionData.current_step}`);
         return;
       }
 
-      if (data.explored_careers && data.explored_careers.length > 0) {
-        setCareers(data.explored_careers);
+      setSession(sessionData);
+
+      // Load existing suggestions if any
+      if (sessionData.suggested_careers && sessionData.suggested_careers.length > 0) {
+        setCareers(sessionData.suggested_careers);
+      }
+
+      // Fetch context (values, strengths, etc.)
+      const contextRes = await fetch('/api/discover/mission/context');
+      const contextData = await contextRes.json();
+      setContext(contextData);
+
+      // Fetch enneagram results
+      try {
+        const enneagramRes = await fetch('/api/enneagram/session');
+        if (enneagramRes.ok) {
+          const enneagramData = await enneagramRes.json();
+          if (enneagramData.enneagram_type) {
+            setEnneagram(enneagramData);
+          }
+        }
+      } catch {
+        // Enneagram not completed
       }
 
       setLoading(false);
+
+      // Auto-generate if no careers yet
+      if (!sessionData.suggested_careers || sessionData.suggested_careers.length === 0) {
+        generateCareers(sessionData, contextData);
+      }
     } catch (error) {
       console.error('[Career Step 3] Error:', error);
       setLoading(false);
     }
   }
 
-  function updateCareer(index: number, updates: Partial<ExploredCareer>) {
+  async function generateCareers(sessionData?: any, contextData?: any) {
+    setGenerating(true);
+    try {
+      const s = sessionData || session;
+      const c = contextData || context;
+
+      const res = await fetch('/api/discover/career-options/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hollandCode: s.holland_code,
+          hollandScores: s.holland_scores,
+          resumeAnalysis: s.resume_analysis,
+          selectedOnetCareers: s.selected_onet_careers,
+          enneagramType: enneagram?.enneagram_type,
+          enneagramWing: enneagram?.wing,
+          values: c?.values,
+          strengths: c?.strengths,
+          vision: c?.vision,
+          mission: c?.mission,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.suggestions) {
+        const careersWithSelection = data.suggestions.map((c: Career) => ({
+          ...c,
+          selected: false,
+        }));
+        setCareers(careersWithSelection);
+
+        // Save to session
+        await fetch('/api/discover/career-options/session', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ suggested_careers: careersWithSelection }),
+        });
+      }
+    } catch (error) {
+      console.error('[Career Step 3] Generate error:', error);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function toggleCareerSelection(index: number) {
     setCareers(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], ...updates };
+      updated[index] = { ...updated[index], selected: !updated[index].selected };
       return updated;
     });
   }
 
-  function addPro(index: number) {
-    const newPros = [...careers[index].pros, ''];
-    updateCareer(index, { pros: newPros });
-  }
-
-  function updatePro(careerIndex: number, proIndex: number, value: string) {
-    const newPros = [...careers[careerIndex].pros];
-    newPros[proIndex] = value;
-    updateCareer(careerIndex, { pros: newPros });
-  }
-
-  function removePro(careerIndex: number, proIndex: number) {
-    const newPros = careers[careerIndex].pros.filter((_, i) => i !== proIndex);
-    updateCareer(careerIndex, { pros: newPros });
-  }
-
-  function addCon(index: number) {
-    const newCons = [...careers[index].cons, ''];
-    updateCareer(index, { cons: newCons });
-  }
-
-  function updateCon(careerIndex: number, conIndex: number, value: string) {
-    const newCons = [...careers[careerIndex].cons];
-    newCons[conIndex] = value;
-    updateCareer(careerIndex, { cons: newCons });
-  }
-
-  function removeCon(careerIndex: number, conIndex: number) {
-    const newCons = careers[careerIndex].cons.filter((_, i) => i !== conIndex);
-    updateCareer(careerIndex, { cons: newCons });
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await fetch('/api/discover/career-options/session', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ explored_careers: careers }),
-      });
-      alert(language === 'ko' ? '저장됨!' : 'Saved!');
-    } catch (error) {
-      console.error('[Career Step 3] Save error:', error);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleNext() {
-    // Check if at least basic research is done
-    const researched = careers.filter(c => c.pros.length > 0 || c.cons.length > 0 || c.notes);
-    if (researched.length < 3) {
+    const selected = careers.filter(c => c.selected);
+    if (selected.length < 3) {
       alert(language === 'ko'
-        ? '최소 3개 경력에 대해 장단점을 작성해주세요.'
-        : 'Please research at least 3 careers with pros/cons.');
+        ? '최소 3개의 경력을 선택해주세요.'
+        : 'Please select at least 3 careers to explore.');
       return;
     }
 
@@ -130,7 +188,21 @@ export default function CareerOptionsStep3() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_step: 4,
-          explored_careers: careers,
+          suggested_careers: careers,
+          explored_careers: selected.map(c => ({
+            title: c.title,
+            titleKo: c.titleKo,
+            description: c.description,
+            descriptionKo: c.descriptionKo,
+            onetCode: c.onetCode,
+            onetLink: c.onetLink,
+            pros: [],
+            cons: [],
+            requirements: '',
+            notes: '',
+            interestLevel: 0,
+            userAdded: false,
+          })),
         }),
       });
 
@@ -143,6 +215,7 @@ export default function CareerOptionsStep3() {
   }
 
   const activities = createActivitiesFromSteps(STEPS, '/discover/career-options', 3, [1, 2]);
+  const selectedCount = careers.filter(c => c.selected).length;
 
   if (loading) {
     return (
@@ -157,200 +230,217 @@ export default function CareerOptionsStep3() {
       moduleId="career-options"
       currentStep={3}
       totalSteps={4}
-      title={language === 'ko' ? '경력 조사' : 'Career Research'}
+      title={language === 'ko' ? 'AI 경력 추천' : 'AI Career Suggestions'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Instructions */}
-        <ModuleCard padding="normal">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            {language === 'ko' ? '선택한 경력 심층 탐색' : 'Deep Dive into Selected Careers'}
-          </h2>
-          <p className="text-sm text-gray-600">
-            {language === 'ko'
-              ? '각 경력에 대해 장점, 단점, 요구 사항을 조사하고 기록하세요.'
-              : 'Research and document the pros, cons, and requirements for each career.'}
-          </p>
-        </ModuleCard>
-
-        {/* Career Research Cards */}
-        <div className="space-y-4">
-          {careers.map((career, index) => {
-            const isExpanded = expandedIndex === index;
-            const hasContent = career.pros.length > 0 || career.cons.length > 0 || career.notes;
-
-            return (
-              <ModuleCard
-                key={index}
-                padding="none"
-                className={hasContent ? 'border-indigo-200' : ''}
-              >
-                {/* Header */}
-                <div
-                  className={`px-6 py-4 cursor-pointer flex items-center justify-between ${
-                    isExpanded ? 'border-b border-gray-200' : ''
-                  }`}
-                  onClick={() => setExpandedIndex(isExpanded ? -1 : index)}
-                >
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{career.title}</h3>
-                    <p className="text-sm text-gray-500">{career.description}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {hasContent && (
-                      <span className="text-xs text-indigo-600 font-medium">
-                        {language === 'ko' ? '조사 완료' : 'Researched'}
+        {/* Profile Summary */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Holland Code */}
+          {session?.holland_code && (
+            <ModuleCard padding="normal" className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+              <div className="flex items-center gap-3">
+                <User className="w-8 h-8 text-indigo-600" />
+                <div>
+                  <p className="text-xs text-indigo-600 uppercase">Holland Code</p>
+                  <p className="text-xl font-bold text-indigo-700">{session.holland_code}</p>
+                  <p className="text-xs text-gray-500">
+                    {session.holland_code?.split('').map((type: string) => (
+                      <span key={type} className="mr-1">
+                        {language === 'ko' ? HOLLAND_TYPES[type]?.nameKo : HOLLAND_TYPES[type]?.name}
                       </span>
-                    )}
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    )}
-                  </div>
+                    ))}
+                  </p>
                 </div>
+              </div>
+            </ModuleCard>
+          )}
 
-                {/* Expanded Content */}
-                {isExpanded && (
-                  <div className="px-6 py-4 space-y-6">
-                    {/* Interest Level */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {language === 'ko' ? '관심도' : 'Interest Level'}
-                      </label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map(level => (
-                          <button
-                            key={level}
-                            onClick={() => updateCareer(index, { interestLevel: level })}
-                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                              career.interestLevel >= level
-                                ? 'bg-indigo-500 text-white'
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                            }`}
-                          >
-                            {level}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+          {/* Enneagram Type */}
+          {enneagram?.enneagram_type && (
+            <ModuleCard padding="normal" className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+              <div className="flex items-center gap-3">
+                <Brain className="w-8 h-8 text-purple-600" />
+                <div>
+                  <p className="text-xs text-purple-600 uppercase">
+                    {language === 'ko' ? '에니어그램' : 'Enneagram'}
+                  </p>
+                  <p className="text-xl font-bold text-purple-700">
+                    Type {enneagram.enneagram_type}
+                    {enneagram.wing && `w${enneagram.wing}`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {language === 'ko'
+                      ? ENNEAGRAM_TYPES[enneagram.enneagram_type]?.nameKo
+                      : ENNEAGRAM_TYPES[enneagram.enneagram_type]?.name}
+                  </p>
+                </div>
+              </div>
+            </ModuleCard>
+          )}
 
-                    {/* Pros */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-green-700">
-                          {language === 'ko' ? '장점' : 'Pros'} ({career.pros.length})
-                        </label>
-                        <button
-                          onClick={() => addPro(index)}
-                          className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {language === 'ko' ? '추가' : 'Add'}
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {career.pros.map((pro, proIndex) => (
-                          <div key={proIndex} className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={pro}
-                              onChange={(e) => updatePro(index, proIndex, e.target.value)}
-                              placeholder={language === 'ko' ? '장점 입력...' : 'Enter a pro...'}
-                              className="flex-1 px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-green-50"
-                            />
-                            <button
-                              onClick={() => removePro(index, proIndex)}
-                              className="p-2 text-gray-400 hover:text-red-500"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        {career.pros.length === 0 && (
-                          <p className="text-sm text-gray-400 italic">
-                            {language === 'ko' ? '장점을 추가하세요' : 'Add pros for this career'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Cons */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-red-700">
-                          {language === 'ko' ? '단점' : 'Cons'} ({career.cons.length})
-                        </label>
-                        <button
-                          onClick={() => addCon(index)}
-                          className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {language === 'ko' ? '추가' : 'Add'}
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {career.cons.map((con, conIndex) => (
-                          <div key={conIndex} className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={con}
-                              onChange={(e) => updateCon(index, conIndex, e.target.value)}
-                              placeholder={language === 'ko' ? '단점 입력...' : 'Enter a con...'}
-                              className="flex-1 px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-red-50"
-                            />
-                            <button
-                              onClick={() => removeCon(index, conIndex)}
-                              className="p-2 text-gray-400 hover:text-red-500"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        {career.cons.length === 0 && (
-                          <p className="text-sm text-gray-400 italic">
-                            {language === 'ko' ? '단점을 추가하세요' : 'Add cons for this career'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Requirements */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {language === 'ko' ? '요구 사항 (학위, 자격증 등)' : 'Requirements (degree, certifications, etc.)'}
-                      </label>
-                      <textarea
-                        value={career.requirements}
-                        onChange={(e) => updateCareer(index, { requirements: e.target.value })}
-                        placeholder={language === 'ko' ? '이 경력에 필요한 요구 사항을 기록하세요...' : 'Note down requirements for this career...'}
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {language === 'ko' ? '메모' : 'Notes'}
-                      </label>
-                      <textarea
-                        value={career.notes}
-                        onChange={(e) => updateCareer(index, { notes: e.target.value })}
-                        placeholder={language === 'ko' ? '추가 메모...' : 'Additional notes...'}
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                )}
-              </ModuleCard>
-            );
-          })}
+          {/* Resume Analysis */}
+          {session?.resume_analysis && (
+            <ModuleCard padding="normal" className="bg-gradient-to-r from-green-50 to-teal-50 border-green-200">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+                <div>
+                  <p className="text-xs text-green-600 uppercase">
+                    {language === 'ko' ? '이력서 분석' : 'Resume Analysis'}
+                  </p>
+                  <p className="text-xl font-bold text-green-700">
+                    {session.resume_analysis.overallFit}% {language === 'ko' ? '적합' : 'Fit'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {session.resume_analysis.experienceLevel}
+                  </p>
+                </div>
+              </div>
+            </ModuleCard>
+          )}
         </div>
 
+        {/* Instructions */}
+        <ModuleCard padding="normal">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                {language === 'ko' ? '종합 경력 추천' : 'Comprehensive Career Recommendations'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {language === 'ko'
+                  ? 'Holland 적성, 이력서 분석, 성격 유형을 종합한 AI 맞춤 추천입니다. 최소 3개를 선택하세요.'
+                  : 'AI recommendations based on your Holland code, resume analysis, and personality type. Select at least 3.'}
+              </p>
+            </div>
+            <ModuleButton
+              onClick={() => generateCareers()}
+              variant="secondary"
+              size="small"
+              disabled={generating}
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+              {language === 'ko' ? '새로 생성' : 'Regenerate'}
+            </ModuleButton>
+          </div>
+        </ModuleCard>
+
+        {/* Career Cards */}
+        {generating ? (
+          <div className="text-center py-12">
+            <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+            <p className="text-gray-600">
+              {language === 'ko'
+                ? 'AI가 맞춤 경력을 추천하고 있습니다...'
+                : 'AI is generating personalized career recommendations...'}
+            </p>
+            <p className="text-sm text-gray-400 mt-2">
+              {language === 'ko'
+                ? 'Holland 코드, 이력서, 성격 유형을 분석 중...'
+                : 'Analyzing Holland code, resume, and personality type...'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {careers.map((career, index) => (
+              <ModuleCard
+                key={index}
+                padding="normal"
+                className={`cursor-pointer transition-all ${
+                  career.selected
+                    ? 'ring-2 ring-indigo-500 border-indigo-300 bg-indigo-50'
+                    : 'hover:border-gray-300'
+                }`}
+              >
+                <div onClick={() => toggleCareerSelection(index)}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">
+                          {language === 'ko' && career.titleKo ? career.titleKo : career.title}
+                        </h3>
+                        {career.onetCode && (
+                          <span className="text-xs text-gray-400">{career.onetCode}</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {language === 'ko' && career.descriptionKo ? career.descriptionKo : career.description}
+                      </p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ml-3 ${
+                      career.selected ? 'bg-indigo-500' : 'border-2 border-gray-300'
+                    }`}>
+                      {career.selected && <Star className="w-4 h-4 text-white" />}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        career.hollandFit === 'High' ? 'bg-green-100 text-green-700' :
+                        career.hollandFit === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        Holland: {career.hollandFit}
+                      </span>
+                      {career.personalityFit && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          career.personalityFit === 'High' ? 'bg-purple-100 text-purple-700' :
+                          career.personalityFit === 'Medium' ? 'bg-purple-50 text-purple-600' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {language === 'ko' ? '성격' : 'Personality'}: {career.personalityFit}
+                        </span>
+                      )}
+                      {career.matchScore && (
+                        <span className="text-indigo-600 font-medium">{career.matchScore}% match</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-4 text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        {career.growthOutlook}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        {career.salaryRange}
+                      </span>
+                      {career.onetLink && (
+                        <a
+                          href={career.onetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700"
+                        >
+                          O*NET <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </ModuleCard>
+            ))}
+          </div>
+        )}
+
+        {/* Selection Summary */}
+        <ModuleCard padding="normal" className={selectedCount >= 3 ? 'bg-green-50 border-green-200' : 'bg-gray-50'}>
+          <div className="flex items-center justify-between">
+            <p className={selectedCount >= 3 ? 'text-green-800' : 'text-gray-600'}>
+              {language === 'ko'
+                ? `${selectedCount}개 선택됨 (최소 3개 필요)`
+                : `${selectedCount} selected (minimum 3 required)`}
+            </p>
+            {selectedCount >= 3 && (
+              <span className="text-green-600">✓</span>
+            )}
+          </div>
+        </ModuleCard>
+
         {/* Navigation */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <ModuleButton
             onClick={() => router.push('/discover/career-options/step2')}
             variant="secondary"
@@ -358,20 +448,15 @@ export default function CareerOptionsStep3() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {language === 'ko' ? '이전' : 'Back'}
           </ModuleButton>
-          <div className="flex gap-3">
-            <ModuleButton onClick={handleSave} variant="ghost" disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {language === 'ko' ? '저장' : 'Save'}
-            </ModuleButton>
-            <ModuleButton
-              onClick={handleNext}
-              disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {language === 'ko' ? '경력 비교' : 'Compare Careers'}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </ModuleButton>
-          </div>
+          <ModuleButton
+            onClick={handleNext}
+            disabled={saving || selectedCount < 3}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {language === 'ko' ? '경력 비교하기' : 'Compare Careers'}
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </ModuleButton>
         </div>
       </div>
     </ModuleShell>

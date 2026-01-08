@@ -18,7 +18,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { hollandCode, hollandScores, values, strengths, vision, mission } = body;
+    const {
+      hollandCode,
+      hollandScores,
+      values,
+      strengths,
+      vision,
+      mission,
+      resumeAnalysis,
+      selectedOnetCareers,
+      enneagramType,
+      enneagramWing,
+    } = body;
 
     // Check for API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -39,6 +50,10 @@ export async function POST(request: NextRequest) {
       strengths,
       vision,
       mission,
+      resumeAnalysis,
+      selectedOnetCareers,
+      enneagramType,
+      enneagramWing,
     });
 
     return NextResponse.json({
@@ -63,55 +78,116 @@ async function generateAICareerSuggestions(
     strengths?: any;
     vision?: any;
     mission?: any;
+    resumeAnalysis?: any;
+    selectedOnetCareers?: any[];
+    enneagramType?: number;
+    enneagramWing?: number;
   }
 ) {
-  const { hollandCode, hollandScores, values, strengths, vision, mission } = data;
+  const {
+    hollandCode,
+    hollandScores,
+    values,
+    strengths,
+    vision,
+    mission,
+    resumeAnalysis,
+    selectedOnetCareers,
+    enneagramType,
+    enneagramWing,
+  } = data;
 
-  const prompt = `You are a career counselor helping someone explore career options based on their profile.
+  // Build resume context if available
+  let resumeContext = '';
+  if (resumeAnalysis) {
+    resumeContext = `
+### Resume Analysis:
+- Professional Summary: ${resumeAnalysis.professionalSummary || 'N/A'}
+- Key Competencies: ${resumeAnalysis.keyCompetencies?.join(', ') || 'N/A'}
+- Experience Level: ${resumeAnalysis.experienceLevel || 'N/A'}
+- Overall Fit Score: ${resumeAnalysis.overallFit || 'N/A'}%`;
+  }
+
+  // Build selected O*NET careers context
+  let onetContext = '';
+  if (selectedOnetCareers && selectedOnetCareers.length > 0) {
+    onetContext = `
+### Selected O*NET Careers from Resume Analysis:
+${selectedOnetCareers.map((c: any) => `- ${c.title} (${c.onetCode}) - ${c.fitScore}% fit`).join('\n')}
+
+Consider these pre-identified careers and suggest similar or related paths.`;
+  }
+
+  const prompt = `You are a career counselor using Dr. Padilla's Workforce-Market Alignment Framework.
+Provide comprehensive career suggestions based on the user's Holland Assessment and resume analysis.
 
 ## User Profile:
 
 ### Holland Code: ${hollandCode}
 Scores: R=${hollandScores?.R || 0}, I=${hollandScores?.I || 0}, A=${hollandScores?.A || 0}, S=${hollandScores?.S || 0}, E=${hollandScores?.E || 0}, C=${hollandScores?.C || 0}
 
-${values ? `### Core Values:
+Holland types meaning:
+- R (Realistic): Practical, hands-on, physical tasks
+- I (Investigative): Analytical, intellectual, research-oriented
+- A (Artistic): Creative, expressive, innovative
+- S (Social): Helping, teaching, nurturing others
+- E (Enterprising): Leading, persuading, business-oriented
+- C (Conventional): Organized, detail-oriented, systematic
+${resumeContext}
+${onetContext}
+${values ? `
+### Core Values:
 ${formatValues(values)}` : ''}
 
-${strengths ? `### Key Strengths:
+${strengths ? `
+### Key Strengths:
 ${strengths.map((s: any) => `- ${s.name || s}`).join('\n')}` : ''}
 
-${vision?.statement ? `### Vision Statement:
+${vision?.statement ? `
+### Vision Statement:
 "${vision.statement}"` : ''}
 
-${mission ? `### Mission Statement:
+${mission ? `
+### Mission Statement:
 "${mission}"` : ''}
 
+${enneagramType ? `
+### Enneagram Type: ${enneagramType}${enneagramWing ? `w${enneagramWing}` : ''}` : ''}
+
 ## Task:
-Generate 8-10 career suggestions that match this profile. For each career, provide:
-1. Title - Job title
-2. Description - Brief description (1-2 sentences)
-3. Holland Fit - How well it matches their Holland code (High/Medium/Low)
-4. Values Fit - How it aligns with their values
-5. Growth Outlook - Job market outlook
-6. Salary Range - Approximate annual salary range
+Generate 8-10 career suggestions that comprehensively match this profile.
+Prioritize careers that align with BOTH the Holland code AND the resume analysis (if provided).
+For each career:
+1. Use real O*NET occupation codes (format: XX-XXXX.XX like "11-3121.00")
+2. Consider workforce market alignment and growth outlook
+3. Match career requirements with demonstrated competencies
 
 ## Output Format:
-Return ONLY a valid JSON array with this structure (no markdown, no code blocks):
+Return ONLY a valid JSON array (no markdown, no code blocks):
 
 [
   {
     "title": "Career Title",
+    "titleKo": "경력 제목 (한국어)",
     "description": "Brief description of the role and responsibilities",
+    "descriptionKo": "역할과 책임에 대한 간략한 설명 (한국어)",
     "hollandFit": "High",
+    "personalityFit": "High",
     "valuesFit": "Aligns well with [specific values]",
     "strengthsFit": "Leverages [specific strengths]",
-    "growthOutlook": "Growing/Stable/Declining",
-    "salaryRange": "$XX,XXX - $XX,XXX",
-    "matchScore": 85
+    "growthOutlook": "Growing (+X%)",
+    "salaryRange": "$XX,XXX - $XXX,XXX",
+    "matchScore": 85,
+    "onetCode": "XX-XXXX.XX",
+    "onetLink": "https://www.onetonline.org/link/summary/XX-XXXX.XX"
   }
 ]
 
-Ensure diverse suggestions across different industries and levels of specialization.`;
+Important:
+- Use valid O*NET codes that match the career title
+- Ensure O*NET links follow the format: https://www.onetonline.org/link/summary/[CODE]
+- Include Korean translations for international users
+- Match scores should reflect combined Holland + Resume + Values alignment`;
 
   try {
     const message = await anthropic.messages.create({

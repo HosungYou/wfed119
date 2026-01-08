@@ -93,6 +93,9 @@ export async function PATCH(request: NextRequest) {
     if (body.top_career_choices !== undefined) updateData.top_career_choices = body.top_career_choices;
     if (body.career_notes !== undefined) updateData.career_notes = body.career_notes;
     if (body.status !== undefined) updateData.status = body.status;
+    // New fields for resume analysis
+    if (body.resume_analysis !== undefined) updateData.resume_analysis = body.resume_analysis;
+    if (body.selected_onet_careers !== undefined) updateData.selected_onet_careers = body.selected_onet_careers;
 
     // Handle completion
     if (body.status === 'completed') {

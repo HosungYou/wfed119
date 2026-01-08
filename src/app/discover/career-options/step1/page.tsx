@@ -48,8 +48,8 @@ const HOLLAND_QUESTIONS = [
 
 const STEPS = [
   { id: 'step1', label: 'Holland Assessment', labelKo: 'Holland 적성 검사' },
-  { id: 'step2', label: 'AI Career Suggestions', labelKo: 'AI 경력 추천' },
-  { id: 'step3', label: 'Career Research', labelKo: '경력 조사' },
+  { id: 'step2', label: 'Resume AI Review', labelKo: '이력서 AI 분석' },
+  { id: 'step3', label: 'AI Career Suggestions', labelKo: 'AI 경력 추천' },
   { id: 'step4', label: 'Career Comparison', labelKo: '경력 비교' },
 ];
 

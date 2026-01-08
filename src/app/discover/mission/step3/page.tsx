@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Heart, Brain, Users, Sparkles, DollarSign, HelpCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Heart, Brain, Users, Sparkles, DollarSign, HelpCircle, MessageCircle, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
 interface WellbeingDimension {
   key: string;
   reflection: string;
+}
+
+interface AIQuestion {
+  question: string;
+  questionKo: string;
 }
 
 const STEPS = [
@@ -100,6 +105,8 @@ export default function MissionStep3() {
     financial: '',
   });
   const [activeDimension, setActiveDimension] = useState<string | null>('physical');
+  const [aiQuestions, setAiQuestions] = useState<Record<string, AIQuestion[]>>({});
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -127,6 +134,34 @@ export default function MissionStep3() {
     } catch (error) {
       console.error('[Mission Step 3] Error:', error);
       setLoading(false);
+    }
+  }
+
+  async function loadAIQuestions(dimensionKey: string) {
+    setAiLoading(prev => ({ ...prev, [dimensionKey]: true }));
+    try {
+      const res = await fetch('/api/discover/mission/ai-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'wellbeing_questions',
+          dimension: dimensionKey,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.questions) {
+          setAiQuestions(prev => ({
+            ...prev,
+            [dimensionKey]: data.questions,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('[Mission Step 3] AI questions error:', error);
+    } finally {
+      setAiLoading(prev => ({ ...prev, [dimensionKey]: false }));
     }
   }
 
@@ -238,6 +273,8 @@ export default function MissionStep3() {
             const isActive = activeDimension === dim.key;
             const hasContent = wellbeing[dim.key]?.trim().length > 0;
             const colorClasses = getColorClasses(dim.color, isActive);
+            const dimensionQuestions = aiQuestions[dim.key] || [];
+            const isLoadingQuestions = aiLoading[dim.key];
 
             return (
               <ModuleCard
@@ -276,11 +313,48 @@ export default function MissionStep3() {
 
                 {isActive && (
                   <div className="mt-4 space-y-3">
+                    {/* AI Questions Section */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <MessageCircle className="w-4 h-4 text-purple-500" />
+                        {language === 'ko' ? 'AI 성찰 질문' : 'AI Reflection Questions'}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadAIQuestions(dim.key);
+                        }}
+                        disabled={isLoadingQuestions}
+                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 px-2 py-1 rounded-lg hover:bg-purple-50"
+                      >
+                        {isLoadingQuestions ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3" />
+                        )}
+                        {language === 'ko' ? '질문 생성' : 'Generate'}
+                      </button>
+                    </div>
+
+                    {dimensionQuestions.length > 0 && (
+                      <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                        {dimensionQuestions.map((q, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-purple-800">
+                              {language === 'ko' ? q.questionKo : q.question}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <textarea
                       value={wellbeing[dim.key]}
                       onChange={(e) => updateWellbeing(dim.key, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
                       placeholder={language === 'ko' ? dim.placeholderKo : dim.placeholder}
-                      rows={3}
+                      rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                     />
                     <div className="flex items-start gap-2 p-3 bg-white/50 rounded-lg">

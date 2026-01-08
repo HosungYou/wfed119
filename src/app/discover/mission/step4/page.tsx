@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, ClipboardList, HelpCircle, Users, Target } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, ClipboardList, HelpCircle, Users, Target, GripVertical, Sparkles, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
@@ -11,9 +11,15 @@ interface RoleCommitment {
   commitment: string;
 }
 
-interface WellbeingCommitment {
-  dimension: string;
-  commitment: string;
+interface LifeRole {
+  id: string;
+  entity: string;
+  role: string;
+}
+
+interface RainbowSlot {
+  role: LifeRole | null;
+  ageRange: string;
 }
 
 const STEPS = [
@@ -34,15 +40,34 @@ const SHARPEN_SAW_ROLES = [
 
 const AGE_MARKERS = [10, 20, 30, 40, 50, 60, 70, 80];
 
+const RAINBOW_COLORS = [
+  'rgb(239, 68, 68)',   // red
+  'rgb(249, 115, 22)',  // orange
+  'rgb(234, 179, 8)',   // yellow
+  'rgb(34, 197, 94)',   // green
+  'rgb(59, 130, 246)',  // blue
+  'rgb(139, 92, 246)',  // purple
+  'rgb(236, 72, 153)',  // pink
+  'rgb(20, 184, 166)',  // teal
+];
+
 export default function MissionStep4() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [lifeRoles, setLifeRoles] = useState<LifeRole[]>([]);
+  const [rainbowSlots, setRainbowSlots] = useState<RainbowSlot[]>(
+    Array(8).fill(null).map((_, i) => ({ role: null, ageRange: `${AGE_MARKERS[i] || 80}+` }))
+  );
   const [roleCommitments, setRoleCommitments] = useState<RoleCommitment[]>([]);
   const [wellbeingCommitments, setWellbeingCommitments] = useState<Record<string, string>>({});
   const [currentAge, setCurrentAge] = useState<number>(25);
+  const [draggedRole, setDraggedRole] = useState<LifeRole | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadData();
@@ -60,8 +85,11 @@ export default function MissionStep4() {
 
       setSession(data);
 
-      // Initialize role commitments from life_roles
+      // Load life roles from session
       if (data.life_roles && data.life_roles.length > 0) {
+        setLifeRoles(data.life_roles);
+
+        // Initialize role commitments
         const existingCommitments = data.role_commitments || [];
         const commitments = data.life_roles.map((lr: any) => {
           const existing = existingCommitments.find((c: any) => c.role === lr.role);
@@ -71,13 +99,19 @@ export default function MissionStep4() {
           };
         });
         setRoleCommitments(commitments);
+
+        // Initialize rainbow slots with existing roles
+        const slots: RainbowSlot[] = Array(8).fill(null).map((_, i) => ({
+          role: i < data.life_roles.length ? data.life_roles[i] : null,
+          ageRange: `${AGE_MARKERS[i] || 80}+`
+        }));
+        setRainbowSlots(slots);
       }
 
       // Initialize wellbeing commitments
       if (data.wellbeing_commitments) {
         setWellbeingCommitments(data.wellbeing_commitments);
       } else if (data.wellbeing_reflections) {
-        // Pre-fill with reflections as starting point
         setWellbeingCommitments(data.wellbeing_reflections);
       }
 
@@ -85,6 +119,85 @@ export default function MissionStep4() {
     } catch (error) {
       console.error('[Mission Step 4] Error:', error);
       setLoading(false);
+    }
+  }
+
+  // Drag and Drop for Rainbow
+  function handleDragStart(e: DragEvent, role: LifeRole) {
+    setDraggedRole(role);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragEnd() {
+    setDraggedRole(null);
+    setDragOverIndex(null);
+  }
+
+  function handleDragOver(e: DragEvent, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }
+
+  function handleDragLeave() {
+    setDragOverIndex(null);
+  }
+
+  function handleDrop(e: DragEvent, index: number) {
+    e.preventDefault();
+    if (draggedRole) {
+      const newSlots = [...rainbowSlots];
+      newSlots[index] = { ...newSlots[index], role: draggedRole };
+      setRainbowSlots(newSlots);
+    }
+    setDraggedRole(null);
+    setDragOverIndex(null);
+  }
+
+  function removeFromRainbow(index: number) {
+    const newSlots = [...rainbowSlots];
+    newSlots[index] = { ...newSlots[index], role: null };
+    setRainbowSlots(newSlots);
+  }
+
+  // AI Commitment Suggestions
+  async function loadAICommitmentSuggestions() {
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/discover/mission/ai-commitments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'suggest_commitments',
+          lifeRoles: lifeRoles,
+          wellbeingReflections: session?.wellbeing_reflections || {},
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.suggestions) {
+          setAiSuggestions(data.suggestions);
+        }
+      }
+    } catch (error) {
+      console.error('[Mission Step 4] AI suggestions error:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function applyAISuggestion(key: string, isWellbeing: boolean) {
+    const suggestion = aiSuggestions[key];
+    if (!suggestion) return;
+
+    if (isWellbeing) {
+      setWellbeingCommitments(prev => ({ ...prev, [key]: suggestion }));
+    } else {
+      const index = roleCommitments.findIndex(rc => rc.role === key);
+      if (index !== -1) {
+        updateRoleCommitment(index, suggestion);
+      }
     }
   }
 
@@ -120,7 +233,6 @@ export default function MissionStep4() {
   }
 
   async function handleNext() {
-    // Validate at least some commitments are filled
     const filledRoleCommitments = roleCommitments.filter(c => c.commitment.trim()).length;
     const filledWellbeingCommitments = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
 
@@ -154,6 +266,7 @@ export default function MissionStep4() {
   const activities = createActivitiesFromSteps(STEPS, '/discover/mission', 4, [1, 2, 3]);
   const filledRoleCount = roleCommitments.filter(c => c.commitment.trim()).length;
   const filledWellbeingCount = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
+  const rainbowFilledCount = rainbowSlots.filter(s => s.role !== null).length;
 
   if (loading) {
     return (
@@ -172,74 +285,143 @@ export default function MissionStep4() {
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Life Rainbow Visualization */}
+        {/* Life Rainbow Visualization with Drag & Drop */}
         <ModuleCard padding="normal">
           <h2 className="text-xl font-bold text-gray-900 mb-3">
             {language === 'ko' ? '3. 삶의 역할 목록 (Life Roles Rainbow)' : '3. List Up All of Your Life Roles (Rainbow)'}
           </h2>
           <p className="text-gray-600 mb-4">
             {language === 'ko'
-              ? '"톱날 갈기"라 불리는 자기 자신을 위한 역할을 포함하여 현재와 미래의 역할을 최대 8개까지 나열하세요. 미래의 역할을 입력할 때는 "[미래]교수" 또는 "CEO"처럼 작성할 수 있습니다.'
-              : 'List up your current and future roles up to eight on this rainbow including the role to yourself, called "Sharpen the Saw." When you enter future roles, you can put "[future] professor" or "CEO" as your role.'}
+              ? '왼쪽의 역할 카드를 드래그하여 무지개 아크에 배치하세요. 나이대별로 어떤 역할이 중요해지는지 시각화합니다.'
+              : 'Drag role cards from the left onto the rainbow arcs. Visualize which roles become important at different life stages.'}
           </p>
 
-          {/* Rainbow Visualization */}
-          <div className="p-6 bg-gradient-to-br from-gray-50 to-teal-50 rounded-lg mb-4">
-            <div className="relative flex justify-center">
-              <svg viewBox="0 0 400 220" className="w-full max-w-md">
-                {/* Age markers */}
-                {AGE_MARKERS.map((age, i) => (
-                  <text
-                    key={age}
-                    x={50 + i * 43}
-                    y={20}
-                    className="text-xs fill-gray-500"
-                    textAnchor="middle"
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Draggable Role Cards */}
+            <div className="lg:col-span-1">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  {language === 'ko' ? '역할 카드' : 'Role Cards'}
+                </h4>
+                <div className="space-y-2">
+                  {/* Sharpen the Saw card */}
+                  <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, { id: 'sharpen', entity: 'Self', role: 'Sharpen the Saw' })}
+                    onDragEnd={handleDragEnd}
+                    className="p-2 bg-purple-100 border border-purple-300 rounded-lg cursor-grab active:cursor-grabbing flex items-center gap-2"
                   >
-                    {age}
-                  </text>
-                ))}
-
-                {/* Rainbow arcs */}
-                {[...Array(8)].map((_, i) => (
-                  <path
-                    key={i}
-                    d={`M 50 200 Q 200 ${20 + i * 20} 350 200`}
-                    fill="none"
-                    stroke={i < roleCommitments.length ? `hsl(${170 + i * 15}, 50%, 60%)` : '#e5e7eb'}
-                    strokeWidth="4"
-                    opacity={0.7}
-                  />
-                ))}
-
-                {/* Current age marker */}
-                <line x1={50 + (currentAge / 10) * 43} y1={25} x2={50 + (currentAge / 10) * 43} y2={195} stroke="#0d9488" strokeWidth="2" strokeDasharray="4 2" />
-                <text x={50 + (currentAge / 10) * 43} y={210} className="text-xs fill-teal-600 font-medium" textAnchor="middle">
-                  {language === 'ko' ? '현재' : 'Now'}
-                </text>
-              </svg>
+                    <GripVertical className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-purple-800 font-medium">Sharpen the Saw</span>
+                  </div>
+                  {/* Life roles */}
+                  {lifeRoles.map((role) => (
+                    <div
+                      key={role.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, role)}
+                      onDragEnd={handleDragEnd}
+                      className="p-2 bg-white border border-gray-200 rounded-lg cursor-grab active:cursor-grabbing flex items-center gap-2 hover:border-teal-400"
+                    >
+                      <GripVertical className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{role.entity}</p>
+                        <p className="text-xs text-gray-500 truncate">{role.role}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <p className="text-center text-sm text-gray-500 mt-2">
-              {language === 'ko'
-                ? 'Life Roles Rainbow (Super, 1980)'
-                : 'Life Roles Rainbow (Super, 1980)'}
-            </p>
+
+            {/* Rainbow Drop Zones */}
+            <div className="lg:col-span-2">
+              <div className="p-4 bg-gradient-to-br from-gray-50 to-teal-50 rounded-lg">
+                {/* Age labels */}
+                <div className="flex justify-between mb-2 px-4">
+                  {AGE_MARKERS.map((age) => (
+                    <span key={age} className="text-xs text-gray-500 font-medium">{age}</span>
+                  ))}
+                </div>
+
+                {/* Rainbow arcs as drop zones */}
+                <div className="relative space-y-1">
+                  {rainbowSlots.map((slot, index) => (
+                    <div
+                      key={index}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={`h-8 rounded-full flex items-center justify-center transition-all ${
+                        slot.role
+                          ? 'bg-opacity-80'
+                          : dragOverIndex === index
+                          ? 'bg-teal-200 border-2 border-dashed border-teal-400'
+                          : 'bg-gray-200 border-2 border-dashed border-gray-300'
+                      }`}
+                      style={{
+                        backgroundColor: slot.role ? RAINBOW_COLORS[index] : undefined,
+                        marginLeft: `${index * 8}px`,
+                        marginRight: `${index * 8}px`,
+                      }}
+                    >
+                      {slot.role ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-xs font-medium px-2 truncate max-w-[150px]">
+                            {slot.role.role === 'Sharpen the Saw' ? 'Sharpen the Saw' : `${slot.role.entity}: ${slot.role.role}`}
+                          </span>
+                          <button
+                            onClick={() => removeFromRainbow(index)}
+                            className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center text-white hover:bg-white/50"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">
+                          {language === 'ko' ? `역할 ${index + 1}` : `Role ${index + 1}`}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-center text-xs text-gray-500 mt-3">
+                  Life Roles Rainbow (Super, 1980) - {rainbowFilledCount}/8 {language === 'ko' ? '배치됨' : 'placed'}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-lg">
+          <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-lg mt-4">
             <span className="font-medium">{language === 'ko' ? '출처: ' : 'Source: '}</span>
             Super, D. E. (1980). A life-span, life-space approach to career development. <em>Journal of Vocational Behavior, 16</em>(3), 282-298.
           </div>
         </ModuleCard>
 
-        {/* Roles & Commitment Table */}
+        {/* Roles & Commitment Table with AI Suggestions */}
         <ModuleCard padding="normal">
-          <div className="flex items-center gap-2 mb-4">
-            <ClipboardList className="w-5 h-5 text-teal-600" />
-            <h3 className="font-semibold text-gray-900">
-              {language === 'ko' ? '4. 역할 및 헌신 (R&C) 테이블' : '4. Completing Roles and Commitment (R&C) Table'}
-            </h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-teal-600" />
+              <h3 className="font-semibold text-gray-900">
+                {language === 'ko' ? '4. 역할 및 헌신 (R&C) 테이블' : '4. Completing Roles and Commitment (R&C) Table'}
+              </h3>
+            </div>
+            <button
+              onClick={loadAICommitmentSuggestions}
+              disabled={aiLoading}
+              className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-50"
+            >
+              {aiLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {language === 'ko' ? 'AI 제안 받기' : 'Get AI Suggestions'}
+            </button>
           </div>
+
           <p className="text-gray-600 text-sm mb-4">
             {language === 'ko'
               ? '"헌신(Commitment)"은 의무나 압박이 아닌 진정한 자기 선택적 참여입니다. 각 역할에 대해 어떻게 헌신할 것인지 1-2문장으로 작성하세요.'
@@ -270,14 +452,29 @@ export default function MissionStep4() {
                   {SHARPEN_SAW_ROLES.map((dim) => (
                     <tr key={dim.key}>
                       <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
-                        {language === 'ko' ? dim.labelKo : dim.label}
+                        <div className="flex items-center justify-between">
+                          <span>{language === 'ko' ? dim.labelKo : dim.label}</span>
+                          {aiSuggestions[dim.key] && (
+                            <button
+                              onClick={() => applyAISuggestion(dim.key, true)}
+                              className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {language === 'ko' ? '적용' : 'Apply'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="border border-gray-200 p-1 bg-white">
                         <input
                           type="text"
                           value={wellbeingCommitments[dim.key] || ''}
                           onChange={(e) => updateWellbeingCommitment(dim.key, e.target.value)}
-                          placeholder={language === 'ko' ? '헌신 내용 입력...' : 'Enter commitment...'}
+                          placeholder={
+                            aiSuggestions[dim.key]
+                              ? `AI: ${aiSuggestions[dim.key].substring(0, 50)}...`
+                              : language === 'ko' ? '헌신 내용 입력...' : 'Enter commitment...'
+                          }
                           className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm"
                         />
                       </td>
@@ -312,14 +509,29 @@ export default function MissionStep4() {
                   {roleCommitments.map((rc, index) => (
                     <tr key={index}>
                       <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
-                        {rc.role}
+                        <div className="flex items-center justify-between">
+                          <span>{rc.role}</span>
+                          {aiSuggestions[rc.role] && (
+                            <button
+                              onClick={() => applyAISuggestion(rc.role, false)}
+                              className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {language === 'ko' ? '적용' : 'Apply'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="border border-gray-200 p-1 bg-white">
                         <input
                           type="text"
                           value={rc.commitment}
                           onChange={(e) => updateRoleCommitment(index, e.target.value)}
-                          placeholder={language === 'ko' ? '이 역할에 대한 헌신...' : 'Your commitment to this role...'}
+                          placeholder={
+                            aiSuggestions[rc.role]
+                              ? `AI: ${aiSuggestions[rc.role].substring(0, 50)}...`
+                              : language === 'ko' ? '이 역할에 대한 헌신...' : 'Your commitment to this role...'
+                          }
                           className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm"
                         />
                       </td>

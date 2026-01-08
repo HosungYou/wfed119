@@ -10,10 +10,35 @@ import {
 } from '@/components/dashboard';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n';
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const { completedModules, loading: modulesLoading } = useAllModulesProgress();
+  const { language } = useLanguage();
+
+  const t = {
+    loginRequired: language === 'ko' ? '로그인이 필요합니다' : 'Sign in required',
+    loginDescription: language === 'ko'
+      ? 'Google 계정으로 로그인하여 개인화된 대시보드와 진행 상황을 확인하세요.'
+      : 'Sign in with your Google account to view your personalized dashboard and progress.',
+    signInWithGoogle: language === 'ko' ? 'Google로 로그인' : 'Sign in with Google',
+    dashboard: language === 'ko' ? '대시보드' : 'Dashboard',
+    home: language === 'ko' ? '홈' : 'Home',
+    signOut: language === 'ko' ? '로그아웃' : 'Sign Out',
+    myJourney: language === 'ko' ? '나의 여정' : 'My Journey',
+    journeyDescription: language === 'ko'
+      ? 'LifeCraft 10단계 모듈을 통해 자기 발견과 목표 설정을 완성하세요.'
+      : 'Complete your self-discovery and goal setting through 10 LifeCraft modules.',
+    values: language === 'ko' ? '가치관' : 'Values',
+    valuesDesc: language === 'ko' ? '핵심 가치 발견' : 'Discover core values',
+    strengths: language === 'ko' ? '강점' : 'Strengths',
+    strengthsDesc: language === 'ko' ? 'AI 강점 분석' : 'AI strength analysis',
+    vision: language === 'ko' ? '비전' : 'Vision',
+    visionDesc: language === 'ko' ? '비전 & 꿈 설정' : 'Vision & dreams',
+    goals: language === 'ko' ? '목표' : 'Goals',
+    goalsDesc: language === 'ko' ? 'OKR 목표 설정' : 'OKR goal setting',
+  };
 
   if (loading) {
     return (
@@ -31,15 +56,13 @@ export default function DashboardPage() {
             <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
               <Lock className="w-8 h-8 text-gray-400" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">로그인이 필요합니다</h1>
-            <p className="text-gray-600 mb-8">
-              Google 계정으로 로그인하여 개인화된 대시보드와 진행 상황을 확인하세요.
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">{t.loginRequired}</h1>
+            <p className="text-gray-600 mb-8">{t.loginDescription}</p>
             <button
               onClick={signInWithGoogle}
               className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-700 transition-colors"
             >
-              Google로 로그인
+              {t.signInWithGoogle}
             </button>
           </div>
         </div>
@@ -68,7 +91,7 @@ export default function DashboardPage() {
               )}
               <div>
                 <h1 className="text-lg font-bold text-gray-900">
-                  {user?.user_metadata?.full_name || '대시보드'}
+                  {user?.user_metadata?.full_name || t.dashboard}
                 </h1>
                 <p className="text-sm text-gray-500">{user?.email}</p>
               </div>
@@ -81,14 +104,14 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <Home className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm">홈</span>
+                <span className="hidden sm:inline text-sm">{t.home}</span>
               </Link>
               <button
                 onClick={signOut}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <LogOut className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm">로그아웃</span>
+                <span className="hidden sm:inline text-sm">{t.signOut}</span>
               </button>
             </div>
           </div>
@@ -98,10 +121,8 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Page Title */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">나의 여정</h2>
-          <p className="text-gray-600 mt-1">
-            LifeCraft 10단계 모듈을 통해 자기 발견과 목표 설정을 완성하세요.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">{t.myJourney}</h2>
+          <p className="text-gray-600 mt-1">{t.journeyDescription}</p>
         </div>
 
         {/* Journey Progress Map */}
@@ -157,29 +178,29 @@ export default function DashboardPage() {
         <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <QuickActionCard
             href="/discover/values"
-            title="가치관"
-            description="핵심 가치 발견"
+            title={t.values}
+            description={t.valuesDesc}
             icon="heart"
             color="rose"
           />
           <QuickActionCard
             href="/discover/strengths"
-            title="강점"
-            description="AI 강점 분석"
+            title={t.strengths}
+            description={t.strengthsDesc}
             icon="target"
             color="blue"
           />
           <QuickActionCard
             href="/discover/vision"
-            title="비전"
-            description="비전 & 꿈 설정"
+            title={t.vision}
+            description={t.visionDesc}
             icon="eye"
             color="purple"
           />
           <QuickActionCard
             href="/discover/goals"
-            title="목표"
-            description="OKR 목표 설정"
+            title={t.goals}
+            description={t.goalsDesc}
             icon="check"
             color="indigo"
           />

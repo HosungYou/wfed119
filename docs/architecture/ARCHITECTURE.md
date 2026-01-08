@@ -1,6 +1,6 @@
 # WFED119 LifeCraft Bot - Architecture Documentation
 
-> **버전**: 3.3.0
+> **버전**: 3.3.1
 > **최종 업데이트**: 2026-01-08
 > **목적**: Claude Code 및 개발자를 위한 시스템 아키텍처 참고 문서
 
@@ -82,7 +82,7 @@ export const MODULE_ORDER: ModuleId[] = [
   'life-themes',    // 4. 라이프 테마
   'vision',         // 5. 비전 설계 (Dreams 통합)
   'mission',        // 6. 사명 선언문 (v3.3: 5단계 Life Roles)
-  'career-options', // 7. 커리어 옵션 (Holland Code)
+  'career-options', // 7. 커리어 옵션 (Holland Code + Resume AI Review)
   'swot',           // 8. SWOT 분석
   'goals',          // 9. 목표 설정 (OKR)
   'errc',           // 10. ERRC 전략
@@ -354,7 +354,7 @@ export async function POST(request: NextRequest) {
 | **Life Themes** | All Part 1 | 테마와 가치/강점 연결 |
 | **Vision** | All Part 1 | 비전 초안 제안 |
 | **Mission** | All Part 1 + Vision | 사명문 옵션 생성 |
-| **Career Options** | All previous | 커리어 적합도 분석 |
+| **Career Options** | All previous | Holland + Resume AI 분석으로 O*NET 커리어 매칭 |
 | **SWOT** | All previous | S 자동 채우기, 전략 제안 |
 | **Goals** | All previous + SWOT | OKR 초안, 역할 제안 |
 | **ERRC** | All previous + Goals | ERRC 행동 제안 |
@@ -392,12 +392,13 @@ export async function POST(request: NextRequest) {
 │  │   Vision    │→│    Mission    │→│ Career Options │               │
 │  │─────────────│ │───────────────│ │────────────────│               │
 │  │  statement  │ │ finalStatement│ │  hollandCode   │               │
-│  │   dreams    │ │ purposeAnswers│ │ suggestedCare  │               │
-│  │ aspirations │ │ life_roles*   │ │   topChoices   │               │
-│  └─────────────┘ │wellbeing_refl*│ └────────────────┘               │
-│                  │role_commitment│                                   │
-│                  └───────────────┘                                   │
+│  │   dreams    │ │ purposeAnswers│ │  hollandScores │               │
+│  │ aspirations │ │ life_roles*   │ │ resume_analysis│               │
+│  └─────────────┘ │wellbeing_refl*│ │selected_onet*  │               │
+│                  │role_commitment│ │ suggestedCare  │               │
+│                  └───────────────┘ └────────────────┘               │
 │  * v3.3 추가: Life Roles 관련 필드                                    │
+│  * v3.2.1 추가: Resume AI Review, O*NET 통합                          │
 └───────────────────────────────────────────────────────────────────────┘
                              │
                              ▼
@@ -644,6 +645,67 @@ const activities = createActivitiesFromSteps(STEPS, currentStep);
 }
 ```
 
+### Career Options 모듈 엔드포인트 (v3.2.1)
+
+```typescript
+// 4-Step Flow:
+// Step 1: Holland RIASEC Assessment (30 questions)
+// Step 2: Resume AI Review (file upload)
+// Step 3: AI Career Suggestions (Holland + Resume combination)
+// Step 4: Career Comparison (O*NET exploration)
+
+// GET /api/discover/career-options/session
+// Response:
+{
+  id: string;
+  user_id: string;
+  status: 'in_progress' | 'completed';
+  current_step: 1 | 2 | 3 | 4;
+  holland_responses: Record<string, number>;  // Question ID → Likert score (1-5)
+  holland_scores: Record<'R'|'I'|'A'|'S'|'E'|'C', number>;  // 0-100 normalized
+  holland_code: string;  // e.g., "RIA" (top 3 types)
+  resume_analysis: ResumeAnalysis | null;  // v3.2.1
+  selected_onet_careers: ONetCareer[];  // v3.2.1
+  ai_suggestions: AISuggestion[];
+}
+
+// POST /api/discover/career-options/analyze-resume (v3.2.1)
+// Request: FormData with file, hollandCode, hollandScores
+// Response:
+{
+  analysis: {
+    professionalSummary: string;
+    professionalSummaryKo: string;
+    keyCompetencies: string[];
+    keyCompetenciesKo: string[];
+    experienceLevel: 'Entry-Level' | 'Mid-Level' | 'Senior' | 'Executive';
+    suggestedCareers: ONetCareer[];  // O*NET career matches
+    overallFit: number;  // 0-100
+  };
+  source: 'ai' | 'fallback';
+}
+
+// ONetCareer interface (v3.2.1)
+interface ONetCareer {
+  onetCode: string;  // Format: "XX-XXXX.XX" (e.g., "11-3121.00")
+  title: string;
+  titleKo: string;
+  description: string;
+  descriptionKo: string;
+  fitScore: number;  // 0-100
+  keySkillsMatch: string[];
+  salaryRange: string;
+  growthOutlook: string;
+  link: string;  // https://www.onetonline.org/link/summary/{onetCode}
+}
+```
+
+**Supported File Formats (v3.2.1)**:
+- PDF: Claude native document support (base64)
+- DOCX: mammoth library parsing
+- TXT: UTF-8 direct read
+- DOC: ❌ Not supported (returns 400 with guidance)
+
 ---
 
 ## 개발 지침
@@ -719,4 +781,5 @@ DEV_USER_ID=uuid-for-local-testing
 | v3.0 | 2026-01-06 | 8모듈 시스템, 선형 진행, Dreams→Vision 통합 |
 | v3.1 | 2026-01-06 | 10모듈 확장, Mission/Career Options 추가 |
 | v3.2 | 2026-01-07 | AI 500 에러 수정, 크로스 모듈 컨텍스트 |
+| v3.2.1 | 2026-01-08 | Career Options Resume AI Review, O*NET 통합 |
 | v3.3 | 2026-01-08 | Mission 5단계 Life Roles 통합 |

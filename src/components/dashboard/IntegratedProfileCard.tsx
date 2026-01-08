@@ -7,6 +7,7 @@ import {
   ChevronRight, TrendingUp, Award, Compass, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/lib/i18n';
 import { IntegratedProfile, ModuleId } from '@/lib/types/modules';
 
 // ============================================================================
@@ -22,20 +23,22 @@ interface IntegratedProfileCardProps {
 // Profile Section Components
 // ============================================================================
 
-function ValuesSection({ values }: { values: IntegratedProfile['topValues'] }) {
+function ValuesSection({ values, language }: { values: IntegratedProfile['topValues']; language: string }) {
   if (!values || values.length === 0) return null;
 
   const typeLabels: Record<string, string> = {
-    terminal: '궁극적',
-    instrumental: '도구적',
-    work: '직업',
+    terminal: language === 'ko' ? '궁극적' : 'Terminal',
+    instrumental: language === 'ko' ? '도구적' : 'Instrumental',
+    work: language === 'ko' ? '직업' : 'Work',
   };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Heart className="w-4 h-4 text-rose-500" />
-        <h4 className="text-sm font-medium text-gray-700">핵심 가치</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? '핵심 가치' : 'Core Values'}
+        </h4>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {values.slice(0, 6).map((value, idx) => (
@@ -52,14 +55,16 @@ function ValuesSection({ values }: { values: IntegratedProfile['topValues'] }) {
   );
 }
 
-function StrengthsSection({ strengths }: { strengths: IntegratedProfile['topStrengths'] }) {
+function StrengthsSection({ strengths, language }: { strengths: IntegratedProfile['topStrengths']; language: string }) {
   if (!strengths || strengths.length === 0) return null;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Target className="w-4 h-4 text-blue-500" />
-        <h4 className="text-sm font-medium text-gray-700">주요 강점</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? '주요 강점' : 'Key Strengths'}
+        </h4>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {strengths.slice(0, 4).map((strength, idx) => (
@@ -79,24 +84,28 @@ function EnneagramSection({
   type,
   wing,
   instinct,
+  language,
 }: {
   type?: number;
   wing?: number;
   instinct?: string;
+  language: string;
 }) {
   if (!type) return null;
 
   const instinctLabels: Record<string, string> = {
-    sp: '자기보존',
-    so: '사회',
-    sx: '성적',
+    sp: language === 'ko' ? '자기보존' : 'Self-Preservation',
+    so: language === 'ko' ? '사회' : 'Social',
+    sx: language === 'ko' ? '성적' : 'Sexual',
   };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <User className="w-4 h-4 text-teal-500" />
-        <h4 className="text-sm font-medium text-gray-700">에니어그램</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? '에니어그램' : 'Enneagram'}
+        </h4>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-xl font-bold text-teal-600">
@@ -112,14 +121,16 @@ function EnneagramSection({
   );
 }
 
-function LifeThemesSection({ themes }: { themes: IntegratedProfile['lifeThemes'] }) {
+function LifeThemesSection({ themes, language }: { themes: IntegratedProfile['lifeThemes']; language: string }) {
   if (!themes || themes.length === 0) return null;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Lightbulb className="w-4 h-4 text-amber-500" />
-        <h4 className="text-sm font-medium text-gray-700">생애 주제</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? '생애 주제' : 'Life Themes'}
+        </h4>
       </div>
       <div className="space-y-1">
         {themes.slice(0, 3).map((theme, idx) => (
@@ -136,9 +147,11 @@ function LifeThemesSection({ themes }: { themes: IntegratedProfile['lifeThemes']
 function VisionSection({
   vision,
   timeHorizon,
+  language,
 }: {
   vision?: string;
   timeHorizon?: string;
+  language: string;
 }) {
   if (!vision) return null;
 
@@ -146,7 +159,9 @@ function VisionSection({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Eye className="w-4 h-4 text-purple-500" />
-        <h4 className="text-sm font-medium text-gray-700">비전</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? '비전' : 'Vision'}
+        </h4>
         {timeHorizon && (
           <span className="px-1.5 py-0.5 text-[10px] bg-purple-50 text-purple-600 rounded">
             {timeHorizon}
@@ -162,20 +177,31 @@ function AiInsightsSection({
   careerInsights,
   recommendedActions,
   growthAreas,
+  language,
 }: {
   careerInsights?: string;
   recommendedActions: IntegratedProfile['aiRecommendedActions'];
   growthAreas: IntegratedProfile['aiGrowthAreas'];
+  language: string;
 }) {
   if (!careerInsights && (!recommendedActions || recommendedActions.length === 0)) {
     return null;
   }
 
+  const getPriorityLabel = (priority: string) => {
+    if (language === 'ko') {
+      return priority === 'high' ? '높음' : priority === 'medium' ? '보통' : '낮음';
+    }
+    return priority === 'high' ? 'High' : priority === 'medium' ? 'Medium' : 'Low';
+  };
+
   return (
     <div className="mt-4 pt-4 border-t border-gray-100">
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-primary-500" />
-        <h4 className="text-sm font-medium text-gray-700">AI 인사이트</h4>
+        <h4 className="text-sm font-medium text-gray-700">
+          {language === 'ko' ? 'AI 인사이트' : 'AI Insights'}
+        </h4>
       </div>
 
       {careerInsights && (
@@ -184,7 +210,9 @@ function AiInsightsSection({
 
       {recommendedActions && recommendedActions.length > 0 && (
         <div className="space-y-2">
-          <h5 className="text-xs font-medium text-gray-500">추천 행동</h5>
+          <h5 className="text-xs font-medium text-gray-500">
+            {language === 'ko' ? '추천 행동' : 'Recommended Actions'}
+          </h5>
           {recommendedActions.slice(0, 3).map((action, idx) => (
             <div
               key={idx}
@@ -202,11 +230,7 @@ function AiInsightsSection({
                       : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {action.priority === 'high'
-                    ? '높음'
-                    : action.priority === 'medium'
-                    ? '보통'
-                    : '낮음'}
+                  {getPriorityLabel(action.priority)}
                 </span>
               </div>
             </div>
@@ -216,7 +240,9 @@ function AiInsightsSection({
 
       {growthAreas && growthAreas.length > 0 && (
         <div className="mt-3 space-y-2">
-          <h5 className="text-xs font-medium text-gray-500">성장 영역</h5>
+          <h5 className="text-xs font-medium text-gray-500">
+            {language === 'ko' ? '성장 영역' : 'Growth Areas'}
+          </h5>
           {growthAreas.slice(0, 2).map((area, idx) => (
             <div key={idx} className="p-2 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium text-gray-700">{area.area}</p>
@@ -238,9 +264,25 @@ export function IntegratedProfileCard({
   compact = false,
 }: IntegratedProfileCardProps) {
   const { isAuthenticated } = useAuth();
+  const { language } = useLanguage();
   const [profile, setProfile] = useState<IntegratedProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const t = {
+    integratedProfile: language === 'ko' ? '통합 프로필' : 'Integrated Profile',
+    profileSummary: language === 'ko' ? '프로필 요약' : 'Profile Summary',
+    complete: language === 'ko' ? '% 완성' : '% complete',
+    noProfile: language === 'ko' ? '프로필이 아직 생성되지 않았습니다.' : 'Profile not yet created.',
+    noProfileHint: language === 'ko'
+      ? '모듈을 완료하면 통합 프로필이 자동으로 생성됩니다.'
+      : 'Complete modules to automatically generate your integrated profile.',
+    myProfile: language === 'ko' ? '나의 통합 프로필' : 'My Integrated Profile',
+    modulesCompleted: language === 'ko' ? '개 모듈 완료' : ' modules completed',
+    refreshAi: language === 'ko' ? 'AI 분석 새로고침' : 'Refresh AI Analysis',
+    viewFullProfile: language === 'ko' ? '전체 프로필 보기' : 'View Full Profile',
+    detailsAndAi: language === 'ko' ? '상세 정보 및 AI 분석 확인' : 'View details and AI analysis',
+  };
 
   const fetchProfile = async () => {
     try {
@@ -296,15 +338,13 @@ export function IntegratedProfileCard({
   if (!profile || profile.modulesCompleted.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">통합 프로필</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">{t.integratedProfile}</h3>
         <div className="text-center py-8">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
             <Compass className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500">프로필이 아직 생성되지 않았습니다.</p>
-          <p className="text-sm text-gray-400 mt-1">
-            모듈을 완료하면 통합 프로필이 자동으로 생성됩니다.
-          </p>
+          <p className="text-gray-500">{t.noProfile}</p>
+          <p className="text-sm text-gray-400 mt-1">{t.noProfileHint}</p>
         </div>
       </div>
     );
@@ -315,9 +355,9 @@ export function IntegratedProfileCard({
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-900">프로필 요약</h3>
+          <h3 className="text-sm font-bold text-gray-900">{t.profileSummary}</h3>
           <span className="text-xs text-gray-500">
-            {profile.profileCompleteness}% 완성
+            {profile.profileCompleteness}{t.complete}
           </span>
         </div>
 
@@ -355,7 +395,7 @@ export function IntegratedProfileCard({
           href="/dashboard/profile"
           className="mt-3 flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700"
         >
-          전체 프로필 보기
+          {t.viewFullProfile}
           <ChevronRight className="w-3 h-3" />
         </Link>
       </div>
@@ -368,16 +408,16 @@ export function IntegratedProfileCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">나의 통합 프로필</h3>
+          <h3 className="text-lg font-bold text-gray-900">{t.myProfile}</h3>
           <p className="text-sm text-gray-500">
-            {profile.modulesCompleted.length}개 모듈 완료 | {profile.profileCompleteness}% 완성
+            {profile.modulesCompleted.length}{t.modulesCompleted} | {profile.profileCompleteness}{t.complete}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
-          title="AI 분석 새로고침"
+          title={t.refreshAi}
         >
           <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
@@ -395,17 +435,19 @@ export function IntegratedProfileCard({
 
       {/* Profile Sections */}
       <div className="space-y-4">
-        <ValuesSection values={profile.topValues} />
-        <StrengthsSection strengths={profile.topStrengths} />
+        <ValuesSection values={profile.topValues} language={language} />
+        <StrengthsSection strengths={profile.topStrengths} language={language} />
         <EnneagramSection
           type={profile.enneagramType}
           wing={profile.enneagramWing}
           instinct={profile.enneagramInstinct}
+          language={language}
         />
-        <LifeThemesSection themes={profile.lifeThemes} />
+        <LifeThemesSection themes={profile.lifeThemes} language={language} />
         <VisionSection
           vision={profile.visionStatement}
           timeHorizon={profile.timeHorizon}
+          language={language}
         />
       </div>
 
@@ -415,6 +457,7 @@ export function IntegratedProfileCard({
           careerInsights={profile.aiCareerInsights}
           recommendedActions={profile.aiRecommendedActions}
           growthAreas={profile.aiGrowthAreas}
+          language={language}
         />
       )}
 
@@ -429,8 +472,8 @@ export function IntegratedProfileCard({
               <Award className="w-5 h-5 text-primary-600" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-gray-900">전체 프로필 보기</h4>
-              <p className="text-xs text-gray-500">상세 정보 및 AI 분석 확인</p>
+              <h4 className="text-sm font-medium text-gray-900">{t.viewFullProfile}</h4>
+              <p className="text-xs text-gray-500">{t.detailsAndAi}</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />

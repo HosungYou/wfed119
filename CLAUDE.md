@@ -202,9 +202,46 @@ OPENAI_API_KEY=sk-proj-...
 - **Environment**: Keep production credentials secure
 - **Documentation**: Update docs when adding significant features
 
+## System Architecture Reference
+
+**CRITICAL**: Before making significant changes to the codebase, always consult the architecture document:
+
+📚 **`docs/architecture/ARCHITECTURE.md`** - Comprehensive system architecture documentation
+
+This document covers:
+- **10 Module System**: Linear progression, module order, prerequisites
+- **Frontend-Backend Connection**: API route patterns, authentication flow
+- **AI Integration**: Cross-module context system, AIContextService, module prompts
+- **Data Flow**: How data flows between modules and AI services
+- **Database Schema**: Table structures, RLS policies, session management
+- **Component System**: ModuleShell, ActivitySidebar, unified UI patterns
+
+### Key Architecture Concepts
+
+1. **Linear Module Progression**: Users must complete modules in order (values → strengths → ... → errc)
+2. **Cross-Module AI Context**: Each module's AI receives context from all previously completed modules
+3. **ModuleShell Pattern**: All module UI pages use unified shell components
+4. **Session-Based State**: Each module maintains its own session table with JSONB fields
+
+### Module System (v3.3)
+
+```typescript
+// 10 modules in order
+const MODULE_ORDER = [
+  'values', 'strengths', 'enneagram', 'life-themes',
+  'vision', 'mission', 'career-options',
+  'swot', 'goals', 'errc'
+];
+```
+
+---
+
 ## Related Documentation
 
+- **Architecture**: `docs/architecture/ARCHITECTURE.md` ⭐ **READ FIRST**
 - **Team Setup**: `docs/collaboration/COLLABORATOR_SETUP.md`
 - **Deployment**: `docs/deployment/`
 - **Release Notes**: `release-notes/`
+- **Release Notes Guidelines**: `release-notes/CLAUDE.md`
 - **Project Overview**: `README.md`
+- **Plan Documents**: `docs/plans/` (v3.0, v3.1, v3.2 implementation plans)

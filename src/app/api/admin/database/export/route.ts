@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { createSupabaseAdmin } from '@/lib/supabase';
 
 const tableMap: Record<string, string> = {

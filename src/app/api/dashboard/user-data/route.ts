@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 const normalizeStrengths = (raw: unknown) => {
   if (!raw || typeof raw !== 'object') return { skills: [], attitudes: [], values: [] };
@@ -28,12 +28,10 @@ const normalizeStrengths = (raw: unknown) => {
 
 export async function GET(req: NextRequest) {
   try {
-    // Get authenticated user from Supabase
-    const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get verified user using the new helper
+    const user = await getVerifiedUser();
 
-    if (userError || !user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -41,6 +39,8 @@ export async function GET(req: NextRequest) {
     const userEmail = user.email;
     const userName = user.user_metadata?.name || user.email;
     const userImage = user.user_metadata?.avatar_url;
+
+    const supabase = await createServerSupabaseClient();
 
     // Test basic database connection
     console.log('Testing Supabase connection...');

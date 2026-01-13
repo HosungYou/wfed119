@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { createSupabaseAdmin } from '@/lib/supabase';
 
 async function checkSuperAdmin(userId: string) {
@@ -14,9 +14,8 @@ async function checkSuperAdmin(userId: string) {
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

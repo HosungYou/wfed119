@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -11,9 +11,8 @@ export async function POST(request: NextRequest) {
   let body: any = null;
 
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

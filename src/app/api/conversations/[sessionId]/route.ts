@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 /**
  * GET /api/conversations/[sessionId]
@@ -19,15 +19,16 @@ export async function GET(
       );
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { session: authSession }, error: authError } = await supabase.auth.getSession();
+    const user = await getVerifiedUser();
 
-    if (!authSession || authError) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
         { status: 401 }
       );
     }
+
+    const supabase = await createServerSupabaseClient();
 
     // Verify session belongs to user
     const { data: sessionData, error: sessionError } = await supabase
@@ -43,7 +44,7 @@ export async function GET(
       );
     }
 
-    if (sessionData.user_id !== authSession.user.id) {
+    if (sessionData.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden - You do not have access to this session' },
         { status: 403 }
@@ -98,15 +99,16 @@ export async function DELETE(
       );
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { session: authSession }, error: authError } = await supabase.auth.getSession();
+    const user = await getVerifiedUser();
 
-    if (!authSession || authError) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
         { status: 401 }
       );
     }
+
+    const supabase = await createServerSupabaseClient();
 
     // Verify session belongs to user
     const { data: sessionData, error: sessionError } = await supabase
@@ -122,7 +124,7 @@ export async function DELETE(
       );
     }
 
-    if (sessionData.user_id !== authSession.user.id) {
+    if (sessionData.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden - You do not have access to this session' },
         { status: 403 }

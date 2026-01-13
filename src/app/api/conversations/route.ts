@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 /**
  * GET /api/conversations
@@ -7,17 +7,17 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { session: authSession }, error: authError } = await supabase.auth.getSession();
+    const user = await getVerifiedUser();
 
-    if (!authSession || authError) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
         { status: 401 }
       );
     }
 
-    const userId = authSession.user.id;
+    const userId = user.id;
+    const supabase = await createServerSupabaseClient();
 
     // Get all sessions with conversation message counts
     const { data: sessions, error: sessionsError } = await supabase

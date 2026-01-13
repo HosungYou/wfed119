@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import type { UpdateErrcItemRequest } from '@/lib/types/errc';
 
@@ -14,9 +14,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -72,9 +71,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -142,9 +140,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

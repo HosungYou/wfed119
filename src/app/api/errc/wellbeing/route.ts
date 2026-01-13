@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import type { CreateWellbeingAssessmentRequest, UpdateWellbeingAssessmentRequest } from '@/lib/types/errc';
 import { validateWellbeingAssessment } from '@/lib/types/errc';
@@ -12,9 +12,8 @@ import { validateWellbeingAssessment } from '@/lib/types/errc';
  */
 export async function GET(req: NextRequest) {
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -72,9 +71,8 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -186,9 +184,8 @@ export async function POST(req: NextRequest) {
  */
 export async function PUT(req: NextRequest) {
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

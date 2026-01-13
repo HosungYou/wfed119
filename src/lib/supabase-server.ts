@@ -37,11 +37,18 @@ export const createServerSupabaseClient = async () => {
   )
 }
 
-export const getSession = async () => {
+/**
+ * Get verified user from Supabase Auth (recommended for most cases)
+ * This is the primary authentication method - it validates the user token
+ * by contacting the Supabase Auth server directly.
+ *
+ * Use this instead of getSession() to avoid "session.user" warnings.
+ *
+ * @returns User object if authenticated, null otherwise
+ */
+export const getVerifiedUser = async () => {
   const supabase = await createServerSupabaseClient()
   try {
-    // Use getUser() instead of getSession() for better security
-    // getUser() authenticates the data by contacting Supabase Auth server
     const {
       data: { user },
       error,
@@ -51,27 +58,54 @@ export const getSession = async () => {
       return null
     }
 
-    // If we need the full session, get it after user verification
+    return user
+  } catch (error) {
+    console.error('[Supabase] getVerifiedUser error:', error)
+    return null
+  }
+}
+
+/**
+ * Get user profile from database
+ * Fetches the full user record from the users table
+ *
+ * @returns User record from database, null if not found
+ */
+export const getCurrentUser = async () => {
+  const user = await getVerifiedUser()
+  if (!user) return null
+
+  const supabase = await createServerSupabaseClient()
+  const { data: userData } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  return userData
+}
+
+/**
+ * Get session with tokens (use only when you need access tokens)
+ * WARNING: Avoid using session.user - use getVerifiedUser() instead
+ *
+ * This should only be used in rare cases where you need the actual
+ * access/refresh tokens (e.g., for external API calls).
+ *
+ * @returns Session object if authenticated, null otherwise
+ */
+export const getSession = async () => {
+  const user = await getVerifiedUser()
+  if (!user) return null
+
+  const supabase = await createServerSupabaseClient()
+  try {
     const {
       data: { session },
     } = await supabase.auth.getSession()
     return session
   } catch (error) {
-    console.error('Error:', error)
+    console.error('[Supabase] getSession error:', error)
     return null
   }
-}
-
-export const getCurrentUser = async () => {
-  const session = await getSession()
-  if (!session?.user) return null
-
-  const supabase = await createServerSupabaseClient()
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single()
-
-  return user
 }

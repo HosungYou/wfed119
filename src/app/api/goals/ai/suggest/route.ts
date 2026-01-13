@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import { AIService } from '@/lib/services/aiServiceClaude';
 
@@ -28,9 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'AI service is not configured.' }, { status: 503 });
     }
 
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

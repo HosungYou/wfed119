@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import type {
   ErrcSuggestionsRequest,
@@ -16,9 +16,8 @@ import { ERRC_CATEGORY_LABELS, WELLBEING_DIMENSION_LABELS } from '@/lib/types/er
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

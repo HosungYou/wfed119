@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIService, SessionContext } from '@/lib/services/aiServiceClaude';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 const aiService = new AIService();
 
@@ -24,23 +24,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get supabase client
+    // Get verified user using the new helper
+    const user = await getVerifiedUser();
+    const authUserId = user?.id || null;
+    const authUserEmail = user?.email || null;
+
+    // Get supabase client for database operations
     const supabase = await createServerSupabaseClient();
-
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let authSession = null;
-    let authUserId = null;
-    let authUserEmail = null;
-
-    if (!userError && user) {
-      authUserId = user.id;
-      authUserEmail = user.email;
-
-      // Get session only after user verification
-      const { data: { session } } = await supabase.auth.getSession();
-      authSession = session;
-    }
 
     // Ensure session exists in database
     const { data: existingSession } = await supabase
@@ -144,8 +134,8 @@ export async function POST(req: NextRequest) {
         strengths = await aiService.analyzeStrengths(conversationHistory);
         console.log('Strengths analysis completed:', strengths);
 
-        if (strengths && authSession?.user) {
-          const userId = authSession.user.id;
+        if (strengths && authUserId) {
+          const userId = authUserId;
 
           // === CRITICAL: Save to TWO tables for cross-module compatibility ===
 

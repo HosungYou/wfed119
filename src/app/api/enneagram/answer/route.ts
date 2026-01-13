@@ -3,7 +3,7 @@ import { getScreenerItems } from '@/lib/enneagram/itemBank';
 import { getInstinctItems } from '@/lib/enneagram/instincts';
 import { getDiscriminatorPairsForTop, getDiscriminatorItems } from '@/lib/enneagram/discriminators';
 import { scoreStage1 } from '@/lib/enneagram/scoring';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { createSupabaseAdmin } from '@/lib/supabase';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';

@@ -34,21 +34,14 @@ export default function DatabaseAdminPage() {
     try {
       const supabase = createSupabaseClient();
       // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-      if (!session?.user) {
+      if (userError || !user) {
         router.push('/');
         return;
       }
 
-      setUser(session.user);
+      setUser(user);
 
       const res = await fetch('/api/admin/check-access');
       const data = await res.json();

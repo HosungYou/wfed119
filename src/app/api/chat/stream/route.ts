@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIService, SessionContext } from '@/lib/services/aiServiceClaude';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 const aiService = new AIService();
 
@@ -61,25 +61,14 @@ export async function POST(req: NextRequest) {
     };
 
     // Database operations (wrapped in try-catch for better error handling)
-    let supabase, authSession, authUserId, authUserEmail;
+    let supabase, authUserId, authUserEmail;
     try {
+      // Get verified user using the new helper
+      const user = await getVerifiedUser();
+      authUserId = user?.id || null;
+      authUserEmail = user?.email || null;
+
       supabase = await createServerSupabaseClient();
-
-      // Use getUser() for better security (authenticates via Auth server)
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (!userError && user) {
-        authUserId = user.id;
-        authUserEmail = user.email;
-
-        // Get session only after user verification
-        const { data: { session } } = await supabase.auth.getSession();
-        authSession = session;
-      } else {
-        authUserId = null;
-        authUserEmail = null;
-        authSession = null;
-      }
 
       console.log('[STREAM_API] Auth status:', { authUserId: !!authUserId });
 

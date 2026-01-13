@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getVerifiedUser();
 
-    if (userError || !user) {
+    if (!user) {
       return NextResponse.json(
         { isAdmin: false, error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
+    const supabase = await createServerSupabaseClient();
     const { data: userData } = await supabase
       .from('users')
       .select('role, email, id')

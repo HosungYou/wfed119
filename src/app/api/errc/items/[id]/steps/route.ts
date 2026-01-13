@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
 import type { CreateErrcActionStepRequest, UpdateErrcActionStepRequest } from '@/lib/types/errc';
 import { calculateItemProgress } from '@/lib/types/errc';
@@ -15,9 +15,8 @@ export async function GET(
 ) {
   try {
     const { id: itemId } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -76,9 +75,8 @@ export async function POST(
 ) {
   try {
     const { id: itemId } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -160,9 +158,8 @@ export async function PUT(
 ) {
   try {
     const { id: itemId } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 
@@ -259,9 +256,8 @@ export async function DELETE(
 ) {
   try {
     const { id: itemId } = await params;
+    const user = await getVerifiedUser();
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     const auth = checkDevAuth(user);
 

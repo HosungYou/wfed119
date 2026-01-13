@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 const databaseDisabledResponse = () =>
   NextResponse.json({ error: 'Database operations disabled' }, { status: 503 });
@@ -19,19 +19,12 @@ export async function POST(req: NextRequest) {
       return databaseDisabledResponse();
     }
 
+    // Get verified user using the new helper
+    const user = await getVerifiedUser();
+    const userId = user?.id || null;
+    const userEmail = user?.email || null;
+
     const supabase = await createServerSupabaseClient();
-    // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
-
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-    const userId = session?.user?.id || null;
-    const userEmail = session?.user?.email || null;
 
     // Upsert session record
     await supabase

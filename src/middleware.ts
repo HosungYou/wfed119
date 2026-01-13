@@ -28,6 +28,16 @@ export async function middleware(req: NextRequest) {
     return res
   }
 
+  const pathname = req.nextUrl.pathname
+
+  // Skip auth checks for explicitly public routes FIRST (before any auth calls)
+  const isPublicRoute = PUBLIC_ROUTES.some(route =>
+    pathname === route || pathname.startsWith(`${route}/`)
+  )
+  if (isPublicRoute) {
+    return res
+  }
+
   const supabase = createServerClient(
     supabaseUrl,
     supabaseKey,
@@ -45,7 +55,7 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Refresh session if expired - important for session management
+  // Only check auth for protected routes
   // Use getUser() for better security (authenticates via Auth server)
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   let session = null
@@ -58,17 +68,11 @@ export async function middleware(req: NextRequest) {
     }
     session = verifiedSession
   } else if (userError) {
-    console.error('[Middleware] User verification error:', userError.message)
-  }
-
-  const pathname = req.nextUrl.pathname
-
-  // Skip auth checks for explicitly public routes
-  const isPublicRoute = PUBLIC_ROUTES.some(route =>
-    pathname === route || pathname.startsWith(`${route}/`)
-  )
-  if (isPublicRoute) {
-    return res
+    // "Auth session missing" is expected for unauthenticated users, not an error
+    // Only log unexpected errors
+    if (userError.message !== 'Auth session missing!') {
+      console.error('[Middleware] Unexpected auth error:', userError.message)
+    }
   }
 
   // Check if current route is protected

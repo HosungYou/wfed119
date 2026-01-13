@@ -567,7 +567,7 @@ export function IntegratedProfileCard({
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-900">{t.myProfile}</h3>
           <p className="text-sm text-gray-500">
@@ -585,7 +585,7 @@ export function IntegratedProfileCard({
       </div>
 
       {/* Profile Completeness Bar */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full transition-all duration-500"
@@ -594,22 +594,93 @@ export function IntegratedProfileCard({
         </div>
       </div>
 
-      {/* Profile Sections */}
-      <div className="space-y-4">
-        <ValuesSection values={profile.topValues} language={language} />
-        <StrengthsSection strengths={profile.topStrengths} language={language} />
-        <EnneagramSection
-          type={profile.enneagramType}
-          wing={profile.enneagramWing}
-          instinct={profile.enneagramInstinct}
-          language={language}
-        />
-        <LifeThemesSection themes={profile.lifeThemes} language={language} />
-        <VisionSection
-          vision={profile.visionStatement}
-          timeHorizon={profile.timeHorizon}
-          language={language}
-        />
+      {/* Radar Chart */}
+      <div className="mb-4">
+        <ProfileRadarChart completedModules={profile.modulesCompleted} language={language} />
+      </div>
+
+      {/* Module Grid */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">
+          {language === 'ko' ? '모듈 현황' : 'Module Status'}
+        </h4>
+        <ModuleGrid completedModules={profile.modulesCompleted} language={language} />
+      </div>
+
+      {/* Profile Sections - Collapsed Summary */}
+      <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">
+          {language === 'ko' ? '프로필 요약' : 'Profile Summary'}
+        </h4>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Values */}
+          {profile.topValues && profile.topValues.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Heart className="w-4 h-4 text-rose-500 mt-0.5" />
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  {language === 'ko' ? '핵심 가치' : 'Core Values'}
+                </p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {profile.topValues.slice(0, 2).map((v, i) => (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded">
+                      {v.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Strengths */}
+          {profile.topStrengths && profile.topStrengths.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Target className="w-4 h-4 text-blue-500 mt-0.5" />
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  {language === 'ko' ? '강점' : 'Strengths'}
+                </p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {profile.topStrengths.slice(0, 2).map((s, i) => (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                      {s.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Enneagram */}
+          {profile.enneagramType && (
+            <div className="flex items-start gap-2">
+              <User className="w-4 h-4 text-teal-500 mt-0.5" />
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  {language === 'ko' ? '에니어그램' : 'Enneagram'}
+                </p>
+                <p className="text-sm font-bold text-teal-600">
+                  {profile.enneagramType}{profile.enneagramWing && `w${profile.enneagramWing}`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Vision */}
+          {profile.visionStatement && (
+            <div className="flex items-start gap-2">
+              <Eye className="w-4 h-4 text-purple-500 mt-0.5" />
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  {language === 'ko' ? '비전' : 'Vision'}
+                </p>
+                <p className="text-[10px] text-gray-500 italic line-clamp-2">
+                  "{profile.visionStatement}"
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* AI Insights */}

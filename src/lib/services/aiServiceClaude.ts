@@ -105,6 +105,13 @@ export class AIService {
     const words = trimmedMessage.split(/\s+/);
     const wordCount = words.length;
 
+    console.log('[VALIDATION] Checking message:', {
+      stage,
+      length: trimmedMessage.length,
+      wordCount,
+      preview: trimmedMessage.substring(0, 50)
+    });
+
     // === LOGIC-BASED VALIDATION (Priority over character count) ===
 
     // 1. Check for deflection patterns (highest priority)
@@ -176,26 +183,58 @@ export class AIService {
 
     // === CONTENT QUALITY CHECKS ===
 
-    // 5. Initial stage: Need substantial story (focus on content, not just length)
+    // 5. Initial stage: Need substantial story (VERY RELAXED for better UX)
     if (stage === 'initial') {
-      const hasActionWords = /\b(did|made|created|built|organized|solved|helped|learned|developed|designed|worked|led|taught)\b/i.test(trimmedMessage);
-      const hasTimeContext = /\b(when|last|ago|during|while|after|recently|yesterday|week|month|year)\b/i.test(trimmedMessage);
+      // Expanded action words including past tense variants
+      const hasActionWords = /\b(did|do|made|make|created?|built?|organized?|solved?|helped?|learned?|developed?|designed?|worked?|led|lead|taught|teach|managed?|coordinated?|served?|facilitated?|implemented?|delivered?|achieved?|accomplished?)\b/i.test(trimmedMessage);
+      const hasTimeContext = /\b(when|last|ago|during|while|after|recently|yesterday|week|month|year|20\d{2}|my|was|were)\b/i.test(trimmedMessage);
+      const hasWorkContext = /\b(work|job|project|task|team|role|position|responsibility|program|education|coordinator|teacher|student|office|colleague|educational|training)\b/i.test(trimmedMessage);
 
-      // Require at least 50 characters AND meaningful content indicators
-      if (trimmedMessage.length < 50 || (!hasActionWords && wordCount < 30)) {
+      console.log('[VALIDATION] Initial stage patterns:', {
+        hasActionWords,
+        hasTimeContext,
+        hasWorkContext,
+        messageLength: trimmedMessage.length,
+        wordCount
+      });
+
+      // CRITICAL: Be VERY lenient on initial stage
+      // Accept ANY of the following conditions:
+      // 1. Has work-related content AND reasonable length (40+ chars OR 8+ words)
+      // 2. Has action words OR work context (regardless of length if 30+ chars)
+      if (trimmedMessage.length >= 30 && (hasActionWords || hasTimeContext || hasWorkContext)) {
+        console.log('[VALIDATION] ✅ Initial stage PASSED - has content markers');
+        return {
+          isValid: true,
+          shouldRedirect: false
+        };
+      }
+
+      // Additional fallback: if message is substantial (60+ chars), accept it
+      if (trimmedMessage.length >= 60) {
+        console.log('[VALIDATION] ✅ Initial stage PASSED - substantial length');
+        return {
+          isValid: true,
+          shouldRedirect: false
+        };
+      }
+
+      // Only reject if truly insufficient (< 30 chars AND < 8 words)
+      if (trimmedMessage.length < 30 && wordCount < 8) {
+        console.log('[VALIDATION] ❌ Initial stage FAILED - too brief');
         return {
           isValid: false,
-          reason: 'Initial response needs more detail about actions taken',
+          reason: 'Initial response too brief',
           shouldRedirect: true,
           redirectMessage: "That's a great start! Could you tell me more about that experience? I'm interested in hearing about what you DID, how you approached it, and what made it meaningful for you."
         };
       }
 
-      // Prefer responses with time context and actions
-      if (!hasTimeContext && !hasActionWords && wordCount < 40) {
+      // Only redirect if truly vague AND short
+      if (wordCount < 20) {
         return {
           isValid: false,
-          reason: 'Need more specific story with actions',
+          reason: 'Need more specific story',
           shouldRedirect: true,
           redirectMessage: "I'd love to hear more! Can you describe a specific situation? For example, when did this happen, what exactly did you do, and what was the outcome?"
         };
@@ -213,6 +252,7 @@ export class AIService {
     }
 
     // === PASS VALIDATION ===
+    console.log('[VALIDATION] Final PASS - no issues found');
     return {
       isValid: true,
       shouldRedirect: false
@@ -548,16 +588,35 @@ If invalid (no real examples), return:
     switch (currentStage) {
       case 'initial':
         // Progress if user shared a valid initial story
-        // Check for action words and context (not just length)
-        const hasActionContext = /\b(did|made|created|built|organized|helped|learned|worked)\b/i.test(lastUserMessage.content);
-        const hasReasonableDepth = lastUserMessage.content.trim().length > 60 || lastUserMessage.content.split(/\s+/).length > 15;
+        // CRITICAL: If validation passed, that means they shared enough - PROGRESS!
+        // Don't add extra checks here that would block progression
+        const messageLength = lastUserMessage.content.trim().length;
+        const messageWords = lastUserMessage.content.split(/\s+/).length;
 
-        if (validation.isValid && (hasActionContext || hasReasonableDepth)) {
-          return {
-            shouldProgress: true,
-            nextStage: 'exploration',
-            reason: 'User shared valid initial story with meaningful content'
-          };
+        // CRITICAL FIX: If validation passed, trust it completely and progress
+        // The validation logic is already strict enough
+        console.log('[STAGE_PROGRESS] Initial stage check:', {
+          validationIsValid: validation.isValid,
+          messageLength,
+          messageWords
+        });
+
+        if (validation.isValid) {
+          // Additional check: make sure message is not too short
+          // Accept if at least 40 chars OR 8 words
+          if (messageLength >= 40 || messageWords >= 8) {
+            console.log('[STAGE_PROGRESS] ✅ Progressing to exploration - validation passed');
+            return {
+              shouldProgress: true,
+              nextStage: 'exploration',
+              reason: 'User shared valid initial story'
+            };
+          } else {
+            console.log('[STAGE_PROGRESS] ⚠️ Validation passed but message too short - requesting more detail');
+            // Don't progress yet, but validation will handle redirect
+          }
+        } else {
+          console.log('[STAGE_PROGRESS] ❌ Not progressing - validation failed');
         }
         break;
 

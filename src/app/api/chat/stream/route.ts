@@ -7,9 +7,10 @@ const aiService = new AIService();
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, messages, stage, context } = await req.json();
-    
+
     // Validate required fields
     if (!sessionId || !messages || !Array.isArray(messages)) {
+      console.error('[STREAM_API] Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields: sessionId, messages' },
         { status: 400 }
@@ -18,18 +19,38 @@ export async function POST(req: NextRequest) {
 
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage || lastMessage.role !== 'user') {
+      console.error('[STREAM_API] Last message must be from user');
       return NextResponse.json(
         { error: 'Last message must be from user' },
         { status: 400 }
       );
     }
 
-    // Check if we should progress to next stage
-    const progressionCheck = await aiService.shouldProgressStage(messages, (stage as SessionContext['stage']) || 'initial');
+    console.log('[STREAM_API] Processing request:', {
+      sessionId,
+      messageCount: messages.length,
+      currentStage: stage,
+      lastMessagePreview: lastMessage.content.substring(0, 50)
+    });
+
+    // Check if we should progress to next stage (wrapped in try-catch)
+    let progressionCheck;
+    try {
+      progressionCheck = await aiService.shouldProgressStage(messages, (stage as SessionContext['stage']) || 'initial');
+      console.log('[STREAM_API] Progression check result:', progressionCheck);
+    } catch (error) {
+      console.error('[STREAM_API] Error in shouldProgressStage:', error);
+      // Continue with current stage if progression check fails
+      progressionCheck = { shouldProgress: false };
+    }
+
     let currentStage = (stage as SessionContext['stage']) || 'initial';
-    
+
     if (progressionCheck.shouldProgress && progressionCheck.nextStage) {
       currentStage = progressionCheck.nextStage;
+      console.log('[STREAM_API] ✅ Stage progressed:', stage, '->', currentStage);
+    } else {
+      console.log('[STREAM_API] Stage unchanged:', currentStage);
     }
 
     // Build session context
@@ -39,36 +60,56 @@ export async function POST(req: NextRequest) {
       extractedThemes: context?.themes || []
     };
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    const authUserId = authSession?.user?.id || null;
-    const authUserEmail = authSession?.user?.email || null;
+    // Database operations (wrapped in try-catch for better error handling)
+    let supabase, authSession, authUserId, authUserEmail;
+    try {
+      supabase = await createServerSupabaseClient();
+      const sessionResult = await supabase.auth.getSession();
+      authSession = sessionResult.data.session;
+      authUserId = authSession?.user?.id || null;
+      authUserEmail = authSession?.user?.email || null;
 
-    if (authUserId) {
-      const { data: existingSession } = await supabase
-        .from('user_sessions')
-        .select('*')
-        .eq('session_id', sessionId)
-        .maybeSingle();
+      console.log('[STREAM_API] Auth status:', { authUserId: !!authUserId });
 
-      if (!existingSession) {
-        await supabase.from('user_sessions').insert({
-          session_id: sessionId,
-          user_id: authUserId,
-          current_stage: currentStage,
-          completed: false,
-          session_type: 'chat'
-        });
-      } else if (progressionCheck.shouldProgress && progressionCheck.nextStage) {
-        await supabase
+      if (authUserId) {
+        const { data: existingSession, error: sessionFetchError } = await supabase
           .from('user_sessions')
-          .update({
+          .select('*')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (sessionFetchError) {
+          console.error('[STREAM_API] Error fetching session:', sessionFetchError);
+        }
+
+        if (!existingSession) {
+          const { error: insertError } = await supabase.from('user_sessions').insert({
+            session_id: sessionId,
+            user_id: authUserId,
             current_stage: currentStage,
-            updated_at: new Date().toISOString(),
-            user_id: authUserId
-          })
-          .eq('session_id', sessionId);
+            completed: false,
+            session_type: 'chat'
+          });
+          if (insertError) {
+            console.error('[STREAM_API] Error inserting session:', insertError);
+          }
+        } else if (progressionCheck.shouldProgress && progressionCheck.nextStage) {
+          const { error: updateError } = await supabase
+            .from('user_sessions')
+            .update({
+              current_stage: currentStage,
+              updated_at: new Date().toISOString(),
+              user_id: authUserId
+            })
+            .eq('session_id', sessionId);
+          if (updateError) {
+            console.error('[STREAM_API] Error updating session:', updateError);
+          }
+        }
       }
+    } catch (dbError) {
+      console.error('[STREAM_API] Database error (non-fatal):', dbError);
+      // Don't fail the entire request on database errors
     }
 
     // Create streaming response

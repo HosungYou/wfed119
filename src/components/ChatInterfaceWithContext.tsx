@@ -281,98 +281,173 @@ export const ChatInterfaceWithContext: React.FC<Props> = ({ moduleId }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex">
+      {/* Left Sidebar */}
+      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Target className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Target className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Strengths Discovery
               </h1>
-              <p className="text-sm text-gray-600">
-                {userName ? `Welcome, ${userName}!` : 'Discover your unique strengths'}
+              <p className="text-xs text-gray-600">
+                {userName ? `${userName}` : 'AI-Powered Analysis'}
               </p>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={saveProgress}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              Save
-            </button>
-            <button
-              onClick={clearSession}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Reset
-            </button>
+        {/* Current Stage Banner */}
+        <div className="m-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 text-white shadow-md">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl">
+                {stage === 'initial' && '📖'}
+                {stage === 'exploration' && '🔍'}
+                {stage === 'deepening' && '💭'}
+                {stage === 'analysis' && '⚡'}
+                {stage === 'summary' && '🎯'}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-sm">
+                {stage === 'initial' && 'Initial Story'}
+                {stage === 'exploration' && 'Exploration'}
+                {stage === 'deepening' && 'Deep Dive'}
+                {stage === 'analysis' && 'Pattern Analysis'}
+                {stage === 'summary' && 'Strength Profile'}
+              </h3>
+              <div className="text-2xl font-bold">{progressStatus.completion}%</div>
+            </div>
           </div>
+          <p className="text-xs text-white/90">{progressStatus.nextStep}</p>
         </div>
 
         {/* Enhanced Progress Indicator */}
-        <ProgressIndicator
-          currentStage={stage}
-          progressPercentage={progressStatus.completion}
-          className="mb-4"
-        />
+        <div className="px-4 flex-1 overflow-y-auto">
+          <ProgressIndicator
+            currentStage={stage}
+            progressPercentage={progressStatus.completion}
+            className="mb-4"
+          />
 
-        {/* Current Stage Banner */}
-        <div className="mb-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <span className="text-2xl">
-                  {stage === 'initial' && '📖'}
-                  {stage === 'exploration' && '🔍'}
-                  {stage === 'deepening' && '💭'}
-                  {stage === 'analysis' && '⚡'}
-                  {stage === 'summary' && '🎯'}
-                </span>
+          {/* Cross-module context panel */}
+          <div className="mb-4">
+            {renderContextPanel()}
+          </div>
+
+          {/* Stats */}
+          <div className="bg-gray-50 rounded-lg p-3 text-sm">
+            <h4 className="font-semibold text-gray-800 mb-2">Session Stats</h4>
+            <div className="space-y-1 text-gray-600">
+              <div className="flex justify-between">
+                <span>Messages:</span>
+                <span className="font-medium">{messages.length}</span>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">
-                  {stage === 'initial' && 'Initial Story'}
-                  {stage === 'exploration' && 'Exploration'}
-                  {stage === 'deepening' && 'Deep Dive'}
-                  {stage === 'analysis' && 'Pattern Analysis'}
-                  {stage === 'summary' && 'Strength Profile'}
-                </h3>
-                <p className="text-sm text-white/90">{progressStatus.nextStep}</p>
+              <div className="flex justify-between">
+                <span>Strengths Found:</span>
+                <span className="font-medium">{Object.values(strengths).flat().length}</span>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold">{progressStatus.completion}%</div>
-              <div className="text-xs text-white/80">Complete</div>
             </div>
           </div>
         </div>
 
-        {/* Cross-module context panel */}
-        {renderContextPanel()}
+        {/* Sidebar Footer - Action Buttons */}
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <button
+            onClick={saveProgress}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+          >
+            <Save className="w-4 h-4" />
+            Save Progress
+          </button>
+          <button
+            onClick={clearSession}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reset Session
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Chat Area */}
+      <main className="flex-1 flex flex-col">{/* Chat Header */}
+        <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-800">Conversation</h2>
+          <p className="text-sm text-gray-600">Share your experiences to discover your strengths</p>
+        </div>
 
         {/* Chat Container */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-white m-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Messages */}
-          <div className="h-[400px] overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {showWelcome && messages.length === 0 && (
-              <div className="text-center py-8">
-                <Sparkles className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Let's discover your strengths!
-                </h2>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  {context?.hasContext
-                    ? "I've loaded your values from the Values Discovery module. Let's use them to explore your strengths!"
-                    : "Share your experiences and I'll help you identify your unique strengths."}
-                </p>
+              <div className="space-y-6">
+                {/* Module Introduction */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Target className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Welcome to Strength Discovery! 🎯
+                      </h2>
+                      <p className="text-gray-700 mb-3">
+                        Through a guided conversation, I'll help you identify your <strong>Skills</strong>, <strong>Attitudes</strong>, and <strong>Values</strong> based on your real experiences.
+                      </p>
+                      <div className="bg-white/60 rounded-lg p-3 text-sm space-y-2">
+                        <p className="font-semibold text-gray-800">📖 How it works:</p>
+                        <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                          <li><strong>Initial Story</strong>: Share a meaningful work experience</li>
+                          <li><strong>Exploration</strong>: I'll ask follow-up questions (2-3 rounds)</li>
+                          <li><strong>Deep Dive</strong>: Uncover patterns and insights (2-3 rounds)</li>
+                          <li><strong>Analysis</strong>: Explore how strengths transfer (2 rounds)</li>
+                          <li><strong>Summary</strong>: Receive your complete strength profile</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example Box */}
+                <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                  <p className="text-sm font-semibold text-yellow-900 mb-2">💡 Example of a good initial story:</p>
+                  <p className="text-sm text-yellow-800 italic">
+                    "I coordinated an educational program for 1,000 teachers in my late 20s. When conflicts arose between students and staff due to miscommunication, I facilitated listening sessions, synthesized concerns, and mediated a joint meeting that resolved the issue and improved team morale."
+                  </p>
+                </div>
+
+                {/* First Question */}
+                <div className="bg-white rounded-xl p-5 border-2 border-blue-300 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-medium mb-2">Let's start your strength discovery journey!</p>
+                      <p className="text-gray-700">
+                        <strong>Tell me about a time when you felt really satisfied with work you were doing.</strong> What happened? What did you do? What made it meaningful?
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        (Share a specific experience from your work, projects, or leadership roles)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {context?.hasContext && (
+                  <div className="bg-pink-50 rounded-lg p-3 border border-pink-200">
+                    <p className="text-sm text-pink-800">
+                      ✨ I've loaded your values from the Values Discovery module to personalize your experience!
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -460,11 +535,11 @@ export const ChatInterfaceWithContext: React.FC<Props> = ({ moduleId }) => {
 
         {/* Strengths Mind Map */}
         {Object.values(strengths).flat().length > 0 && (
-          <div className="mt-6">
+          <div className="m-4 mt-0">
             <StrengthMindMap strengths={strengths} />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };

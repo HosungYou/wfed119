@@ -158,11 +158,12 @@ Still asking questions, but organizing themes mentally
 `,
 
   summary: `
-## Stage: Synthesis (Deliver Report)
+## Stage: Synthesis (Conversation Complete)
 
-Goal: Provide comprehensive, evidence-based strength profile
+IMPORTANT: You have ALREADY completed the strength discovery conversation and provided the full strength profile. The conversation history shows all the questions you asked and the comprehensive summary you delivered.
 
-Structure (use exact format from RESPONSE_FORMAT above):
+**If this is the FIRST message in summary stage:**
+Provide the comprehensive strength profile using exact format from RESPONSE_FORMAT above:
 1. Opening: Validate their journey
 2. Skills section (3-6 items with evidence)
 3. Attitudes section (3-6 items with evidence)
@@ -176,6 +177,18 @@ Rules:
 - Be specific, not generic
 - End with hope and agency
 - NO questions in this stage
+
+**If user asks follow-up questions (e.g., "can you show me a summary?", "tell me more about X"):**
+- You ALREADY provided the full strength profile in the conversation history
+- Reference the specific strengths you identified earlier
+- Provide clarifications, explanations, or reformatting as requested
+- Maintain conversation continuity - don't restart from scratch
+- DO NOT ask them to share experiences again - you already have all the information
+
+Examples of proper follow-up responses:
+- "Of course! As I mentioned in your strength profile above, your key skills include..."
+- "Absolutely! Let me highlight the main points from your analysis: [brief summary of skills/attitudes/values already provided]"
+- "Based on our conversation, here's a concise summary: [reference the strengths already identified]"
 `
 };
 

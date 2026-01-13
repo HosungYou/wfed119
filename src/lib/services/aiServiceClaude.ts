@@ -112,6 +112,16 @@ export class AIService {
       preview: trimmedMessage.substring(0, 50)
     });
 
+    // === SUMMARY STAGE: ACCEPT ALL INPUTS ===
+    // User already completed the discovery process, allow any follow-up questions
+    if (stage === 'summary') {
+      console.log('[VALIDATION] ✅ Summary stage - all inputs accepted');
+      return {
+        isValid: true,
+        shouldRedirect: false
+      };
+    }
+
     // === LOGIC-BASED VALIDATION (Priority over character count) ===
 
     // 1. Check for deflection patterns (highest priority)
@@ -233,8 +243,8 @@ export class AIService {
     messages: ChatMessage[],
     sessionContext: SessionContext
   ): Promise<string> {
-    // Validate last user message if exists
-    if (messages.length > 0) {
+    // Validate last user message if exists (SKIP validation for summary stage)
+    if (messages.length > 0 && sessionContext.stage !== 'summary') {
       const lastUserMessage = messages.filter(m => m.role === 'user').pop();
       if (lastUserMessage) {
         const validation = this.validateUserResponse(lastUserMessage.content, sessionContext.stage);
@@ -328,8 +338,8 @@ export class AIService {
     messages: ChatMessage[],
     sessionContext: SessionContext
   ): AsyncGenerator<string, void, unknown> {
-    // Validate last user message
-    if (messages.length > 0) {
+    // Validate last user message (SKIP validation for summary stage)
+    if (messages.length > 0 && sessionContext.stage !== 'summary') {
       const lastUserMessage = messages.filter(m => m.role === 'user').pop();
       if (lastUserMessage) {
         const validation = this.validateUserResponse(lastUserMessage.content, sessionContext.stage);

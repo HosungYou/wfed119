@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setSession(initialSession);
-        setUser(initialSession?.user ?? null);
+        // Use user object directly from getUser() to avoid warnings
+        setUser(user ?? null);
       } catch (error) {
         console.error('[AuthContext] Error getting initial session:', error);
       } finally {

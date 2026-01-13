@@ -23,14 +23,13 @@ export default function AuthButton() {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
 
       if (!userError && user) {
-        // Get session only after user verification
-        const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name,
-          image: session.user.user_metadata?.avatar_url
-        } : null)
+        // Use user object directly from getUser() to avoid warnings
+        setUser({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name,
+          image: user.user_metadata?.avatar_url
+        })
       } else {
         setUser(null)
       }
@@ -40,13 +39,23 @@ export default function AuthButton() {
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ? {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name,
-          image: session.user.user_metadata?.avatar_url
-        } : null)
+      async (event, session) => {
+        if (session) {
+          // Get user from getUser() to avoid warnings, even though onAuthStateChange is already verified
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            setUser({
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.name,
+              image: user.user_metadata?.avatar_url
+            })
+          } else {
+            setUser(null)
+          }
+        } else {
+          setUser(null)
+        }
         router.refresh()
       }
     )

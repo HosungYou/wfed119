@@ -14,13 +14,12 @@ export default function LoginPage() {
     let isMounted = true;
 
     // Use getUser() for better security (authenticates via Auth server)
-    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
       if (!isMounted) return;
 
+      // Use user object directly to check authentication status
       if (!error && user) {
-        // Get session only after user verification
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
+        setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
       }

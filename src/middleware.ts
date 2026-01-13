@@ -89,9 +89,10 @@ export async function middleware(req: NextRequest) {
   }
 
   // Add user info to headers for API routes (optional enhancement)
-  if (session?.user && pathname.startsWith('/api/')) {
-    res.headers.set('x-user-id', session.user.id)
-    res.headers.set('x-user-email', session.user.email || '')
+  // Use user object directly from getUser() to avoid warnings
+  if (user && pathname.startsWith('/api/')) {
+    res.headers.set('x-user-id', user.id)
+    res.headers.set('x-user-email', user.email || '')
   }
 
   return res

@@ -26,9 +26,21 @@ export async function POST(req: NextRequest) {
 
     // Get supabase client
     const supabase = await createServerSupabaseClient();
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    const authUserId = authSession?.user?.id || null;
-    const authUserEmail = authSession?.user?.email || null;
+
+    // Use getUser() for better security (authenticates via Auth server)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    let authSession = null;
+    let authUserId = null;
+    let authUserEmail = null;
+
+    if (!userError && user) {
+      authUserId = user.id;
+      authUserEmail = user.email;
+
+      // Get session only after user verification
+      const { data: { session } } = await supabase.auth.getSession();
+      authSession = session;
+    }
 
     // Ensure session exists in database
     const { data: existingSession } = await supabase

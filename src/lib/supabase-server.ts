@@ -40,6 +40,18 @@ export const createServerSupabaseClient = async () => {
 export const getSession = async () => {
   const supabase = await createServerSupabaseClient()
   try {
+    // Use getUser() instead of getSession() for better security
+    // getUser() authenticates the data by contacting Supabase Auth server
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      return null
+    }
+
+    // If we need the full session, get it after user verification
     const {
       data: { session },
     } = await supabase.auth.getSession()

@@ -83,8 +83,10 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  const userId = session?.user?.id || null;
+
+  // Use getUser() for better security (authenticates via Auth server)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const userId = (!userError && user) ? user.id : null;
 
   const { data: existingSession, error: fetchError } = await admin
     .from('enneagram_sessions')

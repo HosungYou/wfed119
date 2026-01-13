@@ -64,10 +64,22 @@ export async function POST(req: NextRequest) {
     let supabase, authSession, authUserId, authUserEmail;
     try {
       supabase = await createServerSupabaseClient();
-      const sessionResult = await supabase.auth.getSession();
-      authSession = sessionResult.data.session;
-      authUserId = authSession?.user?.id || null;
-      authUserEmail = authSession?.user?.email || null;
+
+      // Use getUser() for better security (authenticates via Auth server)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (!userError && user) {
+        authUserId = user.id;
+        authUserEmail = user.email;
+
+        // Get session only after user verification
+        const { data: { session } } = await supabase.auth.getSession();
+        authSession = session;
+      } else {
+        authUserId = null;
+        authUserEmail = null;
+        authSession = null;
+      }
 
       console.log('[STREAM_API] Auth status:', { authUserId: !!authUserId });
 

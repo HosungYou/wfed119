@@ -296,6 +296,12 @@ function ProfileRadarChart({
   completedModules: ModuleId[];
   language: string;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const radarData = MODULE_ORDER.map((moduleId) => {
     const config = MODULE_CONFIGS[moduleId];
     const isCompleted = completedModules.includes(moduleId);
@@ -306,6 +312,15 @@ function ProfileRadarChart({
       fullMark: 100,
     };
   });
+
+  // Prevent SSR issues with ResponsiveContainer
+  if (!mounted) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+        <div className="text-gray-400 text-sm">Loading chart...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-64">

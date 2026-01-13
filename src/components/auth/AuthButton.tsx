@@ -19,13 +19,21 @@ export default function AuthButton() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ? {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.user_metadata?.name,
-        image: session.user.user_metadata?.avatar_url
-      } : null)
+      // Use getUser() for better security (authenticates via Auth server)
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (!userError && user) {
+        // Get session only after user verification
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ? {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name,
+          image: session.user.user_metadata?.avatar_url
+        } : null)
+      } else {
+        setUser(null)
+      }
       setLoading(false)
     }
 

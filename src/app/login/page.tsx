@@ -13,9 +13,17 @@ export default function LoginPage() {
     const supabase = createSupabaseClient();
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    // Use getUser() for better security (authenticates via Auth server)
+    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
       if (!isMounted) return;
-      setIsAuthenticated(!!data.session);
+
+      if (!error && user) {
+        // Get session only after user verification
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+      } else {
+        setIsAuthenticated(false);
+      }
       setLoading(false);
     });
 

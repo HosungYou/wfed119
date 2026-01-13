@@ -127,9 +127,17 @@ export async function POST(req: NextRequest) {
     const answers = asDiscriminatorAnswers((input as { answers?: unknown })?.answers, discriminatorsRequired);
     updatedResponses.discriminators = answers;
     progress = Math.min(1, answers.length / discriminatorsRequired);
-    if (progress >= 1) {
-      nextStage = 'wings';
+    if (answers.length < discriminatorsRequired) {
+      return NextResponse.json(
+        {
+          error: `Please answer all ${discriminatorsRequired} questions before proceeding.`,
+          progress,
+          nextStage: stage,
+        },
+        { status: 400 },
+      );
     }
+    nextStage = 'wings';
   }
 
   if (stage === 'wings') {
@@ -138,18 +146,34 @@ export async function POST(req: NextRequest) {
     updatedResponses.wings = responses;
     const total = validIds.size || 1;
     progress = Math.min(1, responses.length / total);
-    if (progress >= 1) {
-      nextStage = 'narrative';
+    if (responses.length < total) {
+      return NextResponse.json(
+        {
+          error: `Please answer all ${total} questions before proceeding.`,
+          progress,
+          nextStage: stage,
+        },
+        { status: 400 },
+      );
     }
+    nextStage = 'narrative';
   }
 
   if (stage === 'narrative') {
     const texts = asTexts((input as { texts?: unknown })?.texts, 2);
     updatedResponses.narrative = texts;
     progress = texts.length / 2;
-    if (texts.length === 2) {
-      nextStage = 'complete';
+    if (texts.length < 2) {
+      return NextResponse.json(
+        {
+          error: 'Please answer both narrative questions before completing.',
+          progress,
+          nextStage: stage,
+        },
+        { status: 400 },
+      );
     }
+    nextStage = 'complete';
   }
 
   if (stage === 'complete') {

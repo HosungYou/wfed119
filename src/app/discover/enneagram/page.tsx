@@ -99,8 +99,10 @@ function EnneagramWizardContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(`Failed to submit (${res.status})`);
-      const data = (await res.json()) as { nextStage?: unknown };
+      const data = (await res.json()) as { nextStage?: unknown; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error || `Failed to submit (${res.status})`);
+      }
       if (isStage(data.nextStage)) {
         setStage(data.nextStage);
       }

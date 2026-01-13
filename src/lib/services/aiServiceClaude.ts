@@ -183,7 +183,7 @@ export class AIService {
 
     // === CONTENT QUALITY CHECKS ===
 
-    // 5. Initial stage: Need substantial story (VERY RELAXED for better UX)
+    // 5. Initial stage: LOGIC-BASED ONLY (no character/word count requirements)
     if (stage === 'initial') {
       // Expanded action words including past tense variants
       const hasActionWords = /\b(did|do|made|make|created?|built?|organized?|solved?|helped?|learned?|developed?|designed?|worked?|led|lead|taught|teach|managed?|coordinated?|served?|facilitated?|implemented?|delivered?|achieved?|accomplished?)\b/i.test(trimmedMessage);
@@ -198,11 +198,8 @@ export class AIService {
         wordCount
       });
 
-      // CRITICAL: Be VERY lenient on initial stage
-      // Accept ANY of the following conditions:
-      // 1. Has work-related content AND reasonable length (40+ chars OR 8+ words)
-      // 2. Has action words OR work context (regardless of length if 30+ chars)
-      if (trimmedMessage.length >= 30 && (hasActionWords || hasTimeContext || hasWorkContext)) {
+      // CRITICAL: Accept if has ANY content markers (NO length requirements)
+      if (hasActionWords || hasTimeContext || hasWorkContext) {
         console.log('[VALIDATION] ✅ Initial stage PASSED - has content markers');
         return {
           isValid: true,
@@ -210,46 +207,19 @@ export class AIService {
         };
       }
 
-      // Additional fallback: if message is substantial (60+ chars), accept it
-      if (trimmedMessage.length >= 60) {
-        console.log('[VALIDATION] ✅ Initial stage PASSED - substantial length');
-        return {
-          isValid: true,
-          shouldRedirect: false
-        };
-      }
-
-      // Only reject if truly insufficient (< 30 chars AND < 8 words)
-      if (trimmedMessage.length < 30 && wordCount < 8) {
-        console.log('[VALIDATION] ❌ Initial stage FAILED - too brief');
-        return {
-          isValid: false,
-          reason: 'Initial response too brief',
-          shouldRedirect: true,
-          redirectMessage: "That's a great start! Could you tell me more about that experience? I'm interested in hearing about what you DID, how you approached it, and what made it meaningful for you."
-        };
-      }
-
-      // Only redirect if truly vague AND short
-      if (wordCount < 20) {
-        return {
-          isValid: false,
-          reason: 'Need more specific story',
-          shouldRedirect: true,
-          redirectMessage: "I'd love to hear more! Can you describe a specific situation? For example, when did this happen, what exactly did you do, and what was the outcome?"
-        };
-      }
-    }
-
-    // 6. Subsequent stages: Ensure meaningful engagement (relaxed criteria)
-    if (stage !== 'initial' && wordCount < 8 && !hasContextualContent) {
+      // Only reject if completely missing work-related content
+      console.log('[VALIDATION] ❌ Initial stage FAILED - no content markers found');
       return {
         isValid: false,
-        reason: 'Response too brief for meaningful analysis',
+        reason: 'No work-related content detected',
         shouldRedirect: true,
-        redirectMessage: "I'd love to hear more about that! Could you expand on your thoughts? What specifically stood out to you about that experience?"
+        redirectMessage: "I'd love to hear about a specific work or project experience! Can you tell me about a time when you worked on something meaningful? What did you do, and what happened?"
       };
     }
+
+    // 6. Subsequent stages: Ensure meaningful engagement (logic-based only)
+    // Accept ANY response that's not a deflection or meta question
+    // No word/character count requirements
 
     // === PASS VALIDATION ===
     console.log('[VALIDATION] Final PASS - no issues found');
@@ -593,28 +563,18 @@ If invalid (no real examples), return:
         const messageLength = lastUserMessage.content.trim().length;
         const messageWords = lastUserMessage.content.split(/\s+/).length;
 
-        // CRITICAL FIX: If validation passed, trust it completely and progress
-        // The validation logic is already strict enough
+        // CRITICAL: Trust validation completely - NO length checks
         console.log('[STAGE_PROGRESS] Initial stage check:', {
-          validationIsValid: validation.isValid,
-          messageLength,
-          messageWords
+          validationIsValid: validation.isValid
         });
 
         if (validation.isValid) {
-          // Additional check: make sure message is not too short
-          // Accept if at least 40 chars OR 8 words
-          if (messageLength >= 40 || messageWords >= 8) {
-            console.log('[STAGE_PROGRESS] ✅ Progressing to exploration - validation passed');
-            return {
-              shouldProgress: true,
-              nextStage: 'exploration',
-              reason: 'User shared valid initial story'
-            };
-          } else {
-            console.log('[STAGE_PROGRESS] ⚠️ Validation passed but message too short - requesting more detail');
-            // Don't progress yet, but validation will handle redirect
-          }
+          console.log('[STAGE_PROGRESS] ✅ Progressing to exploration - validation passed');
+          return {
+            shouldProgress: true,
+            nextStage: 'exploration',
+            reason: 'User shared valid initial story'
+          };
         } else {
           console.log('[STAGE_PROGRESS] ❌ Not progressing - validation failed');
         }

@@ -19,14 +19,8 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    const auth = checkDevAuth(session);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -109,14 +103,8 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    const auth = checkDevAuth(session);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -224,14 +212,8 @@ export async function PATCH(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    const auth = checkDevAuth(session);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -351,14 +333,8 @@ export async function DELETE(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    const auth = checkDevAuth(session);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

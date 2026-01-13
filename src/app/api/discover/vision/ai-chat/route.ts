@@ -44,14 +44,8 @@ export async function POST(req: NextRequest) {
     // 1. 인증 확인 (개발 모드에서는 우회)
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    const auth = checkDevAuth(session);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return new Response('Unauthorized', { status: 401 });

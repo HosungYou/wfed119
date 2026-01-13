@@ -5,36 +5,29 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-    let session = null;
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (!userError && authUser) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-    if (!session?.user) {
+    if (userError || !user) {
       return NextResponse.json(
         { isAdmin: false, error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const { data: user } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('role, email, id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const isAdmin = userData?.role === 'ADMIN' || userData?.role === 'SUPER_ADMIN';
+    const isSuperAdmin = userData?.role === 'SUPER_ADMIN';
 
     return NextResponse.json({
       isAdmin,
       isSuperAdmin,
-      role: user?.role || 'USER',
-      email: user?.email
+      role: userData?.role || 'USER',
+      email: userData?.email
     });
 
   } catch (error) {

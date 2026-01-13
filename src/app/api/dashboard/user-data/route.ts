@@ -32,22 +32,15 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-    if (!session?.user) {
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const userEmail = session.user.email;
-    const userName = session.user.user_metadata?.name || session.user.email;
-    const userImage = session.user.user_metadata?.avatar_url;
+    const userId = user.id;
+    const userEmail = user.email;
+    const userName = user.user_metadata?.name || user.email;
+    const userImage = user.user_metadata?.avatar_url;
 
     // Test basic database connection
     console.log('Testing Supabase connection...');

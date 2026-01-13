@@ -15,27 +15,20 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
-
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
 
     if (authError) {
       console.error('Supabase auth error:', authError);
       return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
     }
 
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: rows, error } = await supabase
       .from('value_results')
       .select('id, user_id, value_set, layout, top3, insights, module_version, updated_at')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -62,7 +55,7 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    return NextResponse.json({ userId: session.user.id, results: latestBySet });
+    return NextResponse.json({ userId: user.id, results: latestBySet });
   } catch (err) {
     console.error('GET /api/discover/values/results/all error', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

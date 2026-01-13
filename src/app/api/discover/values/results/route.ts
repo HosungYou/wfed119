@@ -45,20 +45,13 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
-
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
 
     if (authError) {
       console.error('Supabase auth error:', authError);
       return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
     }
 
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -69,7 +62,7 @@ export async function GET(req: NextRequest) {
     const { data: latest, error } = await supabase
       .from('value_results')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('value_set', set)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -107,20 +100,13 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
-
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
 
     if (authError) {
       console.error('Supabase auth error:', authError);
       return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
     }
 
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -137,7 +123,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing set or layout' }, { status: 400 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Find existing records
     const { data: existing } = await supabase

@@ -13,30 +13,23 @@ const tableMap: Record<string, string> = {
 const requireSuperAdmin = async () => {
   const supabase = await createServerSupabaseClient();
   // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-    let session = null;
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (!userError && authUser) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-  if (!session?.user) {
+  if (userError || !user) {
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
-  const { data: user, error } = await supabase
+  const { data: userData, error } = await supabase
     .from('users')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .maybeSingle();
 
   if (error) {
     console.error('[Admin Export] Role lookup error:', error);
   }
 
-  if (user?.role !== 'SUPER_ADMIN') {
+  if (userData?.role !== 'SUPER_ADMIN') {
     return { ok: false, status: 403, error: 'Super admin access required' };
   }
 

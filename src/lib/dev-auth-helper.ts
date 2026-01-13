@@ -10,10 +10,11 @@ export interface AuthResult {
   isDevelopmentMode: boolean;
 }
 
-export function checkDevAuth(session: any): AuthResult {
+// Accept user object directly instead of session to avoid Supabase warnings
+export function checkDevAuth(user: any): AuthResult {
   const isDevelopmentMode = process.env.DEV_MODE_SKIP_AUTH === 'true';
 
-  if (isDevelopmentMode && !session) {
+  if (isDevelopmentMode && !user) {
     return {
       userId: 'dev-test-user-id',
       isAuthenticated: true,
@@ -22,8 +23,8 @@ export function checkDevAuth(session: any): AuthResult {
   }
 
   return {
-    userId: session?.user?.id || '',
-    isAuthenticated: !!session,
+    userId: user?.id || '',
+    isAuthenticated: !!user,
     isDevelopmentMode: false
   };
 }

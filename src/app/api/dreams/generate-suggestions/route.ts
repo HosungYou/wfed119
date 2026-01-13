@@ -9,21 +9,15 @@ export async function POST(request: NextRequest) {
     // Get current user
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!userError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-    if (!session?.user) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Fetch data from other modules
     const [valuesData, strengthsData, visionData, existingDreams] = await Promise.all([

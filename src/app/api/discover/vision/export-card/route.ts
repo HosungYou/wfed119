@@ -62,19 +62,12 @@ export async function POST(req: NextRequest) {
     // 1. 인증 확인
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-    if (!session || authError) {
+    if (!user || authError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // 2. Vision Statement 데이터 조회
     const { data: visionData, error: visionError } = await supabase
@@ -106,8 +99,8 @@ export async function POST(req: NextRequest) {
       style: visionData.statement_style,
       template,
       user: {
-        name: session.user.user_metadata?.full_name || session.user.email,
-        email: session.user.email
+        name: user.user_metadata?.full_name || user.email,
+        email: user.email
       },
       createdAt: visionData.completed_at || visionData.updated_at
     };
@@ -135,19 +128,12 @@ export async function GET(req: NextRequest) {
     // 1. 인증 확인
     // Use getUser() for better security (authenticates via Auth server)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    let session = null;
 
-    if (!authError && user) {
-      // Get session only after user verification
-      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
-      session = verifiedSession;
-    }
-
-    if (!session || authError) {
+    if (!user || authError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // 2. Vision Statement 조회
     const { data: visionData, error: visionError } = await supabase
@@ -173,8 +159,8 @@ export async function GET(req: NextRequest) {
       template,
       completedAt: visionData.completed_at,
       user: {
-        name: session.user.user_metadata?.full_name || 'User',
-        email: session.user.email
+        name: user.user_metadata?.full_name || 'User',
+        email: user.email
       }
     });
 

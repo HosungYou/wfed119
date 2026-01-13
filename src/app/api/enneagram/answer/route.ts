@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getScreenerItems } from '@/lib/enneagram/itemBank';
 import { getInstinctItems } from '@/lib/enneagram/instincts';
+import { getDiscriminatorPairsForTop, getDiscriminatorItems } from '@/lib/enneagram/discriminators';
+import { scoreStage1 } from '@/lib/enneagram/scoring';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { createSupabaseAdmin } from '@/lib/supabase';
 
@@ -16,8 +18,6 @@ type RequestBody = {
   input?: unknown;
   locale?: string;
 };
-
-const discriminatorsRequired = 6;
 
 const isStage = (value: unknown): value is Stage =>
   value === 'screener' ||
@@ -124,6 +124,21 @@ export async function POST(req: NextRequest) {
   }
 
   if (stage === 'discriminators') {
+    // Calculate required questions dynamically based on screener results
+    const screenerResponses = (updatedResponses.screener || responses.screener) as LikertItem[] | undefined;
+    let discriminatorsRequired = 6; // default fallback
+
+    if (screenerResponses && Array.isArray(screenerResponses) && screenerResponses.length > 0) {
+      const { probabilities } = scoreStage1(screenerResponses, locale);
+      const topTypes = Object.entries(probabilities)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([type]) => Number(type));
+      const pairs = getDiscriminatorPairsForTop(topTypes);
+      const items = getDiscriminatorItems(locale as 'en' | 'kr', pairs);
+      discriminatorsRequired = items.length;
+    }
+
     const answers = asDiscriminatorAnswers((input as { answers?: unknown })?.answers, discriminatorsRequired);
     updatedResponses.discriminators = answers;
     progress = Math.min(1, answers.length / discriminatorsRequired);

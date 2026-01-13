@@ -132,8 +132,12 @@ export async function POST(req: NextRequest) {
         strengths = await aiService.analyzeStrengths(conversationHistory);
         console.log('Strengths analysis completed:', strengths);
 
-        if (strengths) {
-          // Save strength analysis to Supabase
+        if (strengths && authSession?.user) {
+          const userId = authSession.user.id;
+
+          // === CRITICAL: Save to TWO tables for cross-module compatibility ===
+
+          // 1. Save to strength_profiles (for current session)
           await supabase.from('strength_profiles').insert({
             session_id: sessionId,
             user_id: authUserId,
@@ -142,6 +146,56 @@ export async function POST(req: NextRequest) {
             summary: 'Generated from conversation analysis',
             insights: { generated_at: new Date().toISOString() }
           });
+
+          // 2. Save to strength_discovery_results (for cross-module context)
+          //    This enables other modules (Vision, SWOT) to access strength data
+          const conversationHistory = messages.map(m => `${m.role}: ${m.content}`).join('\n\n');
+
+          // Prepare compact strength data for cross-module use
+          const compactStrengths = [
+            ...(strengths.skills || []).slice(0, 5).map(skill => ({
+              name: skill,
+              category: 'skill',
+              description: `Identified from conversation analysis`,
+            })),
+            ...(strengths.attitudes || []).slice(0, 5).map(attitude => ({
+              name: attitude,
+              category: 'attitude',
+              description: `Behavioral strength`,
+            })),
+            ...(strengths.values || []).slice(0, 5).map(value => ({
+              name: value,
+              category: 'value',
+              description: `Core value identified`,
+            })),
+          ];
+
+          await supabase.from('strength_discovery_results').upsert({
+            user_id: userId,
+            final_strengths: compactStrengths,
+            summary: `Skills: ${(strengths.skills || []).slice(0, 3).join(', ')}\nAttitudes: ${(strengths.attitudes || []).slice(0, 3).join(', ')}\nValues: ${(strengths.values || []).slice(0, 3).join(', ')}`,
+            conversation_history: conversationHistory.substring(0, 5000), // Limit size
+            insights: {
+              generated_at: new Date().toISOString(),
+              skills_count: strengths.skills?.length || 0,
+              attitudes_count: strengths.attitudes?.length || 0,
+              values_count: strengths.values?.length || 0,
+              session_id: sessionId,
+              insights: [
+                `Identified ${strengths.skills?.length || 0} key skills`,
+                `Identified ${strengths.attitudes?.length || 0} work attitudes`,
+                `Identified ${strengths.values?.length || 0} core values`,
+              ]
+            },
+            is_completed: true,
+            current_step: 5,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          });
+
+          console.log('[CHAT_API] Strengths saved to both tables for cross-module access');
         }
       } catch (error) {
         console.error('Error analyzing strengths:', error);

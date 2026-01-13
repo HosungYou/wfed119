@@ -317,12 +317,43 @@ export const ChatInterfaceWithContext: React.FC<Props> = ({ moduleId }) => {
           </div>
         </div>
 
-        {/* Progress Indicator */}
+        {/* Enhanced Progress Indicator */}
         <ProgressIndicator
-          stage={stage}
-          messageCount={messages.length}
-          strengthsFound={Object.values(strengths).flat().length}
+          currentStage={stage}
+          progressPercentage={progressStatus.completion}
+          className="mb-4"
         />
+
+        {/* Current Stage Banner */}
+        <div className="mb-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <span className="text-2xl">
+                  {stage === 'initial' && '📖'}
+                  {stage === 'exploration' && '🔍'}
+                  {stage === 'deepening' && '💭'}
+                  {stage === 'analysis' && '⚡'}
+                  {stage === 'summary' && '🎯'}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">
+                  {stage === 'initial' && 'Initial Story'}
+                  {stage === 'exploration' && 'Exploration'}
+                  {stage === 'deepening' && 'Deep Dive'}
+                  {stage === 'analysis' && 'Pattern Analysis'}
+                  {stage === 'summary' && 'Strength Profile'}
+                </h3>
+                <p className="text-sm text-white/90">{progressStatus.nextStep}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">{progressStatus.completion}%</div>
+              <div className="text-xs text-white/80">Complete</div>
+            </div>
+          </div>
+        </div>
 
         {/* Cross-module context panel */}
         {renderContextPanel()}

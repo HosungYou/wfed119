@@ -101,83 +101,118 @@ export class AIService {
   }
 
   private validateUserResponse(message: string, stage: SessionContext['stage']): ResponseValidation {
-    // Check if response is too short
-    if (message.length < 30) {
-      return {
-        isValid: false,
-        reason: 'Response too short',
-        shouldRedirect: true,
-        redirectMessage: "I'd love to hear more details! Could you expand on that experience? For example, what specific steps did you take, and what made it meaningful to you?"
-      };
-    }
+    const trimmedMessage = message.trim();
+    const words = trimmedMessage.split(/\s+/);
+    const wordCount = words.length;
 
-    // Check if user is asking a question instead of sharing
-    const questionPatterns = [
-      /^(what|how|why|when|where|who|which|could|should|would|can|may|is|are|do|does|did)\s+/i,
-      /\?$/,
-      /^(i don't know|idk|not sure|unsure|maybe)/i,
-      /^(can you|could you|will you|would you)/i
-    ];
+    // === LOGIC-BASED VALIDATION (Priority over character count) ===
 
-    const isQuestion = questionPatterns.some(pattern => pattern.test(message.trim()));
-    if (isQuestion && stage !== 'initial') {
-      return {
-        isValid: false,
-        reason: 'User asking questions instead of sharing',
-        shouldRedirect: true,
-        redirectMessage: "Your curiosity is wonderful! But first, I'd love to learn about YOUR experiences. Think of a specific time when you worked on something that engaged you. What was that experience like for you?"
-      };
-    }
-
-    // Check for deflection patterns
+    // 1. Check for deflection patterns (highest priority)
     const deflectionPatterns = [
-      /^(nothing|none|no idea|can't think|don't remember)/i,
-      /^(skip|pass|next question)/i,
-      /^(whatever|doesn't matter|who cares)/i
+      /^(nothing|none|no idea|can't think|don't remember|idk|dunno)$/i,
+      /^(skip|pass|next)/i,
+      /^(i don't know|not sure)$/i,
     ];
-
-    const isDeflection = deflectionPatterns.some(pattern => pattern.test(message.trim()));
+    const isDeflection = deflectionPatterns.some(pattern => pattern.test(trimmedMessage));
     if (isDeflection) {
       return {
         isValid: false,
         reason: 'User deflecting or avoiding',
         shouldRedirect: true,
-        redirectMessage: "No pressure at all! Sometimes it helps to start small. Think about even a simple task or project where you felt a sense of accomplishment, no matter how minor it might seem. Every experience counts!"
+        redirectMessage: "No pressure at all! Every experience counts. Think about even a simple task where you felt a sense of accomplishment. It could be organizing something, helping someone, or learning a new skill. What comes to mind?"
       };
     }
 
-    // Check for off-topic content
+    // 2. Check if user is asking a META question (about the process itself)
+    const metaQuestionPatterns = [
+      /^(what|how|why) (do|should|can|will) (you|we|i|this)/i,
+      /what('s| is) (this|the|next)/i,
+      /how (long|many|much)/i,
+      /^(can you|could you|will you|would you) (help|tell|explain)/i
+    ];
+    const isMetaQuestion = metaQuestionPatterns.some(pattern => pattern.test(trimmedMessage));
+    if (isMetaQuestion && wordCount < 15) {
+      return {
+        isValid: false,
+        reason: 'User asking meta questions instead of sharing',
+        shouldRedirect: true,
+        redirectMessage: "Great question! But first, let's focus on YOUR story. Think of a specific time when you worked on something that engaged you. What was that experience like for you?"
+      };
+    }
+
+    // 3. Check for rhetorical questions within context (OK if part of storytelling)
+    // Only flag if it's ONLY a question with no context
+    const endsWithQuestion = trimmedMessage.endsWith('?');
+    const hasContextualContent = wordCount > 20 || /\b(when|because|so|then|after|during)\b/i.test(trimmedMessage);
+
+    if (endsWithQuestion && !hasContextualContent && stage !== 'initial') {
+      return {
+        isValid: false,
+        reason: 'Only asking questions without sharing experience',
+        shouldRedirect: true,
+        redirectMessage: "I appreciate your curiosity! To identify your strengths, I need to hear about YOUR specific experiences. Can you share a concrete example from your work or projects?"
+      };
+    }
+
+    // 4. Check for off-topic content (only if clearly unrelated)
     const offTopicPatterns = [
-      /(weather|sports team|tv show|movie|game|food|restaurant)/i,
-      /(politics|news|celebrity|gossip)/i,
+      /\b(weather|sports team|tv show|movie|celebrity|gossip)\b/i,
+    ];
+    const workLifeKeywords = [
+      /\b(work|project|task|team|goal|achieve|accomplish|create|build|solve|help|learn|study|research|design|develop|write|organize|plan|manage|lead|teach|mentor|collaborate|present)\b/i
     ];
 
-    const workRelatedKeywords = [
-      /work|project|task|team|goal|achieve|accomplish|create|build|solve|help|learn|study|research|design|develop|write|organize|plan|manage/i
-    ];
+    const hasWorkContent = workLifeKeywords.some(pattern => pattern.test(trimmedMessage));
+    const hasOffTopic = offTopicPatterns.some(pattern => pattern.test(trimmedMessage));
 
-    const hasWorkContent = workRelatedKeywords.some(pattern => pattern.test(message));
-    const hasOffTopic = offTopicPatterns.some(pattern => pattern.test(message));
-
-    if (hasOffTopic && !hasWorkContent && stage !== 'initial') {
+    if (hasOffTopic && !hasWorkContent) {
       return {
         isValid: false,
         reason: 'Off-topic response',
         shouldRedirect: true,
-        redirectMessage: "That's interesting! Let's refocus on your work and project experiences though. What accomplishment, big or small, are you most proud of from the last year?"
+        redirectMessage: "That's interesting! Let's refocus on your work and project experiences. What accomplishment, big or small, are you most proud of recently?"
       };
     }
 
-    // For initial stage, require more substantial response
-    if (stage === 'initial' && message.length < 100) {
+    // === CONTENT QUALITY CHECKS ===
+
+    // 5. Initial stage: Need substantial story (focus on content, not just length)
+    if (stage === 'initial') {
+      const hasActionWords = /\b(did|made|created|built|organized|solved|helped|learned|developed|designed|worked|led|taught)\b/i.test(trimmedMessage);
+      const hasTimeContext = /\b(when|last|ago|during|while|after|recently|yesterday|week|month|year)\b/i.test(trimmedMessage);
+
+      // Require at least 50 characters AND meaningful content indicators
+      if (trimmedMessage.length < 50 || (!hasActionWords && wordCount < 30)) {
+        return {
+          isValid: false,
+          reason: 'Initial response needs more detail about actions taken',
+          shouldRedirect: true,
+          redirectMessage: "That's a great start! Could you tell me more about that experience? I'm interested in hearing about what you DID, how you approached it, and what made it meaningful for you."
+        };
+      }
+
+      // Prefer responses with time context and actions
+      if (!hasTimeContext && !hasActionWords && wordCount < 40) {
+        return {
+          isValid: false,
+          reason: 'Need more specific story with actions',
+          shouldRedirect: true,
+          redirectMessage: "I'd love to hear more! Can you describe a specific situation? For example, when did this happen, what exactly did you do, and what was the outcome?"
+        };
+      }
+    }
+
+    // 6. Subsequent stages: Ensure meaningful engagement (relaxed criteria)
+    if (stage !== 'initial' && wordCount < 8 && !hasContextualContent) {
       return {
         isValid: false,
-        reason: 'Initial response needs more detail',
+        reason: 'Response too brief for meaningful analysis',
         shouldRedirect: true,
-        redirectMessage: "That's a great start! Could you tell me more about that experience? I'm interested in hearing about what you did, how you approached it, and what made it satisfying for you."
+        redirectMessage: "I'd love to hear more about that! Could you expand on your thoughts? What specifically stood out to you about that experience?"
       };
     }
 
+    // === PASS VALIDATION ===
     return {
       isValid: true,
       shouldRedirect: false
@@ -474,7 +509,7 @@ If invalid (no real examples), return:
   }
 
   async shouldProgressStage(
-    messages: ChatMessage[], 
+    messages: ChatMessage[],
     currentStage: SessionContext['stage']
   ): Promise<{ shouldProgress: boolean; nextStage?: SessionContext['stage']; reason?: string }> {
     if (messages.length < 2) {
@@ -484,73 +519,92 @@ If invalid (no real examples), return:
     // Get last user message
     const userMessages = messages.filter(m => m.role === 'user');
     const lastUserMessage = userMessages[userMessages.length - 1];
-    
+
     if (!lastUserMessage) {
       return { shouldProgress: false };
     }
 
     // Validate the last user response
     const validation = this.validateUserResponse(lastUserMessage.content, currentStage);
-    
+
     // Don't progress if last response was invalid
     if (!validation.isValid) {
-      return { 
+      return {
         shouldProgress: false,
-        reason: `Invalid response: ${validation.reason}`
+        reason: `Awaiting valid response: ${validation.reason}`
       };
     }
 
-    const messageLength = lastUserMessage.content.length;
-    const validUserMessages = userMessages.filter(msg => 
+    // Count VALID user messages (quality over quantity)
+    const validUserMessages = userMessages.filter(msg =>
       this.validateUserResponse(msg.content, currentStage).isValid
     ).length;
 
+    // Calculate total conversation depth (including assistant responses)
+    const totalExchanges = Math.floor(messages.length / 2);
+
+    // === LOGIC-BASED STAGE PROGRESSION ===
+
     switch (currentStage) {
       case 'initial':
-        // Progress only if user shared a substantial story (> 100 characters) and it's valid
-        if (messageLength > 100 && validation.isValid) {
-          return { 
-            shouldProgress: true, 
+        // Progress if user shared a valid initial story
+        // Check for action words and context (not just length)
+        const hasActionContext = /\b(did|made|created|built|organized|helped|learned|worked)\b/i.test(lastUserMessage.content);
+        const hasReasonableDepth = lastUserMessage.content.trim().length > 60 || lastUserMessage.content.split(/\s+/).length > 15;
+
+        if (validation.isValid && (hasActionContext || hasReasonableDepth)) {
+          return {
+            shouldProgress: true,
             nextStage: 'exploration',
-            reason: 'User shared valid initial story' 
+            reason: 'User shared valid initial story with meaningful content'
           };
         }
         break;
-        
+
       case 'exploration':
-        // Progress after 2 valid exchanges
-        if (validUserMessages >= 2) {
-          return { 
-            shouldProgress: true, 
+        // Progress after 2-3 exchanges OR 2 valid user messages
+        // Goal: Have basic understanding of the experience
+        if (validUserMessages >= 2 || totalExchanges >= 3) {
+          return {
+            shouldProgress: true,
             nextStage: 'deepening',
-            reason: 'Sufficient valid exploration completed' 
+            reason: 'Basic exploration completed - moving to deeper insights'
           };
         }
         break;
-        
+
       case 'deepening':
-        // Progress after 4 valid exchanges total
-        if (validUserMessages >= 4) {
-          return { 
-            shouldProgress: true, 
+        // Progress after 3-4 valid user messages OR 5 total exchanges
+        // Goal: Uncover emotional and personal dimensions
+        if (validUserMessages >= 3 || totalExchanges >= 5) {
+          return {
+            shouldProgress: true,
             nextStage: 'analysis',
-            reason: 'Deep exploration with valid responses completed' 
+            reason: 'Deep exploration with insights completed'
           };
         }
         break;
-        
+
       case 'analysis':
-        // Progress after 5 valid exchanges total
-        if (validUserMessages >= 5) {
-          return { 
-            shouldProgress: true, 
+        // Progress after 4-5 valid user messages OR 7 total exchanges
+        // Goal: Identify patterns and transferable strengths
+        if (validUserMessages >= 4 || totalExchanges >= 7) {
+          return {
+            shouldProgress: true,
             nextStage: 'summary',
-            reason: 'Ready for final synthesis with sufficient valid data' 
+            reason: 'Comprehensive analysis complete - ready for synthesis'
           };
         }
         break;
+
+      case 'summary':
+        // Already at final stage
+        return { shouldProgress: false, reason: 'Already at summary stage' };
     }
 
-    return { shouldProgress: false };
+    return {
+      shouldProgress: false,
+      reason: `Need ${currentStage === 'initial' ? 'more detail in initial story' : 'more conversation depth'}`
+    };
   }
 }

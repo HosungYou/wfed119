@@ -102,8 +102,60 @@ export async function POST(req: NextRequest) {
             try {
               const conversationHistory = messages.map(m => `${m.role}: ${m.content}`).join('\n\n');
               const strengths = await aiService.analyzeStrengths(conversationHistory);
+
+              // Store for later database save
               strengthsSnapshot = strengths;
-              
+
+              // === SAVE TO DATABASE for cross-module access ===
+              if (authUserId && strengths) {
+                // Prepare compact strength data
+                const compactStrengths = [
+                  ...(strengths.skills || []).slice(0, 5).map(skill => ({
+                    name: skill,
+                    category: 'skill',
+                    description: `Identified from conversation analysis`,
+                  })),
+                  ...(strengths.attitudes || []).slice(0, 5).map(attitude => ({
+                    name: attitude,
+                    category: 'attitude',
+                    description: `Behavioral strength`,
+                  })),
+                  ...(strengths.values || []).slice(0, 5).map(value => ({
+                    name: value,
+                    category: 'value',
+                    description: `Core value identified`,
+                  })),
+                ];
+
+                // Save to strength_discovery_results for cross-module use
+                await supabase.from('strength_discovery_results').upsert({
+                  user_id: authUserId,
+                  final_strengths: compactStrengths,
+                  summary: `Skills: ${(strengths.skills || []).slice(0, 3).join(', ')}\nAttitudes: ${(strengths.attitudes || []).slice(0, 3).join(', ')}\nValues: ${(strengths.values || []).slice(0, 3).join(', ')}`,
+                  conversation_history: conversationHistory.substring(0, 5000),
+                  insights: {
+                    generated_at: new Date().toISOString(),
+                    skills_count: strengths.skills?.length || 0,
+                    attitudes_count: strengths.attitudes?.length || 0,
+                    values_count: strengths.values?.length || 0,
+                    session_id: sessionId,
+                    insights: [
+                      `Identified ${strengths.skills?.length || 0} key skills`,
+                      `Identified ${strengths.attitudes?.length || 0} work attitudes`,
+                      `Identified ${strengths.values?.length || 0} core values`,
+                    ]
+                  },
+                  is_completed: true,
+                  current_step: 5,
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'user_id',
+                  ignoreDuplicates: false
+                });
+
+                console.log('[STREAM_API] Strengths saved for cross-module access');
+              }
+
               const strengthsData = {
                 type: 'strengths',
                 strengths: strengths
@@ -113,9 +165,9 @@ export async function POST(req: NextRequest) {
               console.error('Strength analysis error in streaming:', error);
               // Send fallback strengths
               const fallbackStrengths = {
-                skills: ['Problem-solving', 'Communication', 'Leadership', 'Facilitation', 'Mentorship', 'Team-building'],
-                attitudes: ['Persistence', 'Curiosity', 'Collaboration', 'Empathetic', 'Patient', 'Encouraging'],
-                values: ['Excellence', 'Impact', 'Growth', 'Trust', 'Inclusivity', 'Empowerment']
+                skills: ['Problem-solving', 'Communication', 'Leadership'],
+                attitudes: ['Persistence', 'Curiosity', 'Collaboration'],
+                values: ['Excellence', 'Impact', 'Growth']
               };
               const strengthsData = {
                 type: 'strengths',

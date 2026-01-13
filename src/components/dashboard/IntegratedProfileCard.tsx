@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Heart, Target, User, Lightbulb, Eye, Sparkles,
-  ChevronRight, TrendingUp, Award, Compass, RefreshCw
+  Heart, Target, User, Lightbulb, Eye, Sparkles, Grid3X3, CheckCircle2, Zap,
+  ChevronRight, TrendingUp, Award, Compass, RefreshCw, Lock
 } from 'lucide-react';
+import {
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ResponsiveContainer, Tooltip
+} from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/lib/i18n';
-import { IntegratedProfile, ModuleId } from '@/lib/types/modules';
+import { IntegratedProfile, ModuleId, MODULE_ORDER, MODULE_CONFIGS } from '@/lib/types/modules';
 
 // ============================================================================
 // Types
@@ -256,6 +260,145 @@ function AiInsightsSection({
 }
 
 // ============================================================================
+// Module Icons Map
+// ============================================================================
+
+const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
+  values: Heart,
+  strengths: Target,
+  enneagram: User,
+  'life-themes': Lightbulb,
+  vision: Eye,
+  swot: Grid3X3,
+  goals: CheckCircle2,
+  errc: Zap,
+};
+
+const MODULE_COLORS: Record<ModuleId, { bg: string; text: string; fill: string }> = {
+  values: { bg: 'bg-rose-100', text: 'text-rose-600', fill: '#e11d48' },
+  strengths: { bg: 'bg-blue-100', text: 'text-blue-600', fill: '#2563eb' },
+  enneagram: { bg: 'bg-teal-100', text: 'text-teal-600', fill: '#0d9488' },
+  'life-themes': { bg: 'bg-amber-100', text: 'text-amber-600', fill: '#d97706' },
+  vision: { bg: 'bg-purple-100', text: 'text-purple-600', fill: '#9333ea' },
+  swot: { bg: 'bg-orange-100', text: 'text-orange-600', fill: '#ea580c' },
+  goals: { bg: 'bg-indigo-100', text: 'text-indigo-600', fill: '#4f46e5' },
+  errc: { bg: 'bg-emerald-100', text: 'text-emerald-600', fill: '#059669' },
+};
+
+// ============================================================================
+// Radar Chart Component
+// ============================================================================
+
+function ProfileRadarChart({
+  completedModules,
+  language,
+}: {
+  completedModules: ModuleId[];
+  language: string;
+}) {
+  const radarData = MODULE_ORDER.map((moduleId) => {
+    const config = MODULE_CONFIGS[moduleId];
+    const isCompleted = completedModules.includes(moduleId);
+    return {
+      module: language === 'ko' ? config.name : config.name,
+      moduleId,
+      value: isCompleted ? 100 : 0,
+      fullMark: 100,
+    };
+  });
+
+  return (
+    <div className="w-full h-64">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+          <PolarGrid stroke="#e5e7eb" />
+          <PolarAngleAxis
+            dataKey="module"
+            tick={{ fontSize: 10, fill: '#6b7280' }}
+            tickLine={false}
+          />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 100]}
+            tick={false}
+            axisLine={false}
+          />
+          <Radar
+            name={language === 'ko' ? '완료도' : 'Completion'}
+            dataKey="value"
+            stroke="#6366f1"
+            fill="#6366f1"
+            fillOpacity={0.4}
+            strokeWidth={2}
+          />
+          <Tooltip
+            formatter={(value: number) => [`${value}%`, language === 'ko' ? '완료' : 'Complete']}
+            contentStyle={{
+              backgroundColor: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '12px',
+            }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ============================================================================
+// Module Grid Component
+// ============================================================================
+
+function ModuleGrid({
+  completedModules,
+  language,
+}: {
+  completedModules: ModuleId[];
+  language: string;
+}) {
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {MODULE_ORDER.map((moduleId) => {
+        const config = MODULE_CONFIGS[moduleId];
+        const Icon = MODULE_ICONS[moduleId];
+        const colors = MODULE_COLORS[moduleId];
+        const isCompleted = completedModules.includes(moduleId);
+
+        return (
+          <Link
+            key={moduleId}
+            href={config.route}
+            className={`
+              relative flex flex-col items-center p-3 rounded-xl transition-all
+              ${isCompleted
+                ? `${colors.bg} ${colors.text} hover:shadow-md`
+                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
+              }
+            `}
+          >
+            <Icon className="w-5 h-5 mb-1" />
+            <span className="text-[10px] font-medium text-center leading-tight">
+              {config.name}
+            </span>
+            {isCompleted && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-white" />
+              </div>
+            )}
+            {!isCompleted && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
+                <Lock className="w-2.5 h-2.5 text-gray-400" />
+              </div>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -335,16 +478,34 @@ export function IntegratedProfileCard({
     );
   }
 
+  // Always show the card with radar chart, even if no modules completed
+  const completedModules = profile?.modulesCompleted || [];
+  const completionPercent = profile?.profileCompleteness || Math.round((completedModules.length / MODULE_ORDER.length) * 100);
+
   if (!profile || profile.modulesCompleted.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">{t.integratedProfile}</h3>
-        <div className="text-center py-8">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <Compass className="w-8 h-8 text-gray-400" />
-          </div>
-          <p className="text-gray-500">{t.noProfile}</p>
-          <p className="text-sm text-gray-400 mt-1">{t.noProfileHint}</p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">{t.integratedProfile}</h3>
+          <span className="text-sm text-gray-500">0{t.complete}</span>
+        </div>
+
+        {/* Radar Chart - Empty State */}
+        <ProfileRadarChart completedModules={[]} language={language} />
+
+        {/* Module Grid */}
+        <div className="mt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            {language === 'ko' ? '모듈 현황' : 'Module Status'}
+          </h4>
+          <ModuleGrid completedModules={[]} language={language} />
+        </div>
+
+        {/* Empty State Message */}
+        <div className="mt-6 text-center p-4 bg-gray-50 rounded-xl">
+          <Compass className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">{t.noProfile}</p>
+          <p className="text-xs text-gray-400 mt-1">{t.noProfileHint}</p>
         </div>
       </div>
     );

@@ -5,10 +5,10 @@ import { createSupabaseAdmin } from '@/lib/supabase';
 const requireSuperAdmin = async () => {
   const supabase = await createServerSupabaseClient();
   // Use getUser() for better security (authenticates via Auth server)
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
     let session = null;
 
-    if (!userError && user) {
+    if (!userError && authUser) {
       // Get session only after user verification
       const { data: { session: verifiedSession } } = await supabase.auth.getSession();
       session = verifiedSession;

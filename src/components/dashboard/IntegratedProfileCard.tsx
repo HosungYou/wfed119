@@ -323,40 +323,38 @@ function ProfileRadarChart({
   }
 
   return (
-    <div className="w-full h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-          <PolarGrid stroke="#e5e7eb" />
-          <PolarAngleAxis
-            dataKey="module"
-            tick={{ fontSize: 10, fill: '#6b7280' }}
-            tickLine={false}
-          />
-          <PolarRadiusAxis
-            angle={90}
-            domain={[0, 100]}
-            tick={false}
-            axisLine={false}
-          />
-          <Radar
-            name={language === 'ko' ? '완료도' : 'Completion'}
-            dataKey="value"
-            stroke="#6366f1"
-            fill="#6366f1"
-            fillOpacity={0.4}
-            strokeWidth={2}
-          />
-          <Tooltip
-            formatter={(value: number) => [`${value}%`, language === 'ko' ? '완료' : 'Complete']}
-            contentStyle={{
-              backgroundColor: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '12px',
-            }}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+    <div className="w-full h-64 flex items-center justify-center">
+      <RadarChart width={400} height={256} cx={200} cy={128} outerRadius={90} data={radarData}>
+        <PolarGrid stroke="#e5e7eb" />
+        <PolarAngleAxis
+          dataKey="module"
+          tick={{ fontSize: 10, fill: '#6b7280' }}
+          tickLine={false}
+        />
+        <PolarRadiusAxis
+          angle={90}
+          domain={[0, 100]}
+          tick={false}
+          axisLine={false}
+        />
+        <Radar
+          name={language === 'ko' ? '완료도' : 'Completion'}
+          dataKey="value"
+          stroke="#6366f1"
+          fill="#6366f1"
+          fillOpacity={0.4}
+          strokeWidth={2}
+        />
+        <Tooltip
+          formatter={(value: number) => [`${value}%`, language === 'ko' ? '완료' : 'Complete']}
+          contentStyle={{
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '12px',
+          }}
+        />
+      </RadarChart>
     </div>
   );
 }

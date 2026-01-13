@@ -8,16 +8,25 @@ import { createSupabaseClient } from './supabase';
 export async function getAuthenticatedSession() {
   const supabase = createSupabaseClient();
 
-  const { data: { session }, error } = await supabase.auth.getSession();
+  // Use getUser() for better security (authenticates via Auth server)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (error) {
-    console.error('[Auth] Error getting session:', error);
-    throw new Error('Failed to get session');
+  if (userError) {
+    console.error('[Auth] Error getting user:', userError);
+    throw new Error('Failed to authenticate user');
   }
 
-  if (!session) {
-    console.error('[Auth] No session found');
+  if (!user) {
+    console.error('[Auth] No user found');
     throw new Error('Not authenticated');
+  }
+
+  // Get session only after user verification
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('[Auth] Error getting session:', sessionError);
+    throw new Error('Failed to get session');
   }
 
   return session;

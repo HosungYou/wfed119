@@ -42,7 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        // Use getUser() for better security (authenticates via Auth server)
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        let initialSession = null;
+
+        if (!userError && user) {
+          // Get session only after user verification
+          const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+          initialSession = verifiedSession;
+        }
+
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
       } catch (error) {
@@ -55,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     // Listen for auth changes
+    // Note: onAuthStateChange provides already-verified sessions from Supabase Auth server
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, currentSession: Session | null) => {
         console.log('[AuthContext] Auth state changed:', event);

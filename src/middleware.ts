@@ -46,10 +46,19 @@ export async function middleware(req: NextRequest) {
   )
 
   // Refresh session if expired - important for session management
-  const { data: { session }, error } = await supabase.auth.getSession()
+  // Use getUser() for better security (authenticates via Auth server)
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  let session = null
 
-  if (error) {
-    console.error('[Middleware] Session error:', error.message)
+  if (!userError && user) {
+    // Get session only after user verification
+    const { data: { session: verifiedSession }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) {
+      console.error('[Middleware] Session error:', sessionError.message)
+    }
+    session = verifiedSession
+  } else if (userError) {
+    console.error('[Middleware] User verification error:', userError.message)
   }
 
   const pathname = req.nextUrl.pathname

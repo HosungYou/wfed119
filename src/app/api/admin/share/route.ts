@@ -5,7 +5,15 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use getUser() for better security (authenticates via Auth server)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    let session = null;
+
+    if (!userError && user) {
+      // Get session only after user verification
+      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+      session = verifiedSession;
+    }
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

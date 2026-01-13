@@ -34,7 +34,15 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // 1. 인증 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // Use getUser() for better security (authenticates via Auth server)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    let session = null;
+
+    if (!authError && user) {
+      // Get session only after user verification
+      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+      session = verifiedSession;
+    }
     const auth = checkDevAuth(session);
 
     if (!requireAuth(auth)) {

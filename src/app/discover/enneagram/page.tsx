@@ -3,9 +3,45 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home
+} from 'lucide-react';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
 type Locale = 'en' | 'kr';
+
+// Types for AI interpretation
+interface EnneagramResult {
+  primaryType: string;
+  typeProbabilities: Record<string, number>;
+  confidence: string;
+  wingEstimate: string | null;
+  instinct: string | null;
+}
+
+interface InterpretationData {
+  typeOverview: string;
+  wingInfluence: string;
+  instinctFocus: string;
+  strengthsSynergy?: string;
+  growthPath: string;
+  careerInsights: string;
+}
+
+interface TypeProfile {
+  name: { en: string; ko: string };
+  nickname: { en: string; ko: string };
+  coreFear: { en: string; ko: string };
+  coreDesire: { en: string; ko: string };
+  healthyTraits: { en: string[]; ko: string[] };
+  growthDirection: number;
+}
+
+interface InterpretResponse {
+  interpretation: InterpretationData;
+  typeProfile: TypeProfile;
+  source: 'ai' | 'fallback';
+}
 
 interface ScreenerItem { id: string; type: number; text: string }
 interface DiscItem { id: string; pair: string; leftType: number; rightType: number; prompt: string; optionA: string; optionB: string }
@@ -39,6 +75,12 @@ function EnneagramWizardContent() {
   const [discResponses, setDiscResponses] = useState<Record<string, 'A' | 'B'>>({});
   const [instinctResponses, setInstinctResponses] = useState<Record<string, number>>({});
   const [narrativeTexts, setNarrativeTexts] = useState<string[]>(['', '']);
+
+  // Results & AI Interpretation
+  const [enneagramResult, setEnneagramResult] = useState<EnneagramResult | null>(null);
+  const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [resultError, setResultError] = useState<string | null>(null);
 
   // ensure session id exists
   useEffect(() => {
@@ -78,6 +120,64 @@ function EnneagramWizardContent() {
     if (canFetch && stage !== 'complete') loadItems(stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canFetch, locale, stage]);
+
+  // Auto-fetch results and AI interpretation when entering complete stage
+  useEffect(() => {
+    if (stage === 'complete' && canFetch && !enneagramResult && !resultLoading) {
+      fetchResultsAndInterpretation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, canFetch]);
+
+  async function fetchResultsAndInterpretation() {
+    setResultLoading(true);
+    setResultError(null);
+
+    try {
+      // Step 1: Score the session
+      const scoreRes = await fetch('/api/enneagram/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      if (!scoreRes.ok) {
+        throw new Error(`Failed to calculate score (${scoreRes.status})`);
+      }
+
+      const scoreData: EnneagramResult = await scoreRes.json();
+      setEnneagramResult(scoreData);
+
+      // Step 2: Fetch AI interpretation
+      const type = parseInt(scoreData.primaryType, 10);
+      const wing = scoreData.wingEstimate ? parseInt(scoreData.wingEstimate.split('w')[1], 10) : type;
+      const instinct = (scoreData.instinct as 'sp' | 'so' | 'sx') || 'sp';
+
+      const interpretRes = await fetch('/api/enneagram/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enneagram: {
+            type,
+            wing,
+            instinct,
+            confidence: scoreData.confidence,
+            probabilities: scoreData.typeProbabilities,
+          },
+          locale: locale === 'kr' ? 'ko' : 'en',
+        }),
+      });
+
+      if (interpretRes.ok) {
+        const interpretData: InterpretResponse = await interpretRes.json();
+        setInterpretation(interpretData);
+      }
+    } catch (err) {
+      setResultError(toErrorMessage(err, 'Failed to load results'));
+    } finally {
+      setResultLoading(false);
+    }
+  }
 
   async function submitStage() {
     if (!canFetch) return;

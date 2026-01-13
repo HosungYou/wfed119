@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use getUser() for better security (authenticates via Auth server)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    let session = null;
+
+    if (!userError && user) {
+      // Get session only after user verification
+      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+      session = verifiedSession;
+    }
     const auth = checkDevAuth(session);
 
     if (!requireAuth(auth)) {

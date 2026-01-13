@@ -13,7 +13,15 @@ const valueSets: ValueSet[] = ['terminal', 'instrumental', 'work'];
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    // Use getUser() for better security (authenticates via Auth server)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    let session = null;
+
+    if (!authError && user) {
+      // Get session only after user verification
+      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+      session = verifiedSession;
+    }
 
     if (authError) {
       console.error('Supabase auth error:', authError);

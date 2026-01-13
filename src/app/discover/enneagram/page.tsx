@@ -74,7 +74,8 @@ function EnneagramWizardContent() {
   }
 
   useEffect(() => {
-    if (canFetch) loadItems(stage);
+    // Skip loading items for 'complete' stage - no items needed
+    if (canFetch && stage !== 'complete') loadItems(stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canFetch, locale, stage]);
 

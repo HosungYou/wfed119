@@ -120,8 +120,8 @@ function EnneagramWizardContent() {
       setError(null);
       const res = await fetch('/api/enneagram/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) });
       if (!res.ok) throw new Error(`Failed to score (${res.status})`);
-      // optional: show a toast/summary
-      router.push(`/results?sessionId=${encodeURIComponent(sessionId)}`);
+      // Redirect to dashboard with flag to open Enneagram panel
+      router.push('/dashboard?openEnneagram=true');
     } catch (error) {
       setError(toErrorMessage(error, 'Failed to score'));
     } finally {
@@ -318,20 +318,29 @@ function EnneagramWizardContent() {
 
         {stage === 'complete' && (
           <div className="glass-panel p-8 rounded-3xl text-center">
-            <StageHeader title={locale === 'kr' ? '완료' : 'Complete'} subtitle={locale === 'kr' ? '점수를 계산하고 결과 페이지로 이동합니다.' : 'Score and view your unified results.'} />
+            <StageHeader
+              title={locale === 'kr' ? '완료' : 'Complete'}
+              subtitle={locale === 'kr'
+                ? '축하합니다! 에니어그램 진단이 완료되었습니다.'
+                : 'Congratulations! Your Enneagram assessment is complete.'
+              }
+            />
+            <p className="text-gray-600 mb-6">
+              {locale === 'kr'
+                ? '대시보드에서 AI 기반 해석과 강점 시너지 분석을 확인하세요.'
+                : 'View your AI-powered interpretation and strengths synergy analysis on the dashboard.'
+              }
+            </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={scoreAndGoResults}
                 disabled={loading}
                 className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all disabled:opacity-50"
               >
-                {locale === 'kr' ? '점수 계산 및 결과 보기' : 'Score & View Results'}
-              </button>
-              <button
-                onClick={() => router.push(`/results?sessionId=${encodeURIComponent(sessionId)}`)}
-                className="px-8 py-4 bg-white/50 border border-white/40 text-gray-700 rounded-xl font-bold text-lg hover:bg-white/80 transition-all"
-              >
-                {locale === 'kr' ? '결과로 이동' : 'Go to Results'}
+                {loading
+                  ? (locale === 'kr' ? '처리 중...' : 'Processing...')
+                  : (locale === 'kr' ? '완료 및 대시보드로 이동' : 'Complete & Go to Dashboard')
+                }
               </button>
             </div>
           </div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Heart, Target, User, Lightbulb, Eye, Grid3X3, CheckCircle2, Zap,
-  ChevronRight, ChevronDown, ChevronUp
+  ChevronRight, ChevronDown, ChevronUp, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -12,6 +12,7 @@ import {
   ValuesData, StrengthsData, EnneagramData, LifeThemesData,
   VisionData, SwotData, GoalSettingData, ErrcData
 } from '@/lib/types/modules';
+import { EnneagramDetailPanel } from './EnneagramDetailPanel';
 
 // ============================================================================
 // Types
@@ -111,7 +112,13 @@ function StrengthsSummary({ data }: { data: StrengthsData | null }) {
   );
 }
 
-function EnneagramSummary({ data }: { data: EnneagramData | null }) {
+function EnneagramSummary({
+  data,
+  onViewAI,
+}: {
+  data: EnneagramData | null;
+  onViewAI?: () => void;
+}) {
   if (!data) return <p className="text-gray-500 text-sm">No data</p>;
 
   const instinctLabels: Record<string, string> = {
@@ -121,13 +128,27 @@ function EnneagramSummary({ data }: { data: EnneagramData | null }) {
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="text-2xl font-bold text-teal-600">
-        {data.type}w{data.wing}
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="text-2xl font-bold text-teal-600">
+          {data.type}w{data.wing}
+        </div>
+        <div className="text-sm text-gray-600">
+          {instinctLabels[data.instinct] || data.instinct}
+        </div>
       </div>
-      <div className="text-sm text-gray-600">
-        {instinctLabels[data.instinct] || data.instinct}
-      </div>
+      {onViewAI && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewAI();
+          }}
+          className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 transition-colors"
+        >
+          <Sparkles className="w-4 h-4" />
+          View AI Interpretation
+        </button>
+      )}
     </div>
   );
 }
@@ -248,11 +269,13 @@ function ModuleSummaryCard({
   data,
   isExpanded,
   onToggle,
+  onEnneagramAI,
 }: {
   moduleId: ModuleId;
   data: unknown;
   isExpanded: boolean;
   onToggle: () => void;
+  onEnneagramAI?: () => void;
 }) {
   const config = MODULE_CONFIGS[moduleId];
   const Icon = MODULE_ICONS[moduleId];
@@ -265,7 +288,7 @@ function ModuleSummaryCard({
       case 'strengths':
         return <StrengthsSummary data={data as StrengthsData} />;
       case 'enneagram':
-        return <EnneagramSummary data={data as EnneagramData} />;
+        return <EnneagramSummary data={data as EnneagramData} onViewAI={onEnneagramAI} />;
       case 'life-themes':
         return <LifeThemesSummary data={data as LifeThemesData} />;
       case 'vision':
@@ -330,6 +353,7 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   const [moduleData, setModuleData] = useState<Record<ModuleId, unknown>>({} as Record<ModuleId, unknown>);
   const [expandedModules, setExpandedModules] = useState<Set<ModuleId>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [showEnneagramPanel, setShowEnneagramPanel] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || completedModules.length === 0) {
@@ -418,9 +442,20 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
             data={moduleData[moduleId]}
             isExpanded={expandedModules.has(moduleId)}
             onToggle={() => toggleModule(moduleId)}
+            onEnneagramAI={moduleId === 'enneagram' ? () => setShowEnneagramPanel(true) : undefined}
           />
         ))}
       </div>
+
+      {/* Enneagram Detail Panel */}
+      {moduleData.enneagram && (
+        <EnneagramDetailPanel
+          data={moduleData.enneagram as EnneagramData}
+          strengthsData={moduleData.strengths as StrengthsData | null}
+          isOpen={showEnneagramPanel}
+          onClose={() => setShowEnneagramPanel(false)}
+        />
+      )}
     </div>
   );
 }

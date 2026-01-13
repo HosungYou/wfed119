@@ -262,6 +262,11 @@ export class AIService {
       userThemes: sessionContext.extractedThemes
     });
 
+    // CRITICAL: Add conversation summary for context awareness
+    const conversationSummary = sessionContext.stage === 'summary'
+      ? `\n\nCONVERSATION CONTEXT:\nYou have ${messages.length} messages in this conversation. Review ALL of them carefully before responding. The user has already shared their work experiences and you may have already provided a strength analysis.`
+      : '';
+
     // Try Claude first, fallback to OpenAI
     if (anthropic) {
       try {
@@ -274,8 +279,8 @@ export class AIService {
         const completion = await anthropic.messages.create({
           model: "claude-3-haiku-20240307", // Most cost-effective model
           messages: claudeMessages,
-          system: systemPrompt,
-          max_tokens: 600,
+          system: systemPrompt + conversationSummary,
+          max_tokens: 800, // Increased for summary stage
           temperature: 0.7,
         });
 
@@ -357,6 +362,11 @@ export class AIService {
       userThemes: sessionContext.extractedThemes
     });
 
+    // CRITICAL: Add conversation summary for context awareness
+    const conversationSummary = sessionContext.stage === 'summary'
+      ? `\n\nCONVERSATION CONTEXT:\nYou have ${messages.length} messages in this conversation. Review ALL of them carefully before responding. The user has already shared their work experiences and you may have already provided a strength analysis.`
+      : '';
+
     if (anthropic) {
       try {
         const claudeMessages = messages.map(msg => ({
@@ -367,8 +377,8 @@ export class AIService {
         const stream = await anthropic.messages.create({
           model: "claude-3-haiku-20240307",
           messages: claudeMessages,
-          system: systemPrompt,
-          max_tokens: 600,
+          system: systemPrompt + conversationSummary,
+          max_tokens: 800, // Increased for summary stage
           temperature: 0.7,
           stream: true,
         });
@@ -615,13 +625,15 @@ If invalid (no real examples), return:
         break;
 
       case 'analysis':
-        // Progress after 4-5 valid user messages OR 7 total exchanges
+        // CRITICAL: Progress to summary quickly after gathering insights
         // Goal: Identify patterns and transferable strengths
-        if (validUserMessages >= 4 || totalExchanges >= 7) {
+        // Even 2-3 exchanges in analysis stage is enough to generate summary
+        if (validUserMessages >= 2 || totalExchanges >= 4) {
+          console.log('[STAGE_PROGRESS] ✅ Analysis complete - progressing to summary');
           return {
             shouldProgress: true,
             nextStage: 'summary',
-            reason: 'Comprehensive analysis complete - ready for synthesis'
+            reason: 'Analysis insights gathered - generating comprehensive strength profile'
           };
         }
         break;

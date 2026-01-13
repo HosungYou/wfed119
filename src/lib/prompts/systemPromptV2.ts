@@ -160,9 +160,12 @@ Still asking questions, but organizing themes mentally
   summary: `
 ## Stage: Synthesis (Conversation Complete)
 
-IMPORTANT: You have ALREADY completed the strength discovery conversation and provided the full strength profile. The conversation history shows all the questions you asked and the comprehensive summary you delivered.
+CRITICAL CONTEXT AWARENESS:
+- You MUST read the ENTIRE conversation history before responding
+- All previous questions, answers, and insights are in the messages array
+- Reference specific details the user shared in earlier exchanges
 
-**If this is the FIRST message in summary stage:**
+**If this is the FIRST message in summary stage (you haven't provided profile yet):**
 Provide the comprehensive strength profile using exact format from RESPONSE_FORMAT above:
 1. Opening: Validate their journey
 2. Skills section (3-6 items with evidence)
@@ -179,16 +182,27 @@ Rules:
 - NO questions in this stage
 
 **If user asks follow-up questions (e.g., "can you show me a summary?", "tell me more about X"):**
-- You ALREADY provided the full strength profile in the conversation history
-- Reference the specific strengths you identified earlier
-- Provide clarifications, explanations, or reformatting as requested
-- Maintain conversation continuity - don't restart from scratch
-- DO NOT ask them to share experiences again - you already have all the information
+
+CRITICAL: SEARCH the conversation history for "### Your Strength Profile" or similar section headings.
+
+If found:
+- You ALREADY provided the complete analysis earlier in this conversation
+- DO NOT restart the conversation
+- DO NOT ask them to share experiences again
+- Reference the EXACT strengths you already identified
+- Provide clarifications or expand on specific points
+
+If NOT found (shouldn't happen, but as fallback):
+- Review ALL user messages from the beginning
+- Extract their work experiences, accomplishments, and insights
+- Generate the strength profile based on the full conversation
 
 Examples of proper follow-up responses:
-- "Of course! As I mentioned in your strength profile above, your key skills include..."
-- "Absolutely! Let me highlight the main points from your analysis: [brief summary of skills/attitudes/values already provided]"
-- "Based on our conversation, here's a concise summary: [reference the strengths already identified]"
+- "Of course! Let me recap the strength profile I provided earlier: **Skills**: [list from earlier], **Attitudes**: [list from earlier], **Values**: [list from earlier]"
+- "Absolutely! Earlier I identified these key strengths based on your experience as [reference their role]: [summary]"
+- "Based on our entire conversation, here's a concise summary of what we discovered: [reference specific stories they told]"
+
+NEVER say: "I need to hear about YOUR specific experiences" when they already shared them!
 `
 };
 

@@ -139,16 +139,26 @@ export async function POST(req: NextRequest) {
           }
 
           // Handle strength analysis for summary stage
-          if (currentStage === 'summary' && messages.length >= 8) {
+          // CRITICAL: Check if this is the FIRST message in summary stage to generate strengths
+          const isFirstSummaryMessage = currentStage === 'summary' && messages.length >= 4;
+
+          if (isFirstSummaryMessage) {
+            console.log('[STREAM_API] Generating strengths analysis for summary stage');
             try {
               const conversationHistory = messages.map(m => `${m.role}: ${m.content}`).join('\n\n');
               const strengths = await aiService.analyzeStrengths(conversationHistory);
+
+              console.log('[STREAM_API] Strengths analyzed:', {
+                skills: strengths.skills?.length || 0,
+                attitudes: strengths.attitudes?.length || 0,
+                values: strengths.values?.length || 0
+              });
 
               // Store for later database save
               strengthsSnapshot = strengths;
 
               // === SAVE TO DATABASE for cross-module access ===
-              if (authUserId && strengths) {
+              if (authUserId && strengths && !strengths.invalid) {
                 // Prepare compact strength data
                 const compactStrengths = [
                   ...(strengths.skills || []).slice(0, 5).map(skill => ({
@@ -194,16 +204,24 @@ export async function POST(req: NextRequest) {
                   ignoreDuplicates: false
                 });
 
-                console.log('[STREAM_API] Strengths saved for cross-module access');
+                console.log('[STREAM_API] ✅ Strengths saved for cross-module access');
+              } else {
+                console.log('[STREAM_API] ⚠️ Skipping database save:', {
+                  hasAuth: !!authUserId,
+                  hasStrengths: !!strengths,
+                  isInvalid: strengths?.invalid
+                });
               }
 
+              // CRITICAL: ALWAYS send strengths to client, even if DB save fails
               const strengthsData = {
                 type: 'strengths',
                 strengths: strengths
               };
+              console.log('[STREAM_API] Sending strengths to client');
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(strengthsData)}\n\n`));
             } catch (error) {
-              console.error('Strength analysis error in streaming:', error);
+              console.error('[STREAM_API] ❌ Strength analysis error:', error);
               // Send fallback strengths
               const fallbackStrengths = {
                 skills: ['Problem-solving', 'Communication', 'Leadership'],
@@ -214,8 +232,15 @@ export async function POST(req: NextRequest) {
                 type: 'strengths',
                 strengths: fallbackStrengths
               };
+              console.log('[STREAM_API] Sending fallback strengths to client');
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(strengthsData)}\n\n`));
             }
+          } else {
+            console.log('[STREAM_API] Skipping strengths analysis:', {
+              currentStage,
+              messageCount: messages.length,
+              isFirstSummary: isFirstSummaryMessage
+            });
           }
 
           // Send completion signal

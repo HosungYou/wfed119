@@ -435,7 +435,7 @@ function EnneagramWizardContent() {
             {enneagramResult && !resultLoading && (
               <>
                 {/* Header Card */}
-                <div className="glass-panel p-8 rounded-3xl bg-gradient-to-r from-teal-600 to-teal-500 text-white">
+                <div className="p-8 rounded-3xl bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-lg">
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
                       <span className="text-4xl font-bold">{enneagramResult.primaryType}</span>

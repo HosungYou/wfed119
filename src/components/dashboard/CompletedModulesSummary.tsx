@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Heart, Target, User, Lightbulb, Eye, Grid3X3, CheckCircle2, Zap,
-  ChevronRight, ChevronDown, ChevronUp, Sparkles
+  Flag, Briefcase, ChevronRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ModuleId, MODULE_ORDER, MODULE_CONFIGS, MODULE_PARTS, PART_NAMES,
   ValuesData, StrengthsData, EnneagramData, LifeThemesData,
-  VisionData, SwotData, GoalSettingData, ErrcData
+  VisionData, SwotData, GoalSettingData, ErrcData,
+  MissionData, CareerOptionsData
 } from '@/lib/types/modules';
-import { EnneagramDetailPanel } from './EnneagramDetailPanel';
 
 // ============================================================================
 // Types
@@ -38,8 +38,8 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   enneagram: User,
   'life-themes': Lightbulb,
   vision: Eye,
-  mission: Target,           // NEW: Mission Statement
-  'career-options': User,    // NEW: Career Options
+  mission: Flag,
+  'career-options': Briefcase,
   swot: Grid3X3,
   goals: CheckCircle2,
   errc: Zap,
@@ -51,8 +51,8 @@ const MODULE_COLORS: Record<ModuleId, string> = {
   enneagram: 'text-teal-600 bg-teal-50',
   'life-themes': 'text-amber-600 bg-amber-50',
   vision: 'text-purple-600 bg-purple-50',
-  mission: 'text-teal-600 bg-teal-50',           // NEW: Mission Statement
-  'career-options': 'text-indigo-600 bg-indigo-50', // NEW: Career Options
+  mission: 'text-fuchsia-600 bg-fuchsia-50',
+  'career-options': 'text-sky-600 bg-sky-50',
   swot: 'text-orange-600 bg-orange-50',
   goals: 'text-indigo-600 bg-indigo-50',
   errc: 'text-emerald-600 bg-emerald-50',
@@ -63,12 +63,12 @@ const MODULE_COLORS: Record<ModuleId, string> = {
 // ============================================================================
 
 function ValuesSummary({ data }: { data: ValuesData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   const allValues = [
-    ...(data.terminalTop3 || []).map((v) => ({ type: 'Terminal', value: v })),
-    ...(data.instrumentalTop3 || []).map((v) => ({ type: 'Instrumental', value: v })),
-    ...(data.workTop3 || []).map((v) => ({ type: 'Work', value: v })),
+    ...(data.terminalTop3 || []).map((v) => ({ type: '궁극적', value: v })),
+    ...(data.instrumentalTop3 || []).map((v) => ({ type: '도구적', value: v })),
+    ...(data.workTop3 || []).map((v) => ({ type: '직업', value: v })),
   ];
 
   return (
@@ -84,7 +84,7 @@ function ValuesSummary({ data }: { data: ValuesData | null }) {
         ))}
         {allValues.length > 6 && (
           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-            +{allValues.length - 6} more
+            +{allValues.length - 6} 더보기
           </span>
         )}
       </div>
@@ -93,7 +93,7 @@ function ValuesSummary({ data }: { data: ValuesData | null }) {
 }
 
 function StrengthsSummary({ data }: { data: StrengthsData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   return (
     <div className="space-y-2">
@@ -108,7 +108,7 @@ function StrengthsSummary({ data }: { data: StrengthsData | null }) {
         ))}
         {data.topStrengths && data.topStrengths.length > 4 && (
           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-            +{data.topStrengths.length - 4} more
+            +{data.topStrengths.length - 4} 더보기
           </span>
         )}
       </div>
@@ -116,49 +116,29 @@ function StrengthsSummary({ data }: { data: StrengthsData | null }) {
   );
 }
 
-function EnneagramSummary({
-  data,
-  onViewAI,
-}: {
-  data: EnneagramData | null;
-  onViewAI?: () => void;
-}) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+function EnneagramSummary({ data }: { data: EnneagramData | null }) {
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   const instinctLabels: Record<string, string> = {
-    sp: 'Self-Preservation',
-    so: 'Social',
-    sx: 'Sexual/One-to-One',
+    sp: '자기보존형',
+    so: '사회형',
+    sx: '성적/일대일형',
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="text-2xl font-bold text-teal-600">
-          {data.type}w{data.wing}
-        </div>
-        <div className="text-sm text-gray-600">
-          {instinctLabels[data.instinct] || data.instinct}
-        </div>
+    <div className="flex items-center gap-3">
+      <div className="text-2xl font-bold text-teal-600">
+        {data.type}w{data.wing}
       </div>
-      {onViewAI && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewAI();
-          }}
-          className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 transition-colors"
-        >
-          <Sparkles className="w-4 h-4" />
-          View AI Interpretation
-        </button>
-      )}
+      <div className="text-sm text-gray-600">
+        {instinctLabels[data.instinct] || data.instinct}
+      </div>
     </div>
   );
 }
 
 function LifeThemesSummary({ data }: { data: LifeThemesData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   return (
     <div className="space-y-1">
@@ -173,7 +153,7 @@ function LifeThemesSummary({ data }: { data: LifeThemesData | null }) {
 }
 
 function VisionSummary({ data }: { data: VisionData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   return (
     <div className="space-y-2">
@@ -184,11 +164,11 @@ function VisionSummary({ data }: { data: VisionData | null }) {
       )}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-          {data.timeHorizon} Vision
+          {data.timeHorizon} 비전
         </span>
         {data.dreams && data.dreams.length > 0 && (
           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-            {data.dreams.length} Dreams
+            {data.dreams.length}개의 꿈
           </span>
         )}
       </div>
@@ -196,58 +176,110 @@ function VisionSummary({ data }: { data: VisionData | null }) {
   );
 }
 
+function MissionSummary({ data }: { data: MissionData | null }) {
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+
+  const missionText = data.finalStatement || data.draftVersions?.at(-1)?.text;
+
+  return (
+    <div className="space-y-2">
+      {missionText ? (
+        <p className="text-sm text-gray-700 line-clamp-3">
+          {missionText}
+        </p>
+      ) : (
+        <p className="text-gray-500 text-sm">미션 선언문이 없습니다.</p>
+      )}
+    </div>
+  );
+}
+
+function CareerOptionsSummary({ data }: { data: CareerOptionsData | null }) {
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+
+  const topChoices = data.topCareerChoices || [];
+  const suggested = data.suggestedCareers || [];
+  const displayItems = topChoices.length > 0
+    ? topChoices.map((item) => item.career)
+    : suggested.slice(0, 3).map((item) => item.title);
+
+  return (
+    <div className="space-y-2">
+      {displayItems.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {displayItems.slice(0, 4).map((item, idx) => (
+            <span
+              key={idx}
+              className="px-2 py-0.5 text-xs bg-sky-100 text-sky-700 rounded-full"
+            >
+              {item}
+            </span>
+          ))}
+          {displayItems.length > 4 && (
+            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+              +{displayItems.length - 4} 더보기
+            </span>
+          )}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">추천 직업이 없습니다.</p>
+      )}
+    </div>
+  );
+}
+
 function SwotSummary({ data }: { data: SwotData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   return (
     <div className="grid grid-cols-2 gap-2 text-xs">
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-green-500 rounded-full" />
-        <span className="text-gray-600">Strengths {data.strengths?.length || 0}</span>
+        <span className="text-gray-600">강점 {data.strengths?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-red-500 rounded-full" />
-        <span className="text-gray-600">Weaknesses {data.weaknesses?.length || 0}</span>
+        <span className="text-gray-600">약점 {data.weaknesses?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-blue-500 rounded-full" />
-        <span className="text-gray-600">Opportunities {data.opportunities?.length || 0}</span>
+        <span className="text-gray-600">기회 {data.opportunities?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-orange-500 rounded-full" />
-        <span className="text-gray-600">Threats {data.threats?.length || 0}</span>
+        <span className="text-gray-600">위협 {data.threats?.length || 0}</span>
       </div>
     </div>
   );
 }
 
 function GoalsSummary({ data }: { data: GoalSettingData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   return (
     <div className="space-y-1 text-sm">
       <div className="flex items-center gap-2">
         <span className="text-indigo-600 font-medium">{data.roles?.length || 0}</span>
-        <span className="text-gray-600">Roles</span>
+        <span className="text-gray-600">역할</span>
         <span className="text-gray-300">|</span>
         <span className="text-indigo-600 font-medium">{data.objectives?.length || 0}</span>
-        <span className="text-gray-600">Objectives</span>
+        <span className="text-gray-600">목표</span>
         <span className="text-gray-300">|</span>
         <span className="text-indigo-600 font-medium">{data.keyResults?.length || 0}</span>
-        <span className="text-gray-600">KRs</span>
+        <span className="text-gray-600">KR</span>
       </div>
     </div>
   );
 }
 
 function ErrcSummary({ data }: { data: ErrcData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">No data</p>;
+  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
 
   const categories = [
-    { key: 'eliminate', label: 'Eliminate', color: 'bg-red-100 text-red-700' },
-    { key: 'reduce', label: 'Reduce', color: 'bg-orange-100 text-orange-700' },
-    { key: 'raise', label: 'Raise', color: 'bg-blue-100 text-blue-700' },
-    { key: 'create', label: 'Create', color: 'bg-green-100 text-green-700' },
+    { key: 'eliminate', label: '제거', color: 'bg-red-100 text-red-700' },
+    { key: 'reduce', label: '감소', color: 'bg-orange-100 text-orange-700' },
+    { key: 'raise', label: '증가', color: 'bg-blue-100 text-blue-700' },
+    { key: 'create', label: '창조', color: 'bg-green-100 text-green-700' },
   ];
 
   return (
@@ -273,13 +305,11 @@ function ModuleSummaryCard({
   data,
   isExpanded,
   onToggle,
-  onEnneagramAI,
 }: {
   moduleId: ModuleId;
   data: unknown;
   isExpanded: boolean;
   onToggle: () => void;
-  onEnneagramAI?: () => void;
 }) {
   const config = MODULE_CONFIGS[moduleId];
   const Icon = MODULE_ICONS[moduleId];
@@ -292,15 +322,15 @@ function ModuleSummaryCard({
       case 'strengths':
         return <StrengthsSummary data={data as StrengthsData} />;
       case 'enneagram':
-        return <EnneagramSummary data={data as EnneagramData} onViewAI={onEnneagramAI} />;
+        return <EnneagramSummary data={data as EnneagramData} />;
       case 'life-themes':
         return <LifeThemesSummary data={data as LifeThemesData} />;
       case 'vision':
         return <VisionSummary data={data as VisionData} />;
       case 'mission':
-        return <p className="text-sm text-gray-600">Mission statement completed</p>;
+        return <MissionSummary data={data as MissionData} />;
       case 'career-options':
-        return <p className="text-sm text-gray-600">Career options explored</p>;
+        return <CareerOptionsSummary data={data as CareerOptionsData} />;
       case 'swot':
         return <SwotSummary data={data as SwotData} />;
       case 'goals':
@@ -323,8 +353,8 @@ function ModuleSummaryCard({
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 text-left">
-          <h4 className="font-medium text-gray-900">{config.name}</h4>
-          <p className="text-xs text-gray-500">{config.description}</p>
+          <h4 className="font-medium text-gray-900">{config.nameKo}</h4>
+          <p className="text-xs text-gray-500">{config.name}</p>
         </div>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -343,7 +373,7 @@ function ModuleSummaryCard({
             href={config.route}
             className="mt-3 flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
           >
-            View Details
+            자세히 보기
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -361,7 +391,6 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   const [moduleData, setModuleData] = useState<Record<ModuleId, unknown>>({} as Record<ModuleId, unknown>);
   const [expandedModules, setExpandedModules] = useState<Set<ModuleId>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [showEnneagramPanel, setShowEnneagramPanel] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || completedModules.length === 0) {
@@ -414,14 +443,14 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   if (completedModules.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Completed Modules</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">완료된 모듈</h3>
         <div className="text-center py-8">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500">No completed modules yet.</p>
+          <p className="text-gray-500">아직 완료된 모듈이 없습니다.</p>
           <p className="text-sm text-gray-400 mt-1">
-            Start with the first module!
+            첫 번째 모듈부터 시작해보세요!
           </p>
         </div>
       </div>
@@ -436,9 +465,9 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Completed Modules</h3>
+        <h3 className="text-lg font-bold text-gray-900">완료된 모듈</h3>
         <span className="text-sm text-gray-500">
-          {completedModules.length} completed
+          {completedModules.length}개 완료
         </span>
       </div>
 
@@ -450,20 +479,9 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
             data={moduleData[moduleId]}
             isExpanded={expandedModules.has(moduleId)}
             onToggle={() => toggleModule(moduleId)}
-            onEnneagramAI={moduleId === 'enneagram' ? () => setShowEnneagramPanel(true) : undefined}
           />
         ))}
       </div>
-
-      {/* Enneagram Detail Panel */}
-      {moduleData.enneagram && (
-        <EnneagramDetailPanel
-          data={moduleData.enneagram as EnneagramData}
-          strengthsData={moduleData.strengths as StrengthsData | null}
-          isOpen={showEnneagramPanel}
-          onClose={() => setShowEnneagramPanel(false)}
-        />
-      )}
     </div>
   );
 }

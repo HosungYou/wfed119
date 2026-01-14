@@ -39,6 +39,7 @@ interface InterpretResponse {
     strengthsSynergy?: string;
     growthPath: string;
     careerInsights: string;
+    integratedInsight?: string;  // New: Comprehensive analysis
   };
   typeProfile: EnneagramTypeProfile;
   generatedAt: string;
@@ -195,14 +196,15 @@ Return a JSON object with EXACTLY these keys:
   "instinctFocus": "1-2 sentences about how their dominant instinct shapes their priorities",
   ${strengths ? '"strengthsSynergy": "2-3 sentences analyzing how their discovered strengths align with or complement their Enneagram type",' : ''}
   "growthPath": "2-3 sentences with specific, actionable growth recommendations for moving toward their growth direction (Type ${typeProfile.growthDirection})",
-  "careerInsights": "2-3 sentences about career directions and work environments that leverage their type and strengths"
+  "careerInsights": "2-3 sentences about career directions and work environments that leverage their type and strengths",
+  ${strengths ? '"integratedInsight": "4-6 sentences providing a comprehensive synthesis of how their personality type, discovered strengths, and core values work together. Explain how these elements create a unique personal profile, and offer integrated guidance for leveraging this combination in their career and personal growth journey."' : ''}
 }
 
 Important: Return ONLY the JSON object, no markdown formatting or additional text.`;
 
   const response = await anthropic.messages.create({
     model: 'claude-3-haiku-20240307',
-    max_tokens: 1024,
+    max_tokens: 1536,  // Increased for integratedInsight
     temperature: 0.7,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -224,6 +226,7 @@ Important: Return ONLY the JSON object, no markdown formatting or additional tex
       strengthsSynergy: parsed.strengthsSynergy || undefined,
       growthPath: parsed.growthPath || '',
       careerInsights: parsed.careerInsights || '',
+      integratedInsight: parsed.integratedInsight || undefined,
     };
   } catch {
     // If JSON parsing fails, try to extract from markdown code block
@@ -237,6 +240,7 @@ Important: Return ONLY the JSON object, no markdown formatting or additional tex
         strengthsSynergy: parsed.strengthsSynergy || undefined,
         growthPath: parsed.growthPath || '',
         careerInsights: parsed.careerInsights || '',
+        integratedInsight: parsed.integratedInsight || undefined,
       };
     }
     throw new Error('Failed to parse AI response');

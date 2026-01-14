@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, Suspense } from 'react';
+import React, { useEffect, useMemo, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import html2canvas from 'html2canvas';
 import {
-  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home
+  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home, Download
 } from 'lucide-react';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
@@ -26,6 +27,7 @@ interface InterpretationData {
   strengthsSynergy?: string;
   growthPath: string;
   careerInsights: string;
+  integratedInsight?: string;
 }
 
 interface TypeProfile {
@@ -81,6 +83,8 @@ function EnneagramWizardContent() {
   const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // ensure session id exists
   useEffect(() => {
@@ -176,6 +180,33 @@ function EnneagramWizardContent() {
       setResultError(toErrorMessage(err, 'Failed to load results'));
     } finally {
       setResultLoading(false);
+    }
+  }
+
+  async function downloadAsJPG() {
+    if (!resultsRef.current) return;
+
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(resultsRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+      });
+
+      const image = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `enneagram-result-${enneagramResult?.primaryType || 'type'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert(locale === 'kr' ? '다운로드 중 오류가 발생했습니다.' : 'Download failed. Please try again.');
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -433,7 +464,7 @@ function EnneagramWizardContent() {
 
             {/* Results Display */}
             {enneagramResult && !resultLoading && (
-              <>
+              <div ref={resultsRef} className="space-y-6">
                 {/* Header Card */}
                 <div className="p-8 rounded-3xl bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-lg">
                   <div className="flex items-center gap-6">
@@ -601,6 +632,21 @@ function EnneagramWizardContent() {
                           {interpretation.interpretation.careerInsights}
                         </p>
                       </div>
+
+                      {/* Integrated Insight (if available) */}
+                      {interpretation.interpretation.integratedInsight && (
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-5 h-5 text-amber-600" />
+                            <h4 className="text-base font-bold text-amber-900">
+                              {locale === 'kr' ? '통합 분석: 당신의 고유한 프로필' : 'Integrated Analysis: Your Unique Profile'}
+                            </h4>
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                            {interpretation.interpretation.integratedInsight}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -644,7 +690,7 @@ function EnneagramWizardContent() {
                   </div>
                 )}
 
-                {/* Navigation Button */}
+                {/* Navigation Buttons */}
                 <div className="glass-panel p-6 rounded-3xl text-center">
                   <p className="text-gray-600 mb-4">
                     {locale === 'kr'
@@ -652,15 +698,34 @@ function EnneagramWizardContent() {
                       : 'You can view and manage all module results on your dashboard.'
                     }
                   </p>
-                  <button
-                    onClick={() => router.push('/dashboard')}
-                    className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all flex items-center gap-2 mx-auto"
-                  >
-                    <Home className="w-5 h-5" />
-                    {locale === 'kr' ? '대시보드로 이동' : 'Go to Dashboard'}
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      onClick={downloadAsJPG}
+                      disabled={downloading}
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:shadow-lg hover:shadow-green-500/25 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {locale === 'kr' ? '다운로드 중...' : 'Downloading...'}
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-5 h-5" />
+                          {locale === 'kr' ? 'JPG로 저장' : 'Download as JPG'}
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => router.push('/dashboard')}
+                      className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all flex items-center gap-2"
+                    >
+                      <Home className="w-5 h-5" />
+                      {locale === 'kr' ? '대시보드로 이동' : 'Go to Dashboard'}
+                    </button>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}

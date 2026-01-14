@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase';
+import { createModuleProgressService } from '@/lib/services/moduleProgressService';
 import { getInstinctItems } from '@/lib/enneagram/instincts';
 import { confidenceBand, primaryType, scoreStage1 } from '@/lib/enneagram/scoring';
 
@@ -109,6 +110,24 @@ export async function POST(req: NextRequest) {
     if (updateError) {
       console.error('[Enneagram Score] Update error:', updateError);
       return NextResponse.json({ error: 'Failed to update score' }, { status: 500 });
+    }
+
+    // Update module_progress to mark enneagram as completed
+    if (session.user_id) {
+      try {
+        const progressService = await createModuleProgressService(session.user_id);
+        if (progressService) {
+          await progressService.updateProgress('enneagram', {
+            status: 'completed',
+            currentStage: 'complete',
+            completionPercentage: 100,
+          });
+          console.log('[Enneagram Score] Module progress updated to completed');
+        }
+      } catch (progressError) {
+        // Log error but don't fail the request - score is already saved
+        console.error('[Enneagram Score] Failed to update module progress:', progressError);
+      }
     }
 
     return NextResponse.json(result);

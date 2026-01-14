@@ -154,10 +154,55 @@ OPENAI_API_KEY=sk-proj-...
 4. Document schema changes in `database/migrations/`
 
 ### When Debugging Issues
-1. Check Supabase Dashboard → Logs for real-time errors
-2. Use browser DevTools Network tab for API debugging
-3. Verify environment variables are loaded correctly
-4. Check authentication state in browser console
+1. **Always check ARCHITECTURE.md first** - Understand the system before debugging
+2. Check Supabase Dashboard → Logs for real-time errors
+3. Use browser DevTools Network tab for API debugging
+4. Verify environment variables are loaded correctly
+5. Check authentication state in browser console
+
+### Common Module System Pitfalls
+
+**CRITICAL**: When adding new modules or debugging module-related errors, ensure ALL module-aware components are synchronized with `MODULE_ORDER`.
+
+```typescript
+// src/lib/types/modules.ts defines the source of truth
+export const MODULE_ORDER: ModuleId[] = [
+  'values', 'strengths', 'enneagram', 'life-themes',
+  'vision', 'mission', 'career-options',
+  'swot', 'goals', 'errc'
+]; // Total: 10 modules
+```
+
+**Components that MUST match MODULE_ORDER**:
+1. **`CompletedModulesSummary.tsx`**:
+   - `MODULE_ICONS: Record<ModuleId, React.ElementType>` - Icon for each module
+   - `MODULE_COLORS: Record<ModuleId, string>` - Color scheme for each module
+   - `renderSummary()` switch statement - Summary rendering for each module
+
+2. **`IntegratedProfileCard.tsx`**:
+   - Progress tracking displays
+   - Module completion indicators
+
+**Example Error**: React error #130 "Element type is invalid"
+- **Cause**: User completed 'mission' module, but `MODULE_ICONS['mission']` returned `undefined`
+- **Fix**: Add missing module to `MODULE_ICONS`, `MODULE_COLORS`, and `renderSummary()`
+
+**Prevention**: When adding a new module to `MODULE_ORDER`, search codebase for:
+```bash
+grep -r "MODULE_ICONS\|MODULE_COLORS\|switch.*moduleId" src/
+```
+Ensure all instances include the new module.
+
+## Known Issues and Warnings
+
+### Supabase Security Advisor Warnings
+
+**Warning**: `public.v_errc_legacy_items` view uses SECURITY DEFINER property
+- **Status**: Non-critical, does not affect functionality
+- **Impact**: Supabase Security Advisor flags views with SECURITY DEFINER as potential security risks
+- **Explanation**: SECURITY DEFINER allows views to execute with the privileges of the view creator rather than the current user. This is intentional for legacy data access.
+- **Action Required**: None immediately - this is a design decision for legacy data compatibility
+- **Future Improvement**: Consider migrating to RLS policies if legacy view is no longer needed
 
 ## Testing and Quality
 

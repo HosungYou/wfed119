@@ -585,26 +585,41 @@ export class ModuleProgressService {
 
   /**
    * Get Enneagram module data
+   * Reads from enneagram_sessions table where stage='complete'
    */
   private async getEnneagramData(): Promise<EnneagramData | null> {
     const supabase = await createServerSupabaseClient();
 
     const { data } = await supabase
-      .from('enneagram_results')
+      .from('enneagram_sessions')
       .select('*')
       .eq('user_id', this.userId)
-      .order('created_at', { ascending: false })
+      .eq('stage', 'complete')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .single();
 
     if (!data) return null;
 
+    // Generate description based on type
+    const typeDescriptions: Record<string, string> = {
+      '1': 'The Reformer - Principled, purposeful, self-controlled, and perfectionistic',
+      '2': 'The Helper - Generous, demonstrative, people-pleasing, and possessive',
+      '3': 'The Achiever - Adaptable, excelling, driven, and image-conscious',
+      '4': 'The Individualist - Expressive, dramatic, self-absorbed, and temperamental',
+      '5': 'The Investigator - Perceptive, innovative, secretive, and isolated',
+      '6': 'The Loyalist - Engaging, responsible, anxious, and suspicious',
+      '7': 'The Enthusiast - Spontaneous, versatile, acquisitive, and scattered',
+      '8': 'The Challenger - Self-confident, decisive, willful, and confrontational',
+      '9': 'The Peacemaker - Receptive, reassuring, complacent, and resigned',
+    };
+
     return {
-      type: data.enneagram_type,
-      wing: data.wing,
+      type: data.primary_type,
+      wing: data.wing_estimate,
       instinct: data.instinct || 'sp',
       confidence: data.confidence || 'medium',
-      description: data.description,
+      description: typeDescriptions[data.primary_type] || '',
     };
   }
 
@@ -1393,20 +1408,28 @@ ${g.roles.slice(0, 4).map(r => `- ${r.roleName} (${r.percentageAllocation}%)`).j
       });
     }
 
-    // Enneagram
+    // Enneagram - read from enneagram_sessions where stage='complete'
     const { data: enneagramRow } = await supabase
-      .from('enneagram_results')
-      .select('enneagram_type, updated_at')
+      .from('enneagram_sessions')
+      .select('primary_type, stage, updated_at')
       .eq('user_id', this.userId)
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .single();
-    if (enneagramRow && enneagramRow.enneagram_type) {
+    if (enneagramRow) {
+      const isComplete = enneagramRow.stage === 'complete' && enneagramRow.primary_type;
+      const stageProgress: Record<string, number> = {
+        'screener': 20,
+        'discriminators': 40,
+        'wings': 60,
+        'narrative': 80,
+        'complete': 100,
+      };
       progress.push({
         moduleId: 'enneagram',
-        status: 'completed',
-        completionPercentage: 100,
-        currentStage: undefined,
+        status: isComplete ? 'completed' : enneagramRow.stage !== 'screener' ? 'in_progress' : 'not_started',
+        completionPercentage: stageProgress[enneagramRow.stage] || 0,
+        currentStage: enneagramRow.stage,
         lastUpdatedAt: enneagramRow.updated_at || new Date().toISOString(),
       });
     }

@@ -85,9 +85,93 @@ function EnneagramWizardContent() {
   const [resultError, setResultError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [sessionRestored, setSessionRestored] = useState(false);
 
-  // ensure session id exists
+  // Restore existing session on mount (for authenticated users)
   useEffect(() => {
+    async function restoreSession() {
+      try {
+        const res = await fetch('/api/enneagram/session');
+        if (!res.ok) return;
+
+        const { session } = await res.json();
+        if (session && session.sessionId) {
+          // Restore session ID
+          setSessionId(session.sessionId);
+          setLocale(session.locale || 'en');
+
+          // Restore stage
+          if (session.isComplete && session.primaryType) {
+            setStage('complete');
+            // Pre-populate result data if available
+            setEnneagramResult({
+              primaryType: session.primaryType,
+              typeProbabilities: session.scores?.probabilities || {},
+              confidence: session.confidence || 'medium',
+              wingEstimate: session.wingEstimate,
+              instinct: session.instinct,
+            });
+          } else if (session.stage && isStage(session.stage)) {
+            setStage(session.stage);
+            // Restore responses from session
+            const responses = session.responses || {};
+            if (responses.screener && Array.isArray(responses.screener)) {
+              const restored: Record<string, number> = {};
+              responses.screener.forEach((r: { itemId: string; value: number }) => {
+                if (r.itemId && typeof r.value === 'number') {
+                  restored[r.itemId] = r.value;
+                }
+              });
+              setScreenerResponses(restored);
+            }
+            if (responses.discriminators && Array.isArray(responses.discriminators)) {
+              const restored: Record<string, 'A' | 'B'> = {};
+              responses.discriminators.forEach((r: { itemId: string; choice: 'A' | 'B' }) => {
+                if (r.itemId && (r.choice === 'A' || r.choice === 'B')) {
+                  restored[r.itemId] = r.choice;
+                }
+              });
+              setDiscResponses(restored);
+            }
+            if (responses.wings && Array.isArray(responses.wings)) {
+              const restored: Record<string, number> = {};
+              responses.wings.forEach((r: { itemId: string; value: number }) => {
+                if (r.itemId && typeof r.value === 'number') {
+                  restored[r.itemId] = r.value;
+                }
+              });
+              setInstinctResponses(restored);
+            }
+            if (responses.narrative && Array.isArray(responses.narrative)) {
+              setNarrativeTexts(responses.narrative);
+            }
+          }
+
+          // Update URL with restored session ID
+          const params = new URLSearchParams(Array.from(search.entries()));
+          params.set('sessionId', session.sessionId);
+          router.replace(`?${params.toString()}`);
+        }
+      } catch (err) {
+        console.error('Failed to restore session:', err);
+      } finally {
+        setSessionRestored(true);
+      }
+    }
+
+    // Only try to restore if no session ID in URL
+    if (!initialSession) {
+      restoreSession();
+    } else {
+      setSessionRestored(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ensure session id exists (after restoration attempt)
+  useEffect(() => {
+    if (!sessionRestored) return;
+
     if (!sessionId) {
       const sid = uuidv4();
       setSessionId(sid);
@@ -96,9 +180,9 @@ function EnneagramWizardContent() {
       router.replace(`?${params.toString()}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sessionRestored]);
 
-  const canFetch = useMemo(() => !!sessionId, [sessionId]);
+  const canFetch = useMemo(() => !!sessionId && sessionRestored, [sessionId, sessionRestored]);
 
   async function loadItems(targetStage: Stage) {
     if (!canFetch) return;

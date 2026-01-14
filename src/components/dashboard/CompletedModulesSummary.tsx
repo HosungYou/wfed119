@@ -38,6 +38,8 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   enneagram: User,
   'life-themes': Lightbulb,
   vision: Eye,
+  mission: Target,           // NEW: Mission Statement
+  'career-options': User,    // NEW: Career Options
   swot: Grid3X3,
   goals: CheckCircle2,
   errc: Zap,
@@ -49,6 +51,8 @@ const MODULE_COLORS: Record<ModuleId, string> = {
   enneagram: 'text-teal-600 bg-teal-50',
   'life-themes': 'text-amber-600 bg-amber-50',
   vision: 'text-purple-600 bg-purple-50',
+  mission: 'text-teal-600 bg-teal-50',           // NEW: Mission Statement
+  'career-options': 'text-indigo-600 bg-indigo-50', // NEW: Career Options
   swot: 'text-orange-600 bg-orange-50',
   goals: 'text-indigo-600 bg-indigo-50',
   errc: 'text-emerald-600 bg-emerald-50',
@@ -293,6 +297,10 @@ function ModuleSummaryCard({
         return <LifeThemesSummary data={data as LifeThemesData} />;
       case 'vision':
         return <VisionSummary data={data as VisionData} />;
+      case 'mission':
+        return <p className="text-sm text-gray-600">Mission statement completed</p>;
+      case 'career-options':
+        return <p className="text-sm text-gray-600">Career options explored</p>;
       case 'swot':
         return <SwotSummary data={data as SwotData} />;
       case 'goals':

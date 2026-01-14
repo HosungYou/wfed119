@@ -268,6 +268,8 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   enneagram: User,
   'life-themes': Lightbulb,
   vision: Eye,
+  mission: Target,           // Mission Statement
+  'career-options': User,    // Career Options
   swot: Grid3X3,
   goals: CheckCircle2,
   errc: Zap,
@@ -279,6 +281,8 @@ const MODULE_COLORS: Record<ModuleId, { bg: string; text: string; fill: string }
   enneagram: { bg: 'bg-teal-100', text: 'text-teal-600', fill: '#0d9488' },
   'life-themes': { bg: 'bg-amber-100', text: 'text-amber-600', fill: '#d97706' },
   vision: { bg: 'bg-purple-100', text: 'text-purple-600', fill: '#9333ea' },
+  mission: { bg: 'bg-teal-100', text: 'text-teal-600', fill: '#0d9488' },           // Mission Statement
+  'career-options': { bg: 'bg-indigo-100', text: 'text-indigo-600', fill: '#4f46e5' }, // Career Options
   swot: { bg: 'bg-orange-100', text: 'text-orange-600', fill: '#ea580c' },
   goals: { bg: 'bg-indigo-100', text: 'text-indigo-600', fill: '#4f46e5' },
   errc: { bg: 'bg-emerald-100', text: 'text-emerald-600', fill: '#059669' },

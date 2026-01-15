@@ -31,9 +31,10 @@ export async function GET(request: Request) {
     const { data: { session }, error } = await supabase.auth.getSession()
 
     if (session && !error) {
-      // Redirect directly to dashboard after successful login
-      // This ensures cookies are properly set and avoids client-side navigation issues
-      return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
+      // Redirect to home page after successful login
+      // HomePage will check sessionStorage for the intended redirect URL
+      // This ensures auth cookies are properly set before client-side navigation
+      return NextResponse.redirect(new URL('/', requestUrl.origin))
     }
 
     console.error('[Auth Callback] Session verification failed:', error)

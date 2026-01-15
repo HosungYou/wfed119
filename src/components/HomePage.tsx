@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Sparkles, Heart, Target, User, Lightbulb,
   Eye, Grid3X3, CheckCircle2, Zap, LogIn, LogOut,
@@ -54,6 +55,41 @@ export const HomePage: React.FC = () => {
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const { completedModules, loading: modulesLoading } = useAllModulesProgress();
   const { t, language } = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get redirect URL from query params (set by middleware when auth is required)
+  const redirectUrl = searchParams.get('redirect');
+  const authRequired = searchParams.get('auth') === 'required';
+
+  // Auto-redirect authenticated users to their intended destination
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      // Check for redirect URL in query params first, then sessionStorage
+      const targetUrl = redirectUrl ||
+        (typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect') : null);
+
+      if (targetUrl) {
+        // Clear the stored redirect URL
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('auth_redirect');
+        }
+        // User is logged in and has a redirect URL - navigate there
+        console.log('[HomePage] Auto-redirecting authenticated user to:', targetUrl);
+        router.replace(targetUrl);
+      }
+    }
+  }, [loading, isAuthenticated, redirectUrl, router]);
+
+  // Custom sign in handler that stores the redirect URL
+  const handleSignIn = useCallback(async () => {
+    // Store redirect URL in sessionStorage before OAuth redirect
+    const urlToStore = redirectUrl || '/dashboard';
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('auth_redirect', urlToStore);
+    }
+    await signInWithGoogle();
+  }, [redirectUrl, signInWithGoogle]);
 
   const completedSet = new Set(completedModules);
   const nextModule = isAuthenticated ? getNextModule(completedSet) : null;
@@ -71,6 +107,24 @@ export const HomePage: React.FC = () => {
       ? MODULE_CONFIGS[moduleId].descriptionKo
       : MODULE_CONFIGS[moduleId].description;
   };
+
+  // Check if we should show redirect loading state
+  const hasStoredRedirect = typeof window !== 'undefined' && sessionStorage.getItem('auth_redirect');
+  const shouldRedirect = !loading && isAuthenticated && (redirectUrl || hasStoredRedirect);
+
+  // Show loading state while redirecting authenticated user
+  if (shouldRedirect) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-gray-600">
+            {language === 'ko' ? '대시보드로 이동 중...' : 'Redirecting to dashboard...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,7 +172,7 @@ export const HomePage: React.FC = () => {
               </div>
             ) : (
               <button
-                onClick={signInWithGoogle}
+                onClick={handleSignIn}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
@@ -173,7 +227,7 @@ export const HomePage: React.FC = () => {
               )
             ) : (
               <button
-                onClick={signInWithGoogle}
+                onClick={handleSignIn}
                 className="group bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center space-x-2 shadow-lg shadow-primary-500/20"
               >
                 <span>{language === 'ko' ? '무료로 시작하기' : 'Start for Free'}</span>
@@ -395,7 +449,7 @@ export const HomePage: React.FC = () => {
             </Link>
           ) : (
             <button
-              onClick={signInWithGoogle}
+              onClick={handleSignIn}
               className="inline-flex items-center gap-2 bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
             >
               {language === 'ko' ? '무료로 시작하기' : 'Start for Free'}

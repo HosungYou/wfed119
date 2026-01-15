@@ -369,7 +369,6 @@ function ModuleSummaryCard({
         </div>
         <div className="flex-1 text-left">
           <h4 className="font-medium text-gray-900">{language === 'ko' ? config.nameKo : config.name}</h4>
-          <p className="text-xs text-gray-500">{language === 'ko' ? config.name : config.nameKo}</p>
         </div>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-gray-400" />

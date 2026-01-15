@@ -7,6 +7,7 @@ import {
   Flag, Briefcase, ChevronRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/lib/i18n';
 import {
   ModuleId, MODULE_ORDER, MODULE_CONFIGS, MODULE_PARTS, PART_NAMES,
   ValuesData, StrengthsData, EnneagramData, LifeThemesData,
@@ -62,13 +63,13 @@ const MODULE_COLORS: Record<ModuleId, string> = {
 // Summary Renderers for Each Module
 // ============================================================================
 
-function ValuesSummary({ data }: { data: ValuesData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function ValuesSummary({ data, language }: { data: ValuesData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   const allValues = [
-    ...(data.terminalTop3 || []).map((v) => ({ type: '궁극적', value: v })),
-    ...(data.instrumentalTop3 || []).map((v) => ({ type: '도구적', value: v })),
-    ...(data.workTop3 || []).map((v) => ({ type: '직업', value: v })),
+    ...(data.terminalTop3 || []).map((v) => ({ type: language === 'ko' ? '궁극적' : 'Terminal', value: v })),
+    ...(data.instrumentalTop3 || []).map((v) => ({ type: language === 'ko' ? '도구적' : 'Instrumental', value: v })),
+    ...(data.workTop3 || []).map((v) => ({ type: language === 'ko' ? '직업' : 'Work', value: v })),
   ];
 
   return (
@@ -84,7 +85,7 @@ function ValuesSummary({ data }: { data: ValuesData | null }) {
         ))}
         {allValues.length > 6 && (
           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-            +{allValues.length - 6} 더보기
+            +{allValues.length - 6} {language === 'ko' ? '더보기' : 'more'}
           </span>
         )}
       </div>
@@ -92,8 +93,8 @@ function ValuesSummary({ data }: { data: ValuesData | null }) {
   );
 }
 
-function StrengthsSummary({ data }: { data: StrengthsData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function StrengthsSummary({ data, language }: { data: StrengthsData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   return (
     <div className="space-y-2">
@@ -108,7 +109,7 @@ function StrengthsSummary({ data }: { data: StrengthsData | null }) {
         ))}
         {data.topStrengths && data.topStrengths.length > 4 && (
           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-            +{data.topStrengths.length - 4} 더보기
+            +{data.topStrengths.length - 4} {language === 'ko' ? '더보기' : 'more'}
           </span>
         )}
       </div>
@@ -116,13 +117,18 @@ function StrengthsSummary({ data }: { data: StrengthsData | null }) {
   );
 }
 
-function EnneagramSummary({ data }: { data: EnneagramData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function EnneagramSummary({ data, language }: { data: EnneagramData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
-  const instinctLabels: Record<string, string> = {
-    sp: '자기보존형',
-    so: '사회형',
-    sx: '성적/일대일형',
+  const instinctLabels: Record<string, Record<string, string>> = {
+    sp: { ko: '자기보존형', en: 'Self-Preservation' },
+    so: { ko: '사회형', en: 'Social' },
+    sx: { ko: '성적/일대일형', en: 'Sexual/One-to-One' },
+  };
+
+  const getInstinctLabel = (instinct: string) => {
+    const labels = instinctLabels[instinct];
+    return labels ? labels[language === 'ko' ? 'ko' : 'en'] : instinct;
   };
 
   return (
@@ -131,14 +137,14 @@ function EnneagramSummary({ data }: { data: EnneagramData | null }) {
         {data.type}w{data.wing}
       </div>
       <div className="text-sm text-gray-600">
-        {instinctLabels[data.instinct] || data.instinct}
+        {getInstinctLabel(data.instinct)}
       </div>
     </div>
   );
 }
 
-function LifeThemesSummary({ data }: { data: LifeThemesData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function LifeThemesSummary({ data, language }: { data: LifeThemesData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   return (
     <div className="space-y-1">
@@ -152,23 +158,23 @@ function LifeThemesSummary({ data }: { data: LifeThemesData | null }) {
   );
 }
 
-function VisionSummary({ data }: { data: VisionData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function VisionSummary({ data, language }: { data: VisionData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   return (
     <div className="space-y-2">
       {data.visionStatement && (
         <p className="text-sm text-gray-700 italic line-clamp-2">
-          "{data.visionStatement}"
+          &ldquo;{data.visionStatement}&rdquo;
         </p>
       )}
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-          {data.timeHorizon} 비전
+          {data.timeHorizon} {language === 'ko' ? '비전' : 'Vision'}
         </span>
         {data.dreams && data.dreams.length > 0 && (
           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-            {data.dreams.length}개의 꿈
+            {data.dreams.length} {language === 'ko' ? '개의 꿈' : 'dreams'}
           </span>
         )}
       </div>
@@ -176,8 +182,8 @@ function VisionSummary({ data }: { data: VisionData | null }) {
   );
 }
 
-function MissionSummary({ data }: { data: MissionData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function MissionSummary({ data, language }: { data: MissionData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   const missionText = data.finalStatement || data.draftVersions?.at(-1)?.text;
 
@@ -188,14 +194,14 @@ function MissionSummary({ data }: { data: MissionData | null }) {
           {missionText}
         </p>
       ) : (
-        <p className="text-gray-500 text-sm">미션 선언문이 없습니다.</p>
+        <p className="text-gray-500 text-sm">{language === 'ko' ? '미션 선언문이 없습니다.' : 'No mission statement.'}</p>
       )}
     </div>
   );
 }
 
-function CareerOptionsSummary({ data }: { data: CareerOptionsData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function CareerOptionsSummary({ data, language }: { data: CareerOptionsData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   const topChoices = data.topCareerChoices || [];
   const suggested = data.suggestedCareers || [];
@@ -217,53 +223,60 @@ function CareerOptionsSummary({ data }: { data: CareerOptionsData | null }) {
           ))}
           {displayItems.length > 4 && (
             <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-              +{displayItems.length - 4} 더보기
+              +{displayItems.length - 4} {language === 'ko' ? '더보기' : 'more'}
             </span>
           )}
         </div>
       ) : (
-        <p className="text-gray-500 text-sm">추천 직업이 없습니다.</p>
+        <p className="text-gray-500 text-sm">{language === 'ko' ? '추천 직업이 없습니다.' : 'No recommended careers.'}</p>
       )}
     </div>
   );
 }
 
-function SwotSummary({ data }: { data: SwotData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function SwotSummary({ data, language }: { data: SwotData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
+
+  const labels = {
+    strengths: language === 'ko' ? '강점' : 'Strengths',
+    weaknesses: language === 'ko' ? '약점' : 'Weaknesses',
+    opportunities: language === 'ko' ? '기회' : 'Opportunities',
+    threats: language === 'ko' ? '위협' : 'Threats',
+  };
 
   return (
     <div className="grid grid-cols-2 gap-2 text-xs">
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-green-500 rounded-full" />
-        <span className="text-gray-600">강점 {data.strengths?.length || 0}</span>
+        <span className="text-gray-600">{labels.strengths} {data.strengths?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-red-500 rounded-full" />
-        <span className="text-gray-600">약점 {data.weaknesses?.length || 0}</span>
+        <span className="text-gray-600">{labels.weaknesses} {data.weaknesses?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-blue-500 rounded-full" />
-        <span className="text-gray-600">기회 {data.opportunities?.length || 0}</span>
+        <span className="text-gray-600">{labels.opportunities} {data.opportunities?.length || 0}</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-orange-500 rounded-full" />
-        <span className="text-gray-600">위협 {data.threats?.length || 0}</span>
+        <span className="text-gray-600">{labels.threats} {data.threats?.length || 0}</span>
       </div>
     </div>
   );
 }
 
-function GoalsSummary({ data }: { data: GoalSettingData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function GoalsSummary({ data, language }: { data: GoalSettingData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   return (
     <div className="space-y-1 text-sm">
       <div className="flex items-center gap-2">
         <span className="text-indigo-600 font-medium">{data.roles?.length || 0}</span>
-        <span className="text-gray-600">역할</span>
+        <span className="text-gray-600">{language === 'ko' ? '역할' : 'Roles'}</span>
         <span className="text-gray-300">|</span>
         <span className="text-indigo-600 font-medium">{data.objectives?.length || 0}</span>
-        <span className="text-gray-600">목표</span>
+        <span className="text-gray-600">{language === 'ko' ? '목표' : 'Objectives'}</span>
         <span className="text-gray-300">|</span>
         <span className="text-indigo-600 font-medium">{data.keyResults?.length || 0}</span>
         <span className="text-gray-600">KR</span>
@@ -272,14 +285,14 @@ function GoalsSummary({ data }: { data: GoalSettingData | null }) {
   );
 }
 
-function ErrcSummary({ data }: { data: ErrcData | null }) {
-  if (!data) return <p className="text-gray-500 text-sm">데이터 없음</p>;
+function ErrcSummary({ data, language }: { data: ErrcData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
   const categories = [
-    { key: 'eliminate', label: '제거', color: 'bg-red-100 text-red-700' },
-    { key: 'reduce', label: '감소', color: 'bg-orange-100 text-orange-700' },
-    { key: 'raise', label: '증가', color: 'bg-blue-100 text-blue-700' },
-    { key: 'create', label: '창조', color: 'bg-green-100 text-green-700' },
+    { key: 'eliminate', label: language === 'ko' ? '제거' : 'Eliminate', color: 'bg-red-100 text-red-700' },
+    { key: 'reduce', label: language === 'ko' ? '감소' : 'Reduce', color: 'bg-orange-100 text-orange-700' },
+    { key: 'raise', label: language === 'ko' ? '증가' : 'Raise', color: 'bg-blue-100 text-blue-700' },
+    { key: 'create', label: language === 'ko' ? '창조' : 'Create', color: 'bg-green-100 text-green-700' },
   ];
 
   return (
@@ -305,11 +318,13 @@ function ModuleSummaryCard({
   data,
   isExpanded,
   onToggle,
+  language,
 }: {
   moduleId: ModuleId;
   data: unknown;
   isExpanded: boolean;
   onToggle: () => void;
+  language: string;
 }) {
   const config = MODULE_CONFIGS[moduleId];
   const Icon = MODULE_ICONS[moduleId];
@@ -318,25 +333,25 @@ function ModuleSummaryCard({
   const renderSummary = () => {
     switch (moduleId) {
       case 'values':
-        return <ValuesSummary data={data as ValuesData} />;
+        return <ValuesSummary data={data as ValuesData} language={language} />;
       case 'strengths':
-        return <StrengthsSummary data={data as StrengthsData} />;
+        return <StrengthsSummary data={data as StrengthsData} language={language} />;
       case 'enneagram':
-        return <EnneagramSummary data={data as EnneagramData} />;
+        return <EnneagramSummary data={data as EnneagramData} language={language} />;
       case 'life-themes':
-        return <LifeThemesSummary data={data as LifeThemesData} />;
+        return <LifeThemesSummary data={data as LifeThemesData} language={language} />;
       case 'vision':
-        return <VisionSummary data={data as VisionData} />;
+        return <VisionSummary data={data as VisionData} language={language} />;
       case 'mission':
-        return <MissionSummary data={data as MissionData} />;
+        return <MissionSummary data={data as MissionData} language={language} />;
       case 'career-options':
-        return <CareerOptionsSummary data={data as CareerOptionsData} />;
+        return <CareerOptionsSummary data={data as CareerOptionsData} language={language} />;
       case 'swot':
-        return <SwotSummary data={data as SwotData} />;
+        return <SwotSummary data={data as SwotData} language={language} />;
       case 'goals':
-        return <GoalsSummary data={data as GoalSettingData} />;
+        return <GoalsSummary data={data as GoalSettingData} language={language} />;
       case 'errc':
-        return <ErrcSummary data={data as ErrcData} />;
+        return <ErrcSummary data={data as ErrcData} language={language} />;
       default:
         return null;
     }
@@ -353,8 +368,8 @@ function ModuleSummaryCard({
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 text-left">
-          <h4 className="font-medium text-gray-900">{config.nameKo}</h4>
-          <p className="text-xs text-gray-500">{config.name}</p>
+          <h4 className="font-medium text-gray-900">{language === 'ko' ? config.nameKo : config.name}</h4>
+          <p className="text-xs text-gray-500">{language === 'ko' ? config.name : config.nameKo}</p>
         </div>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -373,7 +388,7 @@ function ModuleSummaryCard({
             href={config.route}
             className="mt-3 flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
           >
-            자세히 보기
+            {language === 'ko' ? '자세히 보기' : 'View Details'}
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -388,6 +403,7 @@ function ModuleSummaryCard({
 
 export function CompletedModulesSummary({ completedModules }: CompletedModulesSummaryProps) {
   const { isAuthenticated } = useAuth();
+  const { language } = useTranslation();
   const [moduleData, setModuleData] = useState<Record<ModuleId, unknown>>({} as Record<ModuleId, unknown>);
   const [expandedModules, setExpandedModules] = useState<Set<ModuleId>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -443,14 +459,18 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   if (completedModules.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">완료된 모듈</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          {language === 'ko' ? '완료된 모듈' : 'Completed Modules'}
+        </h3>
         <div className="text-center py-8">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500">아직 완료된 모듈이 없습니다.</p>
+          <p className="text-gray-500">
+            {language === 'ko' ? '아직 완료된 모듈이 없습니다.' : 'No completed modules yet.'}
+          </p>
           <p className="text-sm text-gray-400 mt-1">
-            첫 번째 모듈부터 시작해보세요!
+            {language === 'ko' ? '첫 번째 모듈부터 시작해보세요!' : 'Start with the first module!'}
           </p>
         </div>
       </div>
@@ -465,9 +485,11 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">완료된 모듈</h3>
+        <h3 className="text-lg font-bold text-gray-900">
+          {language === 'ko' ? '완료된 모듈' : 'Completed Modules'}
+        </h3>
         <span className="text-sm text-gray-500">
-          {completedModules.length}개 완료
+          {completedModules.length} {language === 'ko' ? '개 완료' : 'completed'}
         </span>
       </div>
 
@@ -479,6 +501,7 @@ export function CompletedModulesSummary({ completedModules }: CompletedModulesSu
             data={moduleData[moduleId]}
             isExpanded={expandedModules.has(moduleId)}
             onToggle={() => toggleModule(moduleId)}
+            language={language}
           />
         ))}
       </div>

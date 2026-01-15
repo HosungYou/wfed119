@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Sparkles, Heart, Target, User, Lightbulb,
   Eye, Grid3X3, CheckCircle2, Zap, LogIn, LogOut,
@@ -55,7 +55,6 @@ export const HomePage: React.FC = () => {
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const { completedModules, loading: modulesLoading } = useAllModulesProgress();
   const { t, language } = useTranslation();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Get redirect URL from query params (set by middleware when auth is required)
@@ -76,10 +75,11 @@ export const HomePage: React.FC = () => {
         }
         // User is logged in and has a redirect URL - navigate there
         console.log('[HomePage] Auto-redirecting authenticated user to:', targetUrl);
-        router.replace(targetUrl);
+        // Use window.location for hard redirect to ensure proper navigation
+        window.location.href = targetUrl;
       }
     }
-  }, [loading, isAuthenticated, redirectUrl, router]);
+  }, [loading, isAuthenticated, redirectUrl]);
 
   // Custom sign in handler that stores the redirect URL
   const handleSignIn = useCallback(async () => {

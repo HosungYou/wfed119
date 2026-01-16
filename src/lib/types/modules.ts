@@ -10,7 +10,7 @@
  *
  * Module Order (Linear Progression):
  * Part 1 - Self-Discovery:
- *   1. Values → 2. Strengths → 3. Enneagram → 4. Life Themes
+ *   1. Strengths → 2. Values → 3. Enneagram → 4. Life Themes
  * Part 2 - Vision & Mission:
  *   5. Vision (includes Dreams Matrix) → 6. Mission Statement → 7. Career Options
  * Part 3 - Strategic Analysis:
@@ -52,8 +52,8 @@ export type ModulePart =
 // ============================================================================
 
 export const MODULE_ORDER: ModuleId[] = [
-  'values',         // 1: Part 1 - Self-Discovery
-  'strengths',      // 2: Part 1 - Self-Discovery
+  'strengths',      // 1: Part 1 - Self-Discovery (moved first)
+  'values',         // 2: Part 1 - Self-Discovery (moved second)
   'enneagram',      // 3: Part 1 - Self-Discovery
   'life-themes',    // 4: Part 1 - Self-Discovery
   'vision',         // 5: Part 2 - Vision & Mission (includes Dreams as Step 4)
@@ -133,8 +133,8 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: '당신의 궁극적 가치, 도구적 가치, 직업 가치를 발견합니다',
     route: '/discover/values',
     part: 'self-discovery',
-    order: 1,
-    dependencies: [], // First module - no prerequisites
+    order: 2, // Changed from 1 to 2
+    dependencies: [], // Values questionnaire doesn't need prior data
     stages: ['terminal', 'instrumental', 'work'],
     requiredForCompletion: ['terminal', 'instrumental', 'work'],
     estimatedMinutes: 30,
@@ -147,10 +147,8 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: 'AI 대화를 통해 당신만의 고유한 강점을 발견합니다',
     route: '/discover/strengths',
     part: 'self-discovery',
-    order: 2,
-    dependencies: [
-      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] }
-    ],
+    order: 1, // Changed from 2 to 1 - now first module
+    dependencies: [], // First module - no prerequisites
     stages: ['conversation', 'analysis', 'summary'],
     estimatedMinutes: 45,
   },

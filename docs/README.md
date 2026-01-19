@@ -1,6 +1,6 @@
 # WFED119 LifeCraft Bot Documentation
 
-> Last Updated: 2026-01-06
+> Last Updated: 2026-01-19
 
 ## Directory Structure
 
@@ -39,6 +39,7 @@ docs/
 
 | Date | File | Description |
 |------|------|-------------|
+| 2026-01-19 | [enneagram-algorithm-guide.md](guides/2026-01-19_enneagram-algorithm-guide.md) | **Enneagram assessment algorithm & AI integration** |
 | 2026-01-05 | [rag-data-pipeline-guide.md](guides/2026-01-05_rag-data-pipeline-guide.md) | RAG data pipeline implementation |
 | 2025-10-23 | [swot-setup-guide.md](guides/2025-10-23_swot-setup-guide.md) | SWOT module setup guide |
 | 2025-10-23 | [swot-module-guide.md](guides/2025-10-23_swot-module-guide.md) | SWOT module usage guide |

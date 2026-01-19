@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import html2canvas from 'html2canvas';
 import {
-  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home, Download
+  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home, Download, RefreshCw
 } from 'lucide-react';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
@@ -84,6 +84,7 @@ function EnneagramWizardContent() {
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
 
@@ -207,7 +208,7 @@ function EnneagramWizardContent() {
     // Skip loading items for 'complete' stage - no items needed
     if (canFetch && stage !== 'complete') loadItems(stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canFetch, locale, stage]);
+  }, [canFetch, locale, stage, refreshKey]);
 
   // Auto-fetch results and AI interpretation when entering complete stage
   useEffect(() => {
@@ -368,9 +369,22 @@ function EnneagramWizardContent() {
         {stage === 'screener' && (
           <div className="glass-panel p-8 rounded-3xl">
             <StageHeader
-              title={locale === 'kr' ? '스테이지 1 — 스크리너 (36문항)' : 'Stage 1 — Screener (36 items)'}
+              title={locale === 'kr' ? '스테이지 1 — 스크리너 (45문항)' : 'Stage 1 — Screener (45 items)'}
               subtitle={locale === 'kr' ? '각 문항에 대해 1(전혀 아니다) ~ 5(매우 그렇다)' : 'Rate each 1 (Strongly Disagree) to 5 (Strongly Agree)'}
             />
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => {
+                  setRefreshKey(k => k + 1);
+                  setScreenerResponses({});
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                {locale === 'kr' ? '순서 섞기' : 'Shuffle Items'}
+              </button>
+            </div>
             <div className="space-y-4">
               {screenerItems.map((it) => (
                 <div key={it.id} className="border border-white/40 bg-white/30 rounded-xl p-4">

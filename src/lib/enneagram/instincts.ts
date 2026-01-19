@@ -6,6 +6,17 @@ export interface InstinctItem {
   text: string;
 }
 
+// Display names for instincts (updated per Dr. Yoon feedback: sx -> Intimate)
+export const INSTINCT_DISPLAY_NAMES: Record<'sp' | 'so' | 'sx', { en: string; ko: string; short: string }> = {
+  sp: { en: 'Self Preservation', ko: '자기보존', short: 'SP' },
+  so: { en: 'Social', ko: '사회적', short: 'SO' },
+  sx: { en: 'Intimate', ko: '친밀', short: 'SX' }, // Changed from "Sexual" to "Intimate"
+};
+
+export function getInstinctDisplayName(instinct: 'sp' | 'so' | 'sx', locale: Locale = 'en'): string {
+  return locale === 'kr' ? INSTINCT_DISPLAY_NAMES[instinct].ko : INSTINCT_DISPLAY_NAMES[instinct].en;
+}
+
 const items_en: InstinctItem[] = [
   { id: 'i_01', instinct: 'sp', text: 'I continuously optimize my daily resources (time, money, energy).' },
   { id: 'i_02', instinct: 'so', text: 'I notice shifts in group mood and adjust my role.' },

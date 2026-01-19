@@ -5,6 +5,16 @@ import { getDiscriminatorItems, getDiscriminatorPairsForTop } from '../../../../
 import { scoreStage1 } from '../../../../lib/enneagram/scoring';
 import { createSupabaseAdmin } from '@/lib/supabase';
 
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -15,7 +25,9 @@ export async function GET(req: NextRequest) {
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
     if (stage === 'screener') {
-      return NextResponse.json({ items: getScreenerItems(locale) });
+      // Shuffle items for randomized presentation
+      const items = shuffleArray(getScreenerItems(locale));
+      return NextResponse.json({ items });
     }
 
     // const enne = await prisma.enneagramSession.findUnique({ where: { sessionId } });
@@ -96,12 +108,12 @@ export async function GET(req: NextRequest) {
     if (stage === 'narrative') {
       const prompts = locale === 'kr'
         ? [
-            '최근의 “아주 나다운” 순간을 묘사해 주세요. 무엇을 추구/회피/보호했나요?',
-            '스트레스/안정 상황에서 우선순위와 행동이 어떻게 바뀌나요? 짧은 예를 주세요.',
+            '최근의 "아주 나다운" 순간을 묘사해 주세요. 무엇을 추구/회피/보호했나요?',
+            '압박 상황이나 편안한 상태에서 우선순위와 행동이 어떻게 바뀌나요? 짧은 예를 들어 주세요.',
           ]
         : [
-            'Describe a recent situation that felt “very you.” What were you seeking, avoiding, or protecting?',
-            'In stress or ease, how do your priorities and behavior shift? Give a brief example.',
+            'Describe a recent situation that felt "very you." What were you seeking, avoiding, or protecting?',
+            'Under pressure or relaxed, how do your priorities and behavior shift? Give a brief example.',
           ];
       return NextResponse.json({ prompts });
     }

@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, Suspense, useRef } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import html2canvas from 'html2canvas';
-import {
-  Loader2, Heart, ChevronRight, Brain, Sparkles, TrendingUp, Briefcase, Home, Download, RefreshCw
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import EnneagramResultDisplay from '@/components/enneagram/EnneagramResultDisplay';
 
 type Stage = 'screener' | 'discriminators' | 'wings' | 'narrative' | 'complete';
 type Locale = 'en' | 'kr';
@@ -83,9 +81,7 @@ function EnneagramWizardContent() {
   const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const resultsRef = useRef<HTMLDivElement>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
 
   // Restore existing session on mount (for authenticated users)
@@ -212,11 +208,17 @@ function EnneagramWizardContent() {
 
   // Auto-fetch results and AI interpretation when entering complete stage
   useEffect(() => {
-    if (stage === 'complete' && canFetch && !enneagramResult && !resultLoading) {
-      fetchResultsAndInterpretation();
+    if (stage === 'complete' && canFetch && !resultLoading) {
+      // If we have result but no interpretation (session restored), fetch interpretation only
+      if (enneagramResult && !interpretation) {
+        fetchInterpretationOnly();
+      } else if (!enneagramResult) {
+        // Fresh complete - fetch both results and interpretation
+        fetchResultsAndInterpretation();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, canFetch]);
+  }, [stage, canFetch, enneagramResult, interpretation]);
 
   async function fetchResultsAndInterpretation() {
     setResultLoading(true);
@@ -268,30 +270,41 @@ function EnneagramWizardContent() {
     }
   }
 
-  async function downloadAsJPG() {
-    if (!resultsRef.current) return;
+  // Fetch interpretation only (for session restoration case)
+  async function fetchInterpretationOnly() {
+    if (!enneagramResult) return;
 
-    setDownloading(true);
+    setResultLoading(true);
+    setResultError(null);
+
     try {
-      const canvas = await html2canvas(resultsRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true,
+      const type = parseInt(enneagramResult.primaryType, 10);
+      const wing = enneagramResult.wingEstimate ? parseInt(enneagramResult.wingEstimate.split('w')[1], 10) : type;
+      const instinct = (enneagramResult.instinct as 'sp' | 'so' | 'sx') || 'sp';
+
+      const interpretRes = await fetch('/api/enneagram/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enneagram: {
+            type,
+            wing,
+            instinct,
+            confidence: enneagramResult.confidence,
+            probabilities: enneagramResult.typeProbabilities,
+          },
+          locale: locale === 'kr' ? 'ko' : 'en',
+        }),
       });
 
-      const image = canvas.toDataURL('image/jpeg', 0.95);
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `enneagram-result-${enneagramResult?.primaryType || 'type'}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (interpretRes.ok) {
+        const interpretData: InterpretResponse = await interpretRes.json();
+        setInterpretation(interpretData);
+      }
     } catch (err) {
-      console.error('Download failed:', err);
-      alert(locale === 'kr' ? '다운로드 중 오류가 발생했습니다.' : 'Download failed. Please try again.');
+      setResultError(toErrorMessage(err, 'Failed to load interpretation'));
     } finally {
-      setDownloading(false);
+      setResultLoading(false);
     }
   }
 
@@ -532,298 +545,30 @@ function EnneagramWizardContent() {
 
         {stage === 'complete' && (
           <div className="space-y-6">
-            {/* Loading State */}
-            {resultLoading && (
-              <div className="glass-panel p-12 rounded-3xl text-center">
-                <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-gray-800 mb-2">
-                  {locale === 'kr' ? 'AI 해석 생성 중...' : 'Generating AI Interpretation...'}
-                </h2>
-                <p className="text-gray-600">
-                  {locale === 'kr' ? '잠시만 기다려 주세요' : 'Please wait a moment'}
-                </p>
-              </div>
-            )}
-
             {/* Error State */}
             {resultError && !resultLoading && (
-              <div className="glass-panel p-8 rounded-3xl">
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4">
+              <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800">
+                <div className="bg-red-900/30 border border-red-700/50 text-red-300 rounded-xl p-4 mb-4">
                   {resultError}
                 </div>
                 <button
                   onClick={fetchResultsAndInterpretation}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
                 >
                   {locale === 'kr' ? '다시 시도' : 'Try Again'}
                 </button>
               </div>
             )}
 
-            {/* Results Display */}
-            {enneagramResult && !resultLoading && (
-              <div ref={resultsRef} className="space-y-6">
-                {/* Header Card */}
-                <div className="p-8 rounded-3xl bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-lg">
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
-                      <span className="text-4xl font-bold">{enneagramResult.primaryType}</span>
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold">
-                        {locale === 'kr' ? '에니어그램 결과' : 'Your Enneagram Result'}
-                      </h2>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xl font-semibold">
-                          Type {enneagramResult.wingEstimate || enneagramResult.primaryType}
-                          {interpretation?.typeProfile && (
-                            <span className="ml-2 opacity-90">
-                              - {interpretation.typeProfile.name[locale === 'kr' ? 'ko' : 'en']}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="px-3 py-1 bg-white/20 rounded-full text-sm">
-                          {enneagramResult.instinct === 'sp' && (locale === 'kr' ? '자기보존' : 'Self-Preservation')}
-                          {enneagramResult.instinct === 'so' && (locale === 'kr' ? '사회적' : 'Social')}
-                          {enneagramResult.instinct === 'sx' && (locale === 'kr' ? '성적/일대일' : 'Sexual/One-to-One')}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-sm ${
-                          enneagramResult.confidence === 'high' ? 'bg-green-400/30' :
-                          enneagramResult.confidence === 'medium' ? 'bg-yellow-400/30' :
-                          'bg-red-400/30'
-                        }`}>
-                          {enneagramResult.confidence === 'high' && (locale === 'kr' ? '높은 신뢰도' : 'High Confidence')}
-                          {enneagramResult.confidence === 'medium' && (locale === 'kr' ? '중간 신뢰도' : 'Medium Confidence')}
-                          {enneagramResult.confidence === 'low' && (locale === 'kr' ? '낮은 신뢰도' : 'Low Confidence')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Type Probabilities */}
-                <div className="glass-panel p-6 rounded-3xl">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-teal-600" />
-                    {locale === 'kr' ? '유형별 확률' : 'Type Probabilities'}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {Object.entries(enneagramResult.typeProbabilities)
-                      .sort((a, b) => Number(a[0]) - Number(b[0]))
-                      .map(([typeNum, prob]) => {
-                        const isPrimary = typeNum === enneagramResult.primaryType;
-                        return (
-                          <div
-                            key={typeNum}
-                            className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm ${
-                              isPrimary
-                                ? 'bg-teal-100 border-2 border-teal-400'
-                                : 'bg-gray-50 border border-gray-100'
-                            }`}
-                          >
-                            <span className={`font-medium ${isPrimary ? 'text-teal-700' : 'text-gray-600'}`}>
-                              Type {typeNum}
-                            </span>
-                            <span className={`font-bold ${isPrimary ? 'text-teal-800' : 'text-gray-700'}`}>
-                              {(Number(prob) * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-
-                {/* AI Interpretation */}
-                {interpretation && (
-                  <div className="glass-panel p-6 rounded-3xl">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-amber-500" />
-                      {locale === 'kr' ? 'AI 해석' : 'AI Interpretation'}
-                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                        interpretation.source === 'ai'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {interpretation.source === 'ai' ? 'AI Generated' : 'Template'}
-                      </span>
-                    </h3>
-
-                    <div className="space-y-4">
-                      {/* Type Overview */}
-                      <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Heart className="w-4 h-4 text-rose-500" />
-                          <h4 className="text-sm font-semibold text-gray-700">
-                            {locale === 'kr' ? '유형 개요' : 'Type Overview'}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {interpretation.interpretation.typeOverview}
-                        </p>
-                      </div>
-
-                      {/* Wing Influence */}
-                      <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ChevronRight className="w-4 h-4 text-indigo-500" />
-                          <h4 className="text-sm font-semibold text-gray-700">
-                            {locale === 'kr' ? '날개 영향' : 'Wing Influence'}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {interpretation.interpretation.wingInfluence}
-                        </p>
-                      </div>
-
-                      {/* Instinct Focus */}
-                      <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Brain className="w-4 h-4 text-purple-500" />
-                          <h4 className="text-sm font-semibold text-gray-700">
-                            {locale === 'kr' ? '본능 초점' : 'Instinct Focus'}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {interpretation.interpretation.instinctFocus}
-                        </p>
-                      </div>
-
-                      {/* Strengths Synergy (if available) */}
-                      {interpretation.interpretation.strengthsSynergy && (
-                        <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-amber-500" />
-                            <h4 className="text-sm font-semibold text-gray-700">
-                              {locale === 'kr' ? '강점 시너지' : 'Strengths Synergy'}
-                            </h4>
-                          </div>
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            {interpretation.interpretation.strengthsSynergy}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Growth Path */}
-                      <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="w-4 h-4 text-green-500" />
-                          <h4 className="text-sm font-semibold text-gray-700">
-                            {locale === 'kr' ? '성장 방향' : 'Growth Path'}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {interpretation.interpretation.growthPath}
-                        </p>
-                      </div>
-
-                      {/* Career Insights */}
-                      <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Briefcase className="w-4 h-4 text-blue-500" />
-                          <h4 className="text-sm font-semibold text-gray-700">
-                            {locale === 'kr' ? '커리어 인사이트' : 'Career Insights'}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {interpretation.interpretation.careerInsights}
-                        </p>
-                      </div>
-
-                      {/* Integrated Insight (if available) */}
-                      {interpretation.interpretation.integratedInsight && (
-                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="w-5 h-5 text-amber-600" />
-                            <h4 className="text-base font-bold text-amber-900">
-                              {locale === 'kr' ? '통합 분석: 당신의 고유한 프로필' : 'Integrated Analysis: Your Unique Profile'}
-                            </h4>
-                          </div>
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                            {interpretation.interpretation.integratedInsight}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Type Profile Details */}
-                {interpretation?.typeProfile && (
-                  <div className="glass-panel p-6 rounded-3xl">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                      {locale === 'kr' ? `Type ${enneagramResult.primaryType} 상세 정보` : `About Type ${enneagramResult.primaryType}`}
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-teal-50 rounded-xl p-4">
-                        <h4 className="font-medium text-teal-800 mb-2">
-                          {locale === 'kr' ? '핵심 두려움' : 'Core Fear'}
-                        </h4>
-                        <p className="text-sm text-teal-700">
-                          {interpretation.typeProfile.coreFear[locale === 'kr' ? 'ko' : 'en']}
-                        </p>
-                      </div>
-                      <div className="bg-teal-50 rounded-xl p-4">
-                        <h4 className="font-medium text-teal-800 mb-2">
-                          {locale === 'kr' ? '핵심 욕구' : 'Core Desire'}
-                        </h4>
-                        <p className="text-sm text-teal-700">
-                          {interpretation.typeProfile.coreDesire[locale === 'kr' ? 'ko' : 'en']}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="font-medium text-gray-700 mb-2">
-                        {locale === 'kr' ? '건강한 특성' : 'Healthy Traits'}
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {interpretation.typeProfile.healthyTraits[locale === 'kr' ? 'ko' : 'en'].map((trait, i) => (
-                          <span key={i} className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                            {trait}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation Buttons */}
-                <div className="glass-panel p-6 rounded-3xl text-center">
-                  <p className="text-gray-600 mb-4">
-                    {locale === 'kr'
-                      ? '대시보드에서 모든 모듈 결과를 확인하고 관리할 수 있습니다.'
-                      : 'You can view and manage all module results on your dashboard.'
-                    }
-                  </p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <button
-                      onClick={downloadAsJPG}
-                      disabled={downloading}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:shadow-lg hover:shadow-green-500/25 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {downloading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          {locale === 'kr' ? '다운로드 중...' : 'Downloading...'}
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-5 h-5" />
-                          {locale === 'kr' ? 'JPG로 저장' : 'Download as JPG'}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => router.push('/dashboard')}
-                      className="px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all flex items-center gap-2"
-                    >
-                      <Home className="w-5 h-5" />
-                      {locale === 'kr' ? '대시보드로 이동' : 'Go to Dashboard'}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* New Visual Results Display */}
+            {enneagramResult && (
+              <EnneagramResultDisplay
+                result={enneagramResult}
+                interpretation={interpretation}
+                locale={locale}
+                onNavigateToDashboard={() => router.push('/dashboard')}
+                loading={resultLoading}
+              />
             )}
           </div>
         )}

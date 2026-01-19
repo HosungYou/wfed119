@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Sparkles, Heart, Target, User, Lightbulb,
   Eye, Grid3X3, CheckCircle2, Zap, LogIn, LogOut,
-  LayoutDashboard, Loader2, ChevronRight
+  LayoutDashboard, Loader2, ChevronRight, Compass, Mountain, Leaf
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { JourneyProgressMap } from '@/components/dashboard';
@@ -15,39 +14,50 @@ import { MODULE_ORDER, MODULE_CONFIGS, getNextModule, ModuleId } from '@/lib/typ
 import { useTranslation } from '@/lib/i18n';
 import LanguageToggle from '@/components/LanguageToggle';
 
-// Part data for the journey overview (10 modules total)
+/* =============================================================================
+ * Terra Editorial Design - Journey Parts Configuration
+ * Warm Earth Tones color scheme applied
+ * ============================================================================= */
 const JOURNEY_PARTS = [
   {
     id: 'self-discovery',
     modules: ['values', 'strengths', 'enneagram', 'life-themes'] as ModuleId[],
-    icon: Sparkles,
-    color: 'from-blue-500 to-cyan-500',
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
+    icon: Compass,
+    gradient: 'from-primary-500 to-primary-600',
+    bgGradient: 'from-primary-50 to-primary-100/50',
+    borderColor: 'border-primary-200',
+    accentColor: 'text-primary-700',
+    iconBg: 'bg-primary-100',
   },
   {
     id: 'vision-mission',
     modules: ['vision', 'mission', 'career-options'] as ModuleId[],
     icon: Eye,
-    color: 'from-purple-500 to-pink-500',
-    bgColor: 'bg-purple-50',
-    textColor: 'text-purple-700',
+    gradient: 'from-secondary-500 to-secondary-600',
+    bgGradient: 'from-secondary-50 to-secondary-100/50',
+    borderColor: 'border-secondary-200',
+    accentColor: 'text-secondary-700',
+    iconBg: 'bg-secondary-100',
   },
   {
     id: 'strategic-analysis',
     modules: ['swot'] as ModuleId[],
-    icon: Grid3X3,
-    color: 'from-orange-500 to-amber-500',
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
+    icon: Mountain,
+    gradient: 'from-accent-500 to-accent-600',
+    bgGradient: 'from-accent-50 to-accent-100/50',
+    borderColor: 'border-accent-300',
+    accentColor: 'text-accent-700',
+    iconBg: 'bg-accent-100',
   },
   {
     id: 'goal-setting',
     modules: ['goals', 'errc'] as ModuleId[],
-    icon: Zap,
-    color: 'from-emerald-500 to-green-500',
-    bgColor: 'bg-emerald-50',
-    textColor: 'text-emerald-700',
+    icon: Leaf,
+    gradient: 'from-success to-success-dark',
+    bgGradient: 'from-success-light to-success-light/50',
+    borderColor: 'border-success/20',
+    accentColor: 'text-success-dark',
+    iconBg: 'bg-success-light',
   },
 ];
 
@@ -55,47 +65,11 @@ export const HomePage: React.FC = () => {
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const { completedModules, loading: modulesLoading } = useAllModulesProgress();
   const { t, language } = useTranslation();
-  const searchParams = useSearchParams();
-
-  // Get redirect URL from query params (set by middleware when auth is required)
-  const redirectUrl = searchParams.get('redirect');
-  const authRequired = searchParams.get('auth') === 'required';
-
-  // Auto-redirect authenticated users to their intended destination
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      // Check for redirect URL in query params first, then sessionStorage
-      const targetUrl = redirectUrl ||
-        (typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect') : null);
-
-      if (targetUrl) {
-        // Clear the stored redirect URL
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('auth_redirect');
-        }
-        // User is logged in and has a redirect URL - navigate there
-        console.log('[HomePage] Auto-redirecting authenticated user to:', targetUrl);
-        // Use window.location for hard redirect to ensure proper navigation
-        window.location.href = targetUrl;
-      }
-    }
-  }, [loading, isAuthenticated, redirectUrl]);
-
-  // Custom sign in handler that stores the redirect URL
-  const handleSignIn = useCallback(async () => {
-    // Store redirect URL in sessionStorage before OAuth redirect
-    const urlToStore = redirectUrl || '/dashboard';
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('auth_redirect', urlToStore);
-    }
-    await signInWithGoogle();
-  }, [redirectUrl, signInWithGoogle]);
 
   const completedSet = new Set(completedModules);
   const nextModule = isAuthenticated ? getNextModule(completedSet) : null;
   const nextModuleConfig = nextModule ? MODULE_CONFIGS[nextModule] : null;
 
-  // Get module name based on language
   const getModuleName = (moduleId: ModuleId) => {
     return language === 'ko'
       ? MODULE_CONFIGS[moduleId].nameKo
@@ -108,56 +82,44 @@ export const HomePage: React.FC = () => {
       : MODULE_CONFIGS[moduleId].description;
   };
 
-  // Check if we should show redirect loading state
-  const hasStoredRedirect = typeof window !== 'undefined' && sessionStorage.getItem('auth_redirect');
-  const shouldRedirect = !loading && isAuthenticated && (redirectUrl || hasStoredRedirect);
-
-  // Show loading state while redirecting authenticated user
-  if (shouldRedirect) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
-          <p className="text-gray-600">
-            {language === 'ko' ? '대시보드로 이동 중...' : 'Redirecting to dashboard...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="w-full py-4 px-4 bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+    <div className="min-h-screen bg-surface-cream">
+      {/* =========================================================================
+       * Header - Editorial Navigation
+       * ========================================================================= */}
+      <header className="w-full py-4 px-6 bg-surface-paper/80 backdrop-blur-md border-b border-neutral-100 sticky top-0 z-50">
+        <div className="max-w-editorial-wide mx-auto flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-medium group-hover:shadow-elevated transition-shadow duration-300">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {t('common.appName')}
-            </h1>
+            <div>
+              <h1 className="font-display text-xl font-bold text-neutral-950 tracking-tight">
+                {t('common.appName')}
+              </h1>
+              <p className="text-label text-neutral-400 hidden sm:block">Self-Discovery Journey</p>
+            </div>
           </Link>
 
-          <nav className="flex items-center space-x-3">
-            {/* Language Toggle */}
+          {/* Navigation */}
+          <nav className="flex items-center gap-3">
             <LanguageToggle variant="pill" />
 
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
             ) : isAuthenticated ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all duration-200 shadow-soft hover:shadow-medium"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('common.dashboard')}</span>
                 </Link>
                 <button
                   onClick={signOut}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2.5 text-neutral-500 hover:text-error hover:bg-error-light rounded-lg transition-all duration-200"
                   title={t('common.signOut')}
                 >
                   <LogOut className="w-5 h-5" />
@@ -166,14 +128,14 @@ export const HomePage: React.FC = () => {
                   <img
                     src={user.user_metadata.avatar_url}
                     alt={user.user_metadata?.full_name || 'User'}
-                    className="w-8 h-8 rounded-full border-2 border-gray-200"
+                    className="w-9 h-9 rounded-full border-2 border-neutral-200 shadow-subtle"
                   />
                 )}
               </div>
             ) : (
               <button
-                onClick={handleSignIn}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                onClick={signInWithGoogle}
+                className="flex items-center gap-2 px-5 py-2.5 bg-surface-paper border border-neutral-200 text-neutral-700 rounded-lg font-medium hover:bg-surface-warm hover:border-neutral-300 transition-all duration-200"
               >
                 <LogIn className="w-4 h-4" />
                 <span>{t('common.signIn')}</span>
@@ -183,43 +145,50 @@ export const HomePage: React.FC = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-4 py-12 md:py-20">
-        <div className="text-center mb-16">
-          <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-sm font-medium">
-            {t('home.hero.subtitle')}
+      {/* =========================================================================
+       * Hero Section - Editorial Typography
+       * ========================================================================= */}
+      <main className="max-w-editorial mx-auto px-6 lg:px-8">
+        <section className="pt-16 pb-20 md:pt-24 md:pb-28">
+          {/* Eyebrow */}
+          <div className="flex items-center gap-3 mb-8 animate-fade-up">
+            <div className="accent-line" />
+            <span className="text-label text-primary-600">{t('home.hero.subtitle')}</span>
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            {t('home.hero.title1')}
-            <span className="block text-primary-600 mt-2">
-              {t('home.hero.title2')}
-            </span>
-          </h2>
+          {/* Main Headline - Editorial Style */}
+          <div className="max-w-4xl mb-10">
+            <h2 className="font-display text-display-lg md:text-display-xl lg:text-display-2xl text-neutral-950 mb-6 animate-fade-up delay-100 fill-both">
+              {t('home.hero.title1')}
+              <span className="block text-primary-600 mt-2">
+                {t('home.hero.title2')}
+              </span>
+            </h2>
 
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            {t('home.hero.description')}
-          </p>
+            <p className="text-body-lg md:text-body-xl text-neutral-600 max-w-2xl leading-relaxed animate-fade-up delay-200 fill-both">
+              {t('home.hero.description')}
+            </p>
+          </div>
 
-          {/* Primary CTA */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 animate-fade-up delay-300 fill-both">
             {isAuthenticated ? (
               nextModuleConfig ? (
                 <Link
                   href={nextModuleConfig.route}
-                  className="group bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center space-x-2 shadow-lg shadow-primary-500/20"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 shadow-medium hover:shadow-elevated"
                 >
                   <span>
                     {completedModules.length === 0
                       ? t('home.cta.startJourney')
                       : t('home.cta.continueModule', { moduleName: getModuleName(nextModule!) })}
                   </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               ) : (
                 <Link
                   href="/dashboard"
-                  className="group bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-lg shadow-green-500/20"
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-success text-white rounded-xl font-semibold hover:bg-success-dark transition-all duration-300 shadow-medium hover:shadow-elevated"
                 >
                   <CheckCircle2 className="w-5 h-5" />
                   <span>{language === 'ko' ? '완료! 결과 보기' : 'Complete! View Results'}</span>
@@ -227,37 +196,40 @@ export const HomePage: React.FC = () => {
               )
             ) : (
               <button
-                onClick={handleSignIn}
-                className="group bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center space-x-2 shadow-lg shadow-primary-500/20"
+                onClick={signInWithGoogle}
+                className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 shadow-medium hover:shadow-elevated"
               >
                 <span>{language === 'ko' ? '무료로 시작하기' : 'Start for Free'}</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
             )}
 
             <Link
               href="/dashboard"
-              className="text-gray-600 px-6 py-4 rounded-xl font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2"
+              className="inline-flex items-center gap-2 px-6 py-4 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl font-medium transition-all duration-200"
             >
               <span>{t('common.viewDashboard')}</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-        </div>
+        </section>
 
-        {/* Journey Overview - 4 Parts */}
-        <section className="mb-20">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('home.journey.title')}</h3>
-            <p className="text-gray-600">{t('home.journey.subtitle')}</p>
+        {/* =========================================================================
+         * Journey Overview - 4 Parts Grid
+         * ========================================================================= */}
+        <section className="py-16 border-t border-neutral-100">
+          <div className="mb-12">
+            <span className="text-label text-neutral-400 mb-3 block">{language === 'ko' ? '여정 개요' : 'Journey Overview'}</span>
+            <h3 className="font-display text-display-sm md:text-display-md text-neutral-950 mb-3">
+              {t('home.journey.title')}
+            </h3>
+            <p className="text-body-lg text-neutral-500 max-w-xl">{t('home.journey.subtitle')}</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {JOURNEY_PARTS.map((part, index) => {
               const Icon = part.icon;
-              const completedInPart = part.modules.filter((m) =>
-                completedSet.has(m)
-              ).length;
+              const completedInPart = part.modules.filter((m) => completedSet.has(m)).length;
               const totalInPart = part.modules.length;
               const isPartComplete = completedInPart === totalInPart;
               const isPartStarted = completedInPart > 0;
@@ -271,78 +243,95 @@ export const HomePage: React.FC = () => {
                 <div
                   key={part.id}
                   className={`
-                    relative p-6 rounded-2xl border-2 transition-all
+                    group relative p-6 rounded-2xl border transition-all duration-300 hover-lift
                     ${isPartComplete
-                      ? 'bg-green-50 border-green-200'
+                      ? 'bg-gradient-to-br from-success-light to-white border-success/30'
                       : isPartStarted
-                        ? `${part.bgColor} border-current/20`
-                        : 'bg-white border-gray-200'
+                        ? `bg-gradient-to-br ${part.bgGradient} ${part.borderColor}`
+                        : 'bg-surface-paper border-neutral-100 hover:border-neutral-200'
                     }
                   `}
                 >
                   {/* Part Number */}
-                  <div className="absolute -top-3 -left-3 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600">
-                    {index + 1}
+                  <div className={`
+                    absolute -top-3 -left-3 w-8 h-8 rounded-full text-body-sm font-bold
+                    flex items-center justify-center shadow-soft
+                    ${isPartComplete
+                      ? 'bg-success text-white'
+                      : isPartStarted
+                        ? `bg-gradient-to-br ${part.gradient} text-white`
+                        : 'bg-surface-paper border border-neutral-200 text-neutral-500'
+                    }
+                  `}>
+                    {isPartComplete ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
                   </div>
 
                   {/* Icon */}
-                  <div
-                    className={`
-                      w-12 h-12 rounded-xl flex items-center justify-center mb-4
-                      ${isPartComplete
-                        ? 'bg-green-500 text-white'
-                        : `bg-gradient-to-br ${part.color} text-white`
-                      }
-                    `}
-                  >
-                    {isPartComplete ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : (
-                      <Icon className="w-6 h-6" />
-                    )}
+                  <div className={`
+                    w-14 h-14 rounded-xl flex items-center justify-center mb-5
+                    transition-transform duration-300 group-hover:scale-105
+                    ${isPartComplete
+                      ? 'bg-success/10 text-success'
+                      : `${part.iconBg} ${part.accentColor}`
+                    }
+                  `}>
+                    <Icon className="w-7 h-7" />
                   </div>
 
                   {/* Content */}
-                  <h4 className={`text-lg font-bold mb-1 ${isPartComplete ? 'text-green-700' : part.textColor}`}>
+                  <h4 className={`font-display text-lg font-semibold mb-1 ${isPartComplete ? 'text-success-dark' : part.accentColor}`}>
                     {partTitle}
                   </h4>
-                  <p className="text-sm text-gray-500 mb-3">{partEnglishTitle}</p>
-                  <p className="text-sm text-gray-600 mb-4">{partDescription}</p>
+                  <p className="text-caption text-neutral-400 mb-3">{partEnglishTitle}</p>
+                  <p className="text-body-sm text-neutral-600 mb-5 line-clamp-2">{partDescription}</p>
 
-                  {/* Progress */}
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">
-                      {completedInPart}/{totalInPart} {t('common.modules')}
-                    </span>
-                    {isPartComplete && (
-                      <span className="text-green-600 font-medium">{t('common.completed')}!</span>
-                    )}
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ease-out-expo ${
+                          isPartComplete ? 'bg-success' : `bg-gradient-to-r ${part.gradient}`
+                        }`}
+                        style={{ width: `${(completedInPart / totalInPart) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-caption">
+                      <span className="text-neutral-400">
+                        {completedInPart}/{totalInPart} {t('common.modules')}
+                      </span>
+                      {isPartComplete && (
+                        <span className="text-success font-medium">{t('common.completed')}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Arrow connectors for desktop */}
-          <div className="hidden md:flex justify-center mt-4">
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-sm">{t('home.journey.flow.selfDiscovery')}</span>
+          {/* Flow Indicator */}
+          <div className="hidden lg:flex justify-center mt-8">
+            <div className="flex items-center gap-4 text-neutral-400">
+              <span className="text-body-sm font-medium">{t('home.journey.flow.selfDiscovery')}</span>
               <ArrowRight className="w-4 h-4" />
-              <span className="text-sm">{t('home.journey.flow.vision')}</span>
+              <span className="text-body-sm font-medium">{t('home.journey.flow.vision')}</span>
               <ArrowRight className="w-4 h-4" />
-              <span className="text-sm">{t('home.journey.flow.strategy')}</span>
+              <span className="text-body-sm font-medium">{t('home.journey.flow.strategy')}</span>
               <ArrowRight className="w-4 h-4" />
-              <span className="text-sm">{t('home.journey.flow.action')}</span>
+              <span className="text-body-sm font-medium">{t('home.journey.flow.action')}</span>
             </div>
           </div>
         </section>
 
-        {/* Journey Progress (for authenticated users) */}
+        {/* =========================================================================
+         * Journey Progress (Authenticated Users)
+         * ========================================================================= */}
         {isAuthenticated && !modulesLoading && (
-          <section className="mb-20">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('home.progress.title')}</h3>
-              <p className="text-gray-600">
+          <section className="py-16 border-t border-neutral-100">
+            <div className="mb-10">
+              <span className="text-label text-neutral-400 mb-3 block">{language === 'ko' ? '나의 진행 상황' : 'My Progress'}</span>
+              <h3 className="font-display text-display-sm text-neutral-950 mb-2">{t('home.progress.title')}</h3>
+              <p className="text-body-lg text-neutral-500">
                 {completedModules.length === 1
                   ? t('home.progress.modulesCompleted', { count: completedModules.length })
                   : t('home.progress.modulesCompletedPlural', { count: completedModules.length })}
@@ -353,13 +342,16 @@ export const HomePage: React.FC = () => {
           </section>
         )}
 
-        {/* Benefits Section */}
-        <section className="mb-20">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+        {/* =========================================================================
+         * Benefits Section
+         * ========================================================================= */}
+        <section className="py-16 border-t border-neutral-100">
+          <div className="mb-12">
+            <span className="text-label text-neutral-400 mb-3 block">{language === 'ko' ? '왜 선택해야 하나요?' : 'Why Choose Us?'}</span>
+            <h3 className="font-display text-display-sm md:text-display-md text-neutral-950 mb-3">
               {language === 'ko' ? '왜 LifeCraft인가요?' : 'Why LifeCraft?'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-body-lg text-neutral-500 max-w-xl">
               {language === 'ko'
                 ? '과학적 이론과 AI 기술을 결합한 커리어 코칭'
                 : 'Career coaching combining scientific theory and AI technology'}
@@ -373,7 +365,7 @@ export const HomePage: React.FC = () => {
               description={language === 'ko'
                 ? 'Claude AI가 당신의 응답을 분석하여 개인화된 인사이트를 제공합니다.'
                 : 'Claude AI analyzes your responses to provide personalized insights.'}
-              color="primary"
+              variant="primary"
             />
             <BenefitCard
               icon={<Target className="w-6 h-6" />}
@@ -381,7 +373,7 @@ export const HomePage: React.FC = () => {
               description={language === 'ko'
                 ? '단순한 분석을 넘어 구체적인 목표와 실행 계획을 수립합니다.'
                 : 'Go beyond simple analysis to establish concrete goals and action plans.'}
-              color="secondary"
+              variant="secondary"
             />
             <BenefitCard
               icon={<CheckCircle2 className="w-6 h-6" />}
@@ -389,25 +381,28 @@ export const HomePage: React.FC = () => {
               description={language === 'ko'
                 ? '에니어그램, OKR, SWOT 등 검증된 프레임워크를 활용합니다.'
                 : 'Uses validated frameworks like Enneagram, OKR, and SWOT.'}
-              color="accent"
+              variant="accent"
             />
           </div>
         </section>
 
-        {/* Module List Preview */}
-        <section className="mb-20">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+        {/* =========================================================================
+         * Module List Preview
+         * ========================================================================= */}
+        <section className="py-16 border-t border-neutral-100">
+          <div className="mb-12">
+            <span className="text-label text-neutral-400 mb-3 block">{language === 'ko' ? '전체 모듈' : 'All Modules'}</span>
+            <h3 className="font-display text-display-sm md:text-display-md text-neutral-950 mb-3">
               {language === 'ko' ? '10개의 모듈' : '10 Modules'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-body-lg text-neutral-500 max-w-xl">
               {language === 'ko'
                 ? '순서대로 진행하며 자기 발견의 여정을 완성하세요'
                 : 'Complete your self-discovery journey in sequence'}
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {MODULE_ORDER.map((moduleId, index) => {
               const isCompleted = completedSet.has(moduleId);
               const isNext = nextModule === moduleId;
@@ -429,86 +424,124 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="text-center py-12 px-8 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-3xl">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            {language === 'ko' ? '지금 시작하세요' : 'Start Now'}
-          </h3>
-          <p className="text-gray-600 mb-8 max-w-xl mx-auto">
-            {language === 'ko'
-              ? '무료로 시작하여 나만의 커리어 로드맵을 만들어보세요. 10단계 여정이 당신의 잠재력을 발견하는 데 도움을 드릴 것입니다.'
-              : 'Start for free and create your own career roadmap. The 10-step journey will help you discover your potential.'}
-          </p>
-          {isAuthenticated ? (
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              {language === 'ko' ? '대시보드로 이동' : 'Go to Dashboard'}
-            </Link>
-          ) : (
-            <button
-              onClick={handleSignIn}
-              className="inline-flex items-center gap-2 bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
-            >
-              {language === 'ko' ? '무료로 시작하기' : 'Start for Free'}
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          )}
+        {/* =========================================================================
+         * Final CTA
+         * ========================================================================= */}
+        <section className="py-16 border-t border-neutral-100">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-accent-50 to-secondary-50 p-12 md:p-16">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-200/30 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary-200/30 rounded-full blur-3xl" />
+
+            <div className="relative z-10 text-center max-w-2xl mx-auto">
+              <h3 className="font-display text-display-md text-neutral-950 mb-4">
+                {language === 'ko' ? '지금 시작하세요' : 'Start Now'}
+              </h3>
+              <p className="text-body-lg text-neutral-600 mb-10">
+                {language === 'ko'
+                  ? '무료로 시작하여 나만의 커리어 로드맵을 만들어보세요. 10단계 여정이 당신의 잠재력을 발견하는 데 도움을 드릴 것입니다.'
+                  : 'Start for free and create your own career roadmap. The 10-step journey will help you discover your potential.'}
+              </p>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-3 bg-primary-600 text-white px-10 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 shadow-medium hover:shadow-elevated"
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  {language === 'ko' ? '대시보드로 이동' : 'Go to Dashboard'}
+                </Link>
+              ) : (
+                <button
+                  onClick={signInWithGoogle}
+                  className="inline-flex items-center gap-3 bg-primary-600 text-white px-10 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 shadow-medium hover:shadow-elevated"
+                >
+                  {language === 'ko' ? '무료로 시작하기' : 'Start for Free'}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+      {/* =========================================================================
+       * Footer
+       * ========================================================================= */}
+      <footer className="border-t border-neutral-100 bg-surface-paper py-12 px-6 mt-16">
+        <div className="max-w-editorial mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="font-display text-lg font-bold text-neutral-950">LifeCraft</span>
+                <p className="text-caption text-neutral-400">AI-Powered Career Coaching</p>
+              </div>
             </div>
-            <span className="text-lg font-bold text-gray-900">LifeCraft</span>
+
+            {/* Copyright */}
+            <p className="text-body-sm text-neutral-400">
+              {language === 'ko'
+                ? '© 2025 LifeCraft. AI 기반 커리어 코칭 플랫폼.'
+                : '© 2025 LifeCraft. AI-Powered Career Coaching Platform.'}
+            </p>
           </div>
-          <p className="text-gray-500 text-sm">
-            {language === 'ko'
-              ? '© 2025 LifeCraft. AI 기반 커리어 코칭 플랫폼.'
-              : '© 2025 LifeCraft. AI-Powered Career Coaching Platform.'}
-          </p>
         </div>
       </footer>
     </div>
   );
 };
 
-// Benefit Card Component
+/* =============================================================================
+ * Benefit Card Component
+ * ============================================================================= */
 function BenefitCard({
   icon,
   title,
   description,
-  color,
+  variant,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: 'primary' | 'secondary' | 'accent';
+  variant: 'primary' | 'secondary' | 'accent';
 }) {
-  const colorClasses = {
-    primary: 'bg-primary-100 text-primary-600',
-    secondary: 'bg-secondary-100 text-secondary-600',
-    accent: 'bg-accent-100 text-accent-600',
+  const variantStyles = {
+    primary: {
+      iconBg: 'bg-primary-100',
+      iconColor: 'text-primary-600',
+      hoverBorder: 'hover:border-primary-200',
+    },
+    secondary: {
+      iconBg: 'bg-secondary-100',
+      iconColor: 'text-secondary-600',
+      hoverBorder: 'hover:border-secondary-200',
+    },
+    accent: {
+      iconBg: 'bg-accent-100',
+      iconColor: 'text-accent-700',
+      hoverBorder: 'hover:border-accent-300',
+    },
   };
 
+  const styles = variantStyles[variant];
+
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${colorClasses[color]}`}>
+    <div className={`card-interactive p-7 ${styles.hoverBorder}`}>
+      <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${styles.iconBg} ${styles.iconColor}`}>
         {icon}
       </div>
-      <h4 className="text-lg font-bold text-gray-900 mb-2">{title}</h4>
-      <p className="text-gray-600 text-sm">{description}</p>
+      <h4 className="font-display text-lg font-semibold text-neutral-900 mb-3">{title}</h4>
+      <p className="text-body-sm text-neutral-600 leading-relaxed">{description}</p>
     </div>
   );
 }
 
-// Module Preview Card Component
+/* =============================================================================
+ * Module Preview Card Component
+ * ============================================================================= */
 function ModulePreviewCard({
   order,
   name,
@@ -531,44 +564,47 @@ function ModulePreviewCard({
   const content = (
     <div
       className={`
-        relative p-4 rounded-xl border-2 transition-all h-full
+        relative p-5 rounded-xl border transition-all duration-300 h-full
         ${isCompleted
-          ? 'bg-green-50 border-green-200'
+          ? 'bg-gradient-to-br from-success-light to-white border-success/30'
           : isNext
-            ? 'bg-primary-50 border-primary-200 ring-2 ring-primary-500/20'
+            ? 'bg-gradient-to-br from-primary-50 to-white border-primary-300 shadow-glow-primary'
             : isLocked
-              ? 'bg-gray-50 border-gray-200 opacity-60'
-              : 'bg-white border-gray-200 hover:border-gray-300'
+              ? 'bg-neutral-50 border-neutral-100 opacity-50'
+              : 'bg-surface-paper border-neutral-100 hover:border-neutral-200 hover:shadow-soft'
         }
       `}
     >
       {/* Order Badge */}
       <div
         className={`
-          absolute -top-2 -left-2 w-6 h-6 rounded-full text-xs font-bold
-          flex items-center justify-center
+          absolute -top-2.5 -left-2.5 w-7 h-7 rounded-full text-body-xs font-bold
+          flex items-center justify-center shadow-subtle
           ${isCompleted
-            ? 'bg-green-500 text-white'
+            ? 'bg-success text-white'
             : isNext
-              ? 'bg-primary-500 text-white'
-              : 'bg-gray-200 text-gray-600'
+              ? 'bg-primary-600 text-white'
+              : 'bg-surface-paper border border-neutral-200 text-neutral-500'
           }
         `}
       >
-        {isCompleted ? '✓' : order}
+        {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : order}
       </div>
 
-      <h5 className={`font-medium mb-1 ${isCompleted ? 'text-green-700' : isLocked ? 'text-gray-400' : 'text-gray-900'}`}>
+      <h5 className={`font-display font-semibold mb-2 ${
+        isCompleted ? 'text-success-dark' : isLocked ? 'text-neutral-400' : 'text-neutral-900'
+      }`}>
         {name}
       </h5>
-      <p className={`text-xs line-clamp-2 ${isLocked ? 'text-gray-400' : 'text-gray-500'}`}>
+      <p className={`text-body-xs line-clamp-2 ${isLocked ? 'text-neutral-300' : 'text-neutral-500'}`}>
         {description}
       </p>
 
       {isNext && (
-        <span className="mt-2 inline-block text-xs text-primary-600 font-medium">
-          {language === 'ko' ? '다음 단계 →' : 'Next Step →'}
-        </span>
+        <div className="mt-3 flex items-center gap-1 text-body-xs text-primary-600 font-medium">
+          <span>{language === 'ko' ? '다음 단계' : 'Next Step'}</span>
+          <ArrowRight className="w-3 h-3" />
+        </div>
       )}
     </div>
   );

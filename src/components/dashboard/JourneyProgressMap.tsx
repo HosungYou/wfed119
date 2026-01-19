@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Heart, Target, User, Lightbulb, Eye, Grid3X3, CheckCircle2, Zap,
-  Lock, ArrowRight, Play, CheckCircle
+  Lock, ArrowRight, Play, CheckCircle, Compass, Mountain, Leaf, Flag
 } from 'lucide-react';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
 import {
@@ -13,6 +13,11 @@ import {
   getOverallProgress, getNextModule
 } from '@/lib/types/modules';
 import { useTranslation } from '@/lib/i18n';
+
+/* =============================================================================
+ * Terra Editorial Design - Journey Progress Map
+ * Warm earth tones with editorial typography
+ * ============================================================================= */
 
 // ============================================================================
 // Module Icons Map (10 modules)
@@ -24,33 +29,33 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   enneagram: User,
   'life-themes': Lightbulb,
   vision: Eye,
-  mission: Target,           // NEW: Mission Statement
-  'career-options': User,    // NEW: Career Options
+  mission: Flag,
+  'career-options': Compass,
   swot: Grid3X3,
   goals: CheckCircle2,
   errc: Zap,
 };
 
-// Module colors for visual distinction (10 modules)
+// Terra Editorial colors for modules
 const MODULE_COLORS: Record<ModuleId, { bg: string; bgLight: string; text: string; border: string }> = {
-  values: { bg: 'bg-rose-500', bgLight: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
-  strengths: { bg: 'bg-blue-500', bgLight: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
-  enneagram: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
+  values: { bg: 'bg-primary-500', bgLight: 'bg-primary-50', text: 'text-primary-600', border: 'border-primary-200' },
+  strengths: { bg: 'bg-secondary-500', bgLight: 'bg-secondary-50', text: 'text-secondary-600', border: 'border-secondary-200' },
+  enneagram: { bg: 'bg-accent-500', bgLight: 'bg-accent-50', text: 'text-accent-600', border: 'border-accent-200' },
   'life-themes': { bg: 'bg-amber-500', bgLight: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
   vision: { bg: 'bg-purple-500', bgLight: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-  mission: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },           // NEW
-  'career-options': { bg: 'bg-indigo-500', bgLight: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }, // NEW
+  mission: { bg: 'bg-primary-600', bgLight: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200' },
+  'career-options': { bg: 'bg-secondary-600', bgLight: 'bg-secondary-50', text: 'text-secondary-700', border: 'border-secondary-200' },
   swot: { bg: 'bg-orange-500', bgLight: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
-  goals: { bg: 'bg-cyan-500', bgLight: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' },
-  errc: { bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+  goals: { bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+  errc: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
 };
 
-// Part colors
-const PART_COLORS: Record<ModulePart, { bg: string; text: string; accent: string }> = {
-  'self-discovery': { bg: 'bg-blue-50', text: 'text-blue-800', accent: 'bg-blue-500' },
-  'vision-mission': { bg: 'bg-purple-50', text: 'text-purple-800', accent: 'bg-purple-500' },
-  'strategic-analysis': { bg: 'bg-orange-50', text: 'text-orange-800', accent: 'bg-orange-500' },
-  'goal-setting': { bg: 'bg-emerald-50', text: 'text-emerald-800', accent: 'bg-emerald-500' },
+// Terra Editorial part colors
+const PART_COLORS: Record<ModulePart, { bg: string; text: string; accent: string; icon: React.ElementType }> = {
+  'self-discovery': { bg: 'bg-primary-50', text: 'text-primary-800', accent: 'bg-primary-500', icon: Compass },
+  'vision-mission': { bg: 'bg-secondary-50', text: 'text-secondary-800', accent: 'bg-secondary-500', icon: Mountain },
+  'strategic-analysis': { bg: 'bg-accent-50', text: 'text-accent-800', accent: 'bg-accent-500', icon: Grid3X3 },
+  'goal-setting': { bg: 'bg-emerald-50', text: 'text-emerald-800', accent: 'bg-emerald-500', icon: Leaf },
 };
 
 // ============================================================================
@@ -106,41 +111,41 @@ function ModuleNode({
       {/* Module Circle */}
       <div
         className={`
-          relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center
-          transition-all duration-300
+          relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center
+          transition-all duration-300 ease-out-expo
           ${isCompleted
-            ? 'bg-green-500 text-white shadow-lg shadow-green-200'
+            ? 'bg-emerald-500 text-white shadow-elevated'
             : isInProgress
-              ? `${colors.bg} text-white shadow-lg ${colors.text.replace('text-', 'shadow-')}/30 ring-4 ring-white`
+              ? `${colors.bg} text-white shadow-elevated ring-4 ring-white`
               : isLocked
-                ? 'bg-gray-100 text-gray-400'
+                ? 'bg-neutral-100 text-neutral-400'
                 : `${colors.bgLight} ${colors.text} border-2 ${colors.border}`
           }
-          ${!isLocked && !isCompleted && 'group-hover:scale-110 group-hover:shadow-lg'}
+          ${!isLocked && !isCompleted && 'group-hover:scale-110 group-hover:shadow-elevated'}
           ${isNext && !isInProgress && 'animate-pulse'}
         `}
       >
         {isCompleted ? (
-          <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7" />
+          <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8" />
         ) : isLocked ? (
           <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
         ) : isNext && !isInProgress ? (
           <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
         ) : (
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+          <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
         )}
 
         {/* Order badge */}
         <div
           className={`
-            absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold
-            flex items-center justify-center
+            absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full text-xs font-bold
+            flex items-center justify-center font-display shadow-soft
             ${isCompleted
-              ? 'bg-green-600 text-white'
+              ? 'bg-emerald-600 text-white'
               : isInProgress
                 ? `${colors.bg} text-white`
                 : isLocked
-                  ? 'bg-gray-300 text-gray-600'
+                  ? 'bg-neutral-300 text-neutral-600'
                   : `${colors.bg} text-white`
             }
           `}
@@ -152,28 +157,28 @@ function ModuleNode({
         {isInProgress && completionPercentage > 0 && (
           <svg
             className="absolute inset-0 w-full h-full -rotate-90"
-            viewBox="0 0 56 56"
+            viewBox="0 0 64 64"
           >
             <circle
               className="text-white/30"
               strokeWidth="3"
               stroke="currentColor"
               fill="transparent"
-              r="24"
-              cx="28"
-              cy="28"
+              r="28"
+              cx="32"
+              cy="32"
             />
             <circle
               className="text-white"
               strokeWidth="3"
-              strokeDasharray={150}
-              strokeDashoffset={150 - (150 * completionPercentage) / 100}
+              strokeDasharray={175}
+              strokeDashoffset={175 - (175 * completionPercentage) / 100}
               strokeLinecap="round"
               stroke="currentColor"
               fill="transparent"
-              r="24"
-              cx="28"
-              cy="28"
+              r="28"
+              cx="32"
+              cy="32"
             />
           </svg>
         )}
@@ -182,14 +187,14 @@ function ModuleNode({
       {/* Module Name */}
       <span
         className={`
-          mt-2 text-xs sm:text-sm font-medium text-center max-w-[80px] sm:max-w-[100px] leading-tight
+          mt-3 text-body-sm font-medium text-center max-w-[80px] sm:max-w-[100px] leading-tight
           ${isCompleted
-            ? 'text-green-700'
+            ? 'text-emerald-700'
             : isInProgress
               ? colors.text
               : isLocked
-                ? 'text-gray-400'
-                : 'text-gray-700'
+                ? 'text-neutral-400'
+                : 'text-neutral-700'
           }
         `}
       >
@@ -198,12 +203,12 @@ function ModuleNode({
 
       {/* Status label */}
       {isInProgress && (
-        <span className="mt-1 text-[10px] sm:text-xs text-gray-500">
+        <span className="mt-1 text-caption text-neutral-500">
           {completionPercentage}% {language === 'ko' ? '완료' : 'complete'}
         </span>
       )}
       {isNext && !isInProgress && !isLocked && (
-        <span className={`mt-1 text-[10px] sm:text-xs ${colors.text} font-medium`}>
+        <span className={`mt-1 text-caption ${colors.text} font-medium`}>
           {language === 'ko' ? '다음 단계' : 'Next Step'}
         </span>
       )}
@@ -227,10 +232,10 @@ function ConnectorLine({
       className={`
         flex-1 h-1 mx-1 sm:mx-2 rounded-full transition-all duration-500
         ${isCompleted
-          ? 'bg-green-400'
+          ? 'bg-emerald-400'
           : isActive
-            ? 'bg-gradient-to-r from-green-400 to-gray-200'
-            : 'bg-gray-200'
+            ? 'bg-gradient-to-r from-emerald-400 to-neutral-200'
+            : 'bg-neutral-200'
         }
       `}
     />
@@ -257,22 +262,26 @@ function PartLabel({
   const totalCount = moduleIds.length;
   const isComplete = completedCount === totalCount;
   const isStarted = completedCount > 0;
+  const PartIcon = colors.icon;
 
   const displayName = language === 'ko' ? partName.ko : partName.en;
 
   return (
     <div
       className={`
-        px-3 py-1.5 rounded-full text-xs font-medium
+        inline-flex items-center gap-2 px-4 py-2 rounded-xl text-body-sm font-medium
+        transition-all duration-300
         ${isComplete
-          ? 'bg-green-100 text-green-700'
+          ? 'bg-emerald-100 text-emerald-700'
           : isStarted
             ? `${colors.bg} ${colors.text}`
-            : 'bg-gray-100 text-gray-500'
+            : 'bg-neutral-100 text-neutral-500'
         }
       `}
     >
-      {displayName} ({completedCount}/{totalCount})
+      <PartIcon className="w-4 h-4" />
+      <span>{displayName}</span>
+      <span className="text-caption opacity-70">({completedCount}/{totalCount})</span>
     </div>
   );
 }
@@ -291,12 +300,12 @@ export function JourneyProgressMap({
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded-full w-48 mb-6 mx-auto" />
+        <div className="h-8 bg-neutral-200 rounded-full w-48 mb-6 mx-auto" />
         <div className="flex justify-center items-center gap-2">
           {[...Array(10)].map((_, i) => (
             <React.Fragment key={i}>
-              <div className="w-12 h-12 bg-gray-200 rounded-full" />
-              {i < 9 && <div className="w-8 h-1 bg-gray-200 rounded" />}
+              <div className="w-14 h-14 bg-neutral-200 rounded-2xl" />
+              {i < 9 && <div className="w-8 h-1 bg-neutral-200 rounded" />}
             </React.Fragment>
           ))}
         </div>
@@ -325,21 +334,21 @@ export function JourneyProgressMap({
   if (variant === 'minimal') {
     return (
       <div className="w-full">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray-700">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-body-sm font-medium text-neutral-700">
             {language === 'ko' ? '여정 진행률' : 'Journey Progress'}
           </span>
-          <span className="text-sm font-bold text-primary-600">
+          <span className="font-display text-lg font-bold text-primary-600">
             {overallProgress}%
           </span>
         </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-neutral-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full transition-all duration-500 ease-out-expo"
             style={{ width: `${overallProgress}%` }}
           />
         </div>
-        <div className="mt-2 flex justify-between text-xs text-gray-500">
+        <div className="mt-3 flex justify-between text-caption text-neutral-500">
           <span>
             {completedModules.length} {language === 'ko' ? '개 완료' : 'completed'}
           </span>
@@ -358,14 +367,14 @@ export function JourneyProgressMap({
         {/* Progress Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="font-display text-lg font-bold text-neutral-900">
               {language === 'ko' ? '나의 여정' : 'My Journey'}
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-body-sm text-neutral-500 mt-1">
               {completedModules.length} {language === 'ko' ? '개 모듈 완료' : 'modules completed'} / {MODULE_ORDER.length} {language === 'ko' ? '개 중' : 'total'}
             </p>
           </div>
-          <div className="text-3xl font-bold text-primary-600">{overallProgress}%</div>
+          <div className="font-display text-display-sm font-bold text-primary-600">{overallProgress}%</div>
         </div>
 
         {/* Module Nodes */}
@@ -406,22 +415,23 @@ export function JourneyProgressMap({
 
   // Full variant - with part labels and detailed info
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-200 p-6">
+    <div className="w-full card p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <span className="text-label text-primary-600 uppercase tracking-wider">Progress</span>
+          <h2 className="font-display text-xl font-bold text-neutral-900 mt-1">
             {language === 'ko' ? 'LifeCraft 여정' : 'LifeCraft Journey'}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-body-sm text-neutral-500 mt-1">
             {language === 'ko'
               ? '10개의 모듈을 순서대로 완료하세요'
               : 'Complete 10 modules in sequence'}
           </p>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold text-primary-600">{overallProgress}%</div>
-          <p className="text-sm text-gray-500">
+          <div className="font-display text-display-md font-bold text-primary-600">{overallProgress}%</div>
+          <p className="text-caption text-neutral-500">
             {language === 'ko' ? '전체 진행률' : 'Overall Progress'}
           </p>
         </div>
@@ -429,9 +439,9 @@ export function JourneyProgressMap({
 
       {/* Overall Progress Bar */}
       <div className="mb-8">
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-3 bg-neutral-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-primary-500 via-secondary-500 to-emerald-500 rounded-full transition-all duration-500 ease-out-expo"
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -439,7 +449,7 @@ export function JourneyProgressMap({
 
       {/* Part Labels */}
       {showPartLabels && (
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
+        <div className="flex flex-wrap gap-3 mb-8 justify-center">
           {(Object.keys(modulesByPart) as ModulePart[]).map((part) => {
             const partModules = modulesByPart[part];
             const completedCount = partModules.filter((m) =>
@@ -460,7 +470,7 @@ export function JourneyProgressMap({
 
       {/* Module Journey Map */}
       <div className="overflow-x-auto">
-        <div className="flex items-center justify-center min-w-[640px] gap-2 px-4 py-4">
+        <div className="flex items-center justify-center min-w-[700px] gap-2 px-4 py-6">
           {MODULE_ORDER.map((moduleId, index) => {
             const moduleData = modules[moduleId];
             const status = moduleData?.progress?.status || 'not_started';
@@ -495,23 +505,23 @@ export function JourneyProgressMap({
 
       {/* Next Step CTA */}
       {nextModuleId && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-8 pt-8 border-t border-neutral-100">
           <NextStepCTA moduleId={nextModuleId} language={language} />
         </div>
       )}
 
       {/* All Completed */}
       {!nextModuleId && completedModules.length === MODULE_ORDER.length && (
-        <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full">
+        <div className="mt-8 pt-8 border-t border-neutral-100 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-100 text-emerald-700 rounded-2xl">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">
+            <span className="font-display font-semibold">
               {language === 'ko'
                 ? '모든 모듈을 완료했습니다!'
                 : 'All modules completed!'}
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-body-sm text-neutral-500 mt-3">
             {language === 'ko'
               ? '대시보드에서 통합 프로필과 인사이트를 확인하세요.'
               : 'Check your integrated profile and insights on the dashboard.'}
@@ -543,39 +553,39 @@ function NextStepCTA({ moduleId, language }: { moduleId: ModuleId; language: str
     <Link
       href={config.route}
       className={`
-        flex items-center gap-4 p-4 rounded-xl border-2 transition-all
-        ${colors.bgLight} ${colors.border} hover:shadow-md group
+        flex items-center gap-5 p-5 rounded-2xl border-2 transition-all duration-300
+        ${colors.bgLight} ${colors.border} hover:shadow-medium group
       `}
     >
       <div
         className={`
-          w-12 h-12 rounded-xl flex items-center justify-center
+          w-14 h-14 rounded-xl flex items-center justify-center shadow-soft
           ${colors.bg} text-white
         `}
       >
-        <Icon className="w-6 h-6" />
+        <Icon className="w-7 h-7" />
       </div>
 
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${colors.text}`}>
+          <span className={`text-caption font-medium ${colors.text}`}>
             {isInProgress
               ? (language === 'ko' ? '계속하기' : 'Continue')
               : (language === 'ko' ? '다음 단계' : 'Next Step')}
           </span>
         </div>
-        <h3 className="text-lg font-bold text-gray-900">{moduleName}</h3>
-        <p className="text-sm text-gray-600">{moduleDescription}</p>
+        <h3 className="font-display text-lg font-bold text-neutral-900">{moduleName}</h3>
+        <p className="text-body-sm text-neutral-600 mt-0.5">{moduleDescription}</p>
 
         {isInProgress && completionPercentage > 0 && (
-          <div className="mt-2">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
+          <div className="mt-3">
+            <div className="flex justify-between text-caption text-neutral-500 mb-1">
               <span>{language === 'ko' ? '진행률' : 'Progress'}</span>
               <span>{completionPercentage}%</span>
             </div>
-            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
               <div
-                className={`h-full ${colors.bg} rounded-full`}
+                className={`h-full ${colors.bg} rounded-full transition-all duration-300`}
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
@@ -583,7 +593,7 @@ function NextStepCTA({ moduleId, language }: { moduleId: ModuleId; language: str
         )}
       </div>
 
-      <ArrowRight className={`w-5 h-5 ${colors.text} group-hover:translate-x-1 transition-transform`} />
+      <ArrowRight className={`w-6 h-6 ${colors.text} group-hover:translate-x-1 transition-transform duration-200`} />
     </Link>
   );
 }

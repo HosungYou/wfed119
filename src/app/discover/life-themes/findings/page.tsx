@@ -37,16 +37,25 @@ export default function FindingsPage() {
 
   // Fetch existing findings or generate new ones
   const fetchFindings = useCallback(async () => {
+    console.log('[Findings] fetchFindings called');
     try {
       const res = await fetch('/api/life-themes/findings');
+      console.log('[Findings] GET response status:', res.status);
+
       if (res.ok) {
         const data = await res.json();
+        console.log('[Findings] GET response data:', data);
+        console.log('[Findings] Existing findings count:', data.findings?.length || 0);
+
         if (data.findings?.length > 0) {
           setFindings(data.findings);
         } else {
           // No existing findings, generate with AI
+          console.log('[Findings] No existing findings, generating...');
           await generateFindings();
         }
+      } else {
+        console.error('[Findings] GET failed:', res.status);
       }
       setLoading(false);
     } catch (err) {
@@ -61,25 +70,34 @@ export default function FindingsPage() {
   }, [fetchFindings]);
 
   const generateFindings = async () => {
+    console.log('[Findings] generateFindings called');
     setGenerating(true);
     setError(null);
     try {
+      console.log('[Findings] Calling /api/life-themes/analyze with action: findings');
       const res = await fetch('/api/life-themes/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'findings' }),
       });
 
+      console.log('[Findings] Response status:', res.status);
+
       if (res.ok) {
         const data = await res.json();
+        console.log('[Findings] Response data:', data);
+        console.log('[Findings] Findings count:', data.findings?.length || 0);
         setFindings(data.findings || []);
       } else {
-        setError('Failed to generate findings');
+        const errorText = await res.text();
+        console.error('[Findings] API error:', res.status, errorText);
+        setError(`Failed to generate findings (${res.status})`);
       }
     } catch (err) {
       console.error('[Findings] Generate error:', err);
       setError('Failed to generate findings with AI');
     } finally {
+      console.log('[Findings] generateFindings finished');
       setGenerating(false);
     }
   };

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Heart, Target, User, Lightbulb, Eye, Grid3X3, CheckCircle2, Zap,
-  Lock, ArrowRight, Play, CheckCircle, Compass, Mountain, Leaf, Flag
+  Lock, ArrowRight, Play, CheckCircle, Compass, Mountain, Leaf, Flag, Briefcase, Users
 } from 'lucide-react';
 import { useAllModulesProgress } from '@/hooks/useModuleProgress';
 import {
@@ -20,41 +20,44 @@ import { useTranslation } from '@/lib/i18n';
  * ============================================================================= */
 
 // ============================================================================
-// Module Icons Map (10 modules)
+// Module Icons Map (10 modules + 1 deprecated)
+// New order: enneagram → life-themes → values → mission → life-roles → vision → swot → career-options → goals → errc
 // ============================================================================
 
 const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
-  values: Heart,
-  strengths: Target,
   enneagram: User,
   'life-themes': Lightbulb,
-  vision: Eye,
+  values: Heart,
   mission: Flag,
-  'career-options': Compass,
+  'life-roles': Users,
+  vision: Eye,
   swot: Grid3X3,
+  'career-options': Briefcase,
   goals: CheckCircle2,
   errc: Zap,
+  strengths: Target, // DEPRECATED
 };
 
 // Terra Editorial colors for modules
 const MODULE_COLORS: Record<ModuleId, { bg: string; bgLight: string; text: string; border: string }> = {
-  values: { bg: 'bg-primary-500', bgLight: 'bg-primary-50', text: 'text-primary-600', border: 'border-primary-200' },
-  strengths: { bg: 'bg-secondary-500', bgLight: 'bg-secondary-50', text: 'text-secondary-600', border: 'border-secondary-200' },
-  enneagram: { bg: 'bg-accent-500', bgLight: 'bg-accent-50', text: 'text-accent-600', border: 'border-accent-200' },
+  enneagram: { bg: 'bg-primary-500', bgLight: 'bg-primary-50', text: 'text-primary-600', border: 'border-primary-200' },
   'life-themes': { bg: 'bg-amber-500', bgLight: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
+  values: { bg: 'bg-rose-500', bgLight: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
+  mission: { bg: 'bg-fuchsia-500', bgLight: 'bg-fuchsia-50', text: 'text-fuchsia-600', border: 'border-fuchsia-200' },
+  'life-roles': { bg: 'bg-violet-500', bgLight: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' },
   vision: { bg: 'bg-purple-500', bgLight: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-  mission: { bg: 'bg-primary-600', bgLight: 'bg-primary-50', text: 'text-primary-700', border: 'border-primary-200' },
-  'career-options': { bg: 'bg-secondary-600', bgLight: 'bg-secondary-50', text: 'text-secondary-700', border: 'border-secondary-200' },
   swot: { bg: 'bg-orange-500', bgLight: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
+  'career-options': { bg: 'bg-secondary-500', bgLight: 'bg-secondary-50', text: 'text-secondary-600', border: 'border-secondary-200' },
   goals: { bg: 'bg-emerald-500', bgLight: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
   errc: { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
+  strengths: { bg: 'bg-accent-500', bgLight: 'bg-accent-50', text: 'text-accent-600', border: 'border-accent-200' }, // DEPRECATED
 };
 
 // Terra Editorial part colors
 const PART_COLORS: Record<ModulePart, { bg: string; text: string; accent: string; icon: React.ElementType }> = {
   'self-discovery': { bg: 'bg-primary-50', text: 'text-primary-800', accent: 'bg-primary-500', icon: Compass },
-  'vision-mission': { bg: 'bg-secondary-50', text: 'text-secondary-800', accent: 'bg-secondary-500', icon: Mountain },
-  'strategic-analysis': { bg: 'bg-accent-50', text: 'text-accent-800', accent: 'bg-accent-500', icon: Grid3X3 },
+  'mission-roles': { bg: 'bg-secondary-50', text: 'text-secondary-800', accent: 'bg-secondary-500', icon: Flag },
+  'vision-options': { bg: 'bg-orange-50', text: 'text-orange-800', accent: 'bg-orange-500', icon: Mountain },
   'goal-setting': { bg: 'bg-emerald-50', text: 'text-emerald-800', accent: 'bg-emerald-500', icon: Leaf },
 };
 
@@ -217,10 +220,10 @@ function ModuleNode({
 }
 
 // ============================================================================
-// Connector Line Component
+// Connection Line Component
 // ============================================================================
 
-function ConnectorLine({
+function ConnectionLine({
   isCompleted,
   isActive,
 }: {
@@ -320,8 +323,8 @@ export function JourneyProgressMap({
   // Group modules by part
   const modulesByPart: Record<ModulePart, ModuleId[]> = {
     'self-discovery': [],
-    'vision-mission': [],
-    'strategic-analysis': [],
+    'mission-roles': [],
+    'vision-options': [],
     'goal-setting': [],
   };
 
@@ -386,7 +389,7 @@ export function JourneyProgressMap({
             const isNext = nextModuleId === moduleId;
             const completionPercentage = moduleData?.progress?.completionPercentage || 0;
             const isCompleted = status === 'completed';
-            const isInProgress = status === 'in_progress';
+            const prevCompleted = index > 0 && completedSet.has(MODULE_ORDER[index - 1]);
 
             return (
               <React.Fragment key={moduleId}>
@@ -400,9 +403,9 @@ export function JourneyProgressMap({
                   language={language}
                 />
                 {index < MODULE_ORDER.length - 1 && (
-                  <ConnectorLine
+                  <ConnectionLine
                     isCompleted={isCompleted}
-                    isActive={isInProgress}
+                    isActive={prevCompleted && !isCompleted}
                   />
                 )}
               </React.Fragment>
@@ -478,7 +481,7 @@ export function JourneyProgressMap({
             const isNext = nextModuleId === moduleId;
             const completionPercentage = moduleData?.progress?.completionPercentage || 0;
             const isCompleted = status === 'completed';
-            const isInProgress = status === 'in_progress';
+            const prevCompleted = index > 0 && completedSet.has(MODULE_ORDER[index - 1]);
 
             return (
               <React.Fragment key={moduleId}>
@@ -492,9 +495,9 @@ export function JourneyProgressMap({
                   language={language}
                 />
                 {index < MODULE_ORDER.length - 1 && (
-                  <ConnectorLine
+                  <ConnectionLine
                     isCompleted={isCompleted}
-                    isActive={isInProgress}
+                    isActive={prevCompleted && !isCompleted}
                   />
                 )}
               </React.Fragment>
@@ -537,12 +540,12 @@ export function JourneyProgressMap({
 // ============================================================================
 
 function NextStepCTA({ moduleId, language }: { moduleId: ModuleId; language: string }) {
-  const config = MODULE_CONFIGS[moduleId];
-  const colors = MODULE_COLORS[moduleId];
-  const Icon = MODULE_ICONS[moduleId];
   const { modules } = useAllModulesProgress();
-
   const moduleData = modules[moduleId];
+  const config = MODULE_CONFIGS[moduleId];
+  const Icon = MODULE_ICONS[moduleId];
+  const colors = MODULE_COLORS[moduleId];
+
   const isInProgress = moduleData?.progress?.status === 'in_progress';
   const completionPercentage = moduleData?.progress?.completionPercentage || 0;
 
@@ -602,4 +605,4 @@ function NextStepCTA({ moduleId, language }: { moduleId: ModuleId; language: str
 // Export Additional Components
 // ============================================================================
 
-export { NextStepCTA, ModuleNode, PartLabel };
+export { ModuleNode, ConnectionLine, PartLabel };

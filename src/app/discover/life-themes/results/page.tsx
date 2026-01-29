@@ -27,6 +27,8 @@ import {
   LifeTheme,
   LifeThemesPattern,
   LifeThemesAnalysis,
+  FindingsData,
+  FollowUpData,
   QUESTION_CONFIG,
   QuestionNumber,
   ANALYSIS_TYPE_LABELS,
@@ -82,9 +84,9 @@ export default function LifeThemesResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading your results...</p>
         </div>
       </div>
@@ -92,7 +94,7 @@ export default function LifeThemesResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -111,23 +113,23 @@ export default function LifeThemesResultsPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Journey Summary</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-indigo-50 rounded-xl">
-              <div className="text-3xl font-bold text-indigo-600">
+            <div className="text-center p-4 bg-primary-50 rounded-xl">
+              <div className="text-3xl font-bold text-primary-600">
                 {getCompletedQuestionsCount()}
               </div>
               <div className="text-sm text-gray-500">Questions Answered</div>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-xl">
-              <div className="text-3xl font-bold text-purple-600">
-                {session?.patterns?.length || 0}
+            <div className="text-center p-4 bg-secondary-50 rounded-xl">
+              <div className="text-3xl font-bold text-secondary-600">
+                {session?.findings?.findings?.length || session?.themes?.length || 0}
               </div>
-              <div className="text-sm text-gray-500">Patterns Identified</div>
+              <div className="text-sm text-gray-500">Life Themes</div>
             </div>
             <div className="text-center p-4 bg-pink-50 rounded-xl">
               <div className="text-3xl font-bold text-pink-600">
-                {session?.themes?.length || 0}
+                {session?.followup?.themePriorities?.length || 0}
               </div>
-              <div className="text-sm text-gray-500">Life Themes</div>
+              <div className="text-sm text-gray-500">Priorities Set</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-xl">
               <div className="text-3xl font-bold text-green-600">100%</div>
@@ -136,14 +138,59 @@ export default function LifeThemesResultsPage() {
           </div>
         </div>
 
-        {/* Your Life Themes */}
+        {/* Your Life Themes (from Findings) */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <Star className="w-6 h-6 text-amber-500" />
             <h2 className="text-2xl font-semibold text-gray-900">Your Core Life Themes</h2>
           </div>
 
-          {session?.themes && session.themes.length > 0 ? (
+          {session?.findings?.findings && session.findings.findings.length > 0 ? (
+            <div className="space-y-4">
+              {session.findings.findings.map((finding, idx) => {
+                // Use followup priorities for ordering if available
+                const priorityIdx = session.followup?.themePriorities?.indexOf(finding.theme) ?? -1;
+                const displayIdx = priorityIdx >= 0 ? priorityIdx : idx;
+
+                return (
+                  <div
+                    key={`finding-${idx}`}
+                    className={`p-5 rounded-xl border-2 ${
+                      displayIdx === 0 ? 'border-amber-300 bg-amber-50' :
+                      displayIdx === 1 ? 'border-gray-300 bg-gray-50' :
+                      displayIdx === 2 ? 'border-orange-200 bg-orange-50' :
+                      'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                        displayIdx === 0 ? 'bg-amber-500' :
+                        displayIdx === 1 ? 'bg-gray-400' :
+                        displayIdx === 2 ? 'bg-orange-400' :
+                        'bg-primary-500'
+                      }`}>
+                        {displayIdx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-gray-900">{finding.theme}</h3>
+                        {finding.relevantStories && finding.relevantStories.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Related Stories:</p>
+                            <ul className="list-disc list-inside text-gray-600 text-sm space-y-1">
+                              {finding.relevantStories.map((story, sIdx) => (
+                                <li key={sIdx}>{story}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : session?.themes && session.themes.length > 0 ? (
+            // Fallback to old themes format
             <div className="space-y-4">
               {session.themes
                 .sort((a, b) => a.priority_rank - b.priority_rank)
@@ -162,7 +209,7 @@ export default function LifeThemesResultsPage() {
                         idx === 0 ? 'bg-amber-500' :
                         idx === 1 ? 'bg-gray-400' :
                         idx === 2 ? 'bg-orange-400' :
-                        'bg-indigo-500'
+                        'bg-primary-500'
                       }`}>
                         {idx + 1}
                       </div>
@@ -172,7 +219,7 @@ export default function LifeThemesResultsPage() {
                           <p className="text-gray-600 mt-1">{theme.theme_description}</p>
                         )}
                         {theme.personal_reflection && (
-                          <p className="text-indigo-600 mt-3 italic text-sm">
+                          <p className="text-primary-600 mt-3 italic text-sm">
                             &quot;{theme.personal_reflection}&quot;
                           </p>
                         )}
@@ -186,14 +233,47 @@ export default function LifeThemesResultsPage() {
           )}
         </div>
 
-        {/* Patterns Overview */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <Target className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-2xl font-semibold text-gray-900">Identified Patterns</h2>
-          </div>
+        {/* Your Reflections (from Follow-up) */}
+        {session?.followup && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Target className="w-6 h-6 text-primary-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Your Reflections</h2>
+            </div>
 
-          {session?.patterns && session.patterns.length > 0 ? (
+            <div className="space-y-6">
+              {session.followup.enneagramConnection && (
+                <div className="p-4 bg-primary-50 rounded-xl">
+                  <h4 className="font-semibold text-gray-900 mb-2">Enneagram Connection</h4>
+                  <p className="text-gray-700">{session.followup.enneagramConnection}</p>
+                </div>
+              )}
+
+              {session.followup.careerGuidance && (
+                <div className="p-4 bg-secondary-50 rounded-xl">
+                  <h4 className="font-semibold text-gray-900 mb-2">Career Guidance</h4>
+                  <p className="text-gray-700">{session.followup.careerGuidance}</p>
+                </div>
+              )}
+
+              {session.followup.selfLearning && (
+                <div className="p-4 bg-pink-50 rounded-xl">
+                  <h4 className="font-semibold text-gray-900 mb-2">What You Learned About Yourself</h4>
+                  <p className="text-gray-700">{session.followup.selfLearning}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Fallback: Patterns Overview (for backward compatibility) */}
+        {!session?.followup && session?.patterns && session.patterns.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Target className="w-6 h-6 text-primary-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Identified Patterns</h2>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               {session.patterns.map(pattern => (
                 <div
@@ -203,7 +283,7 @@ export default function LifeThemesResultsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900">{pattern.pattern_text}</h4>
                     {pattern.source === 'ai' && (
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">AI</span>
+                      <span className="px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded text-xs">AI</span>
                     )}
                   </div>
                   {pattern.pattern_description && (
@@ -213,7 +293,7 @@ export default function LifeThemesResultsPage() {
                     {pattern.related_questions.map(q => (
                       <span
                         key={q}
-                        className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs"
+                        className="flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs"
                       >
                         {QUESTION_ICONS[q]}
                         Q{q}
@@ -223,14 +303,12 @@ export default function LifeThemesResultsPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No patterns identified yet.</p>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Analysis Synthesis */}
         {getAnalysis('final_synthesis') && (
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+          <div className="bg-gradient-to-r from-primary-500 to-secondary-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
             <div className="flex items-center gap-3 mb-6">
               <Sparkles className="w-6 h-6" />
               <h2 className="text-2xl font-semibold">Final Synthesis</h2>
@@ -282,15 +360,20 @@ export default function LifeThemesResultsPage() {
             <li className="flex items-start gap-3 text-gray-700">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <span>
-                Your top life theme is <strong>{session?.themes?.[0]?.theme_name || 'yet to be discovered'}</strong>,
+                Your top life theme is <strong>{
+                  session?.followup?.themePriorities?.[0] ||
+                  session?.findings?.findings?.[0]?.theme ||
+                  session?.themes?.[0]?.theme_name ||
+                  'yet to be discovered'
+                }</strong>,
                 which represents a core part of your identity.
               </span>
             </li>
             <li className="flex items-start gap-3 text-gray-700">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <span>
-                You identified {session?.patterns?.length || 0} patterns across your responses,
-                showing recurring themes in your life experiences.
+                You identified {session?.findings?.findings?.length || session?.themes?.length || 0} life themes across your responses,
+                revealing recurring patterns in your life experiences.
               </span>
             </li>
             <li className="flex items-start gap-3 text-gray-700">
@@ -313,28 +396,28 @@ export default function LifeThemesResultsPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">What&apos;s Next?</h2>
           <div className="grid md:grid-cols-3 gap-4">
             <button
-              onClick={() => router.push('/discover/life-themes/themes')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-left"
+              onClick={() => router.push('/discover/life-themes/findings')}
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
             >
-              <Star className="w-6 h-6 text-indigo-600 mb-2" />
-              <h3 className="font-semibold text-gray-900">Refine Themes</h3>
-              <p className="text-sm text-gray-600">Edit or reorder your themes</p>
+              <Star className="w-6 h-6 text-primary-600 mb-2" />
+              <h3 className="font-semibold text-gray-900">Review Findings</h3>
+              <p className="text-sm text-gray-600">Edit themes and stories</p>
             </button>
 
             <button
               onClick={() => router.push('/discover/errc')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-left"
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
             >
-              <Target className="w-6 h-6 text-indigo-600 mb-2" />
+              <Target className="w-6 h-6 text-primary-600 mb-2" />
               <h3 className="font-semibold text-gray-900">ERRC Action Plan</h3>
               <p className="text-sm text-gray-600">Create behavior change actions</p>
             </button>
 
             <button
               onClick={() => router.push('/discover')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-left"
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
             >
-              <Home className="w-6 h-6 text-indigo-600 mb-2" />
+              <Home className="w-6 h-6 text-primary-600 mb-2" />
               <h3 className="font-semibold text-gray-900">Explore More</h3>
               <p className="text-sm text-gray-600">Discover other modules</p>
             </button>
@@ -344,16 +427,16 @@ export default function LifeThemesResultsPage() {
         {/* Navigation */}
         <div className="flex justify-between items-center">
           <button
-            onClick={() => router.push('/discover/life-themes/themes')}
+            onClick={() => router.push('/discover/life-themes/followup')}
             className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Themes
+            Back to Follow-up
           </button>
 
           <button
             onClick={() => router.push('/discover')}
-            className="flex items-center px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Continue to Dashboard
             <ArrowRight className="w-5 h-5 ml-2" />

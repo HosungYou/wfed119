@@ -1,22 +1,21 @@
 /**
  * Module Types and Interfaces for WFED119 LifeCraft
  *
- * PHASE 2 UPDATE (2026-01-06):
+ * PHASE 3 UPDATE (2026-01-29):
+ * - Reordered modules based on PDF worksheet structure
  * - Linear (순차적 강제) progression: 10 modules must be completed in sequence
+ * - Life Roles and Commitment module added (skeleton)
  * - Dreams integrated into Vision module as Step 4
- * - NEW: Mission Statement module (Part 2)
- * - NEW: Career Options module (Part 2)
- * - Full cross-module data integration with AI insights
  *
  * Module Order (Linear Progression):
  * Part 1 - Self-Discovery:
- *   1. Values → 2. Enneagram → 3. Life Themes (Strengths temporarily disabled)
- * Part 2 - Vision & Mission:
- *   4. Vision (includes Dreams Matrix) → 5. Mission Statement → 6. Career Options
- * Part 3 - Strategic Analysis:
- *   7. SWOT
+ *   1. Enneagram → 2. Life Themes → 3. Values
+ * Part 2 - Mission & Roles:
+ *   4. Mission Statement → 5. Life Roles & Commitment (NEW)
+ * Part 3 - Vision & Options:
+ *   6. Vision (includes Dreams Matrix) → 7. SWOT → 8. Career Options
  * Part 4 - Goal Setting:
- *   8. Goals → 9. ERRC
+ *   9. Goals → 10. ERRC
  */
 
 // ============================================================================
@@ -24,16 +23,17 @@
 // ============================================================================
 
 export type ModuleId =
-  | 'values'
-  | 'strengths'
   | 'enneagram'
   | 'life-themes'
+  | 'values'
+  | 'mission'
+  | 'life-roles'      // NEW: Life Roles & Commitment
   | 'vision'
-  | 'mission'         // NEW: Mission Statement
-  | 'career-options'  // NEW: Career Options
   | 'swot'
+  | 'career-options'
   | 'goals'
-  | 'errc';
+  | 'errc'
+  | 'strengths';      // DEPRECATED: kept for backward compatibility
 
 export type ModuleStatus =
   | 'not_started'
@@ -42,47 +42,48 @@ export type ModuleStatus =
 
 // Part grouping for UI display
 export type ModulePart =
-  | 'self-discovery'    // Part 1: Modules 1-4
-  | 'vision-mission'    // Part 2: Module 5
-  | 'strategic-analysis' // Part 3: Module 6
-  | 'goal-setting';     // Part 4: Modules 7-8
+  | 'self-discovery'      // Part 1: Enneagram, Life Themes, Values
+  | 'mission-roles'       // Part 2: Mission, Life Roles
+  | 'vision-options'      // Part 3: Vision, SWOT, Career Options
+  | 'goal-setting';       // Part 4: Goals, ERRC
 
 // ============================================================================
 // Module Order (Linear Progression - STRICT)
 // ============================================================================
 
 export const MODULE_ORDER: ModuleId[] = [
-  'values',         // 1: Part 1 - Self-Discovery
-  // 'strengths',   // TEMPORARILY DISABLED per Dr. Yoon feedback (2026-01-19)
-  'enneagram',      // 2: Part 1 - Self-Discovery (was 3)
-  'life-themes',    // 3: Part 1 - Self-Discovery (was 4)
-  'vision',         // 4: Part 2 - Vision & Mission (was 5)
-  'mission',        // 5: Part 2 - Mission Statement (was 6)
-  'career-options', // 6: Part 2 - Career Options (was 7)
-  'swot',           // 7: Part 3 - Strategic Analysis (was 8)
-  'goals',          // 8: Part 4 - Goal Setting (was 9)
-  'errc',           // 9: Part 4 - Action Optimization (was 10)
+  'enneagram',      // 1: Part 1 - Self-Discovery
+  'life-themes',    // 2: Part 1 - Self-Discovery
+  'values',         // 3: Part 1 - Self-Discovery
+  'mission',        // 4: Part 2 - Mission & Roles
+  'life-roles',     // 5: Part 2 - Mission & Roles (NEW)
+  'vision',         // 6: Part 3 - Vision & Options
+  'swot',           // 7: Part 3 - Vision & Options
+  'career-options', // 8: Part 3 - Vision & Options
+  'goals',          // 9: Part 4 - Goal Setting
+  'errc',           // 10: Part 4 - Action Optimization
 ];
 
 // Module to Part mapping
 export const MODULE_PARTS: Record<ModuleId, ModulePart> = {
-  'values': 'self-discovery',
-  'strengths': 'self-discovery',
   'enneagram': 'self-discovery',
   'life-themes': 'self-discovery',
-  'vision': 'vision-mission',
-  'mission': 'vision-mission',
-  'career-options': 'vision-mission',
-  'swot': 'strategic-analysis',
+  'values': 'self-discovery',
+  'mission': 'mission-roles',
+  'life-roles': 'mission-roles',
+  'vision': 'vision-options',
+  'swot': 'vision-options',
+  'career-options': 'vision-options',
   'goals': 'goal-setting',
   'errc': 'goal-setting',
+  'strengths': 'self-discovery',  // DEPRECATED
 };
 
 // Part display names (Korean)
 export const PART_NAMES: Record<ModulePart, { en: string; ko: string }> = {
   'self-discovery': { en: 'Self-Discovery', ko: '자기 발견' },
-  'vision-mission': { en: 'Vision & Mission', ko: '비전 & 미션' },
-  'strategic-analysis': { en: 'Strategic Analysis', ko: '전략 분석' },
+  'mission-roles': { en: 'Mission & Roles', ko: '미션 & 역할' },
+  'vision-options': { en: 'Vision & Options', ko: '비전 & 옵션' },
   'goal-setting': { en: 'Goal Setting', ko: '목표 설정' },
 };
 
@@ -125,33 +126,6 @@ export interface ModuleConfig {
 // ============================================================================
 
 export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
-  values: {
-    id: 'values',
-    name: 'Values Discovery',
-    nameKo: '가치관 발견',
-    description: 'Identify your terminal, instrumental, and work values',
-    descriptionKo: '당신의 궁극적 가치, 도구적 가치, 직업 가치를 발견합니다',
-    route: '/discover/values',
-    part: 'self-discovery',
-    order: 1, // First module (strengths temporarily disabled)
-    dependencies: [], // Values questionnaire doesn't need prior data
-    stages: ['terminal', 'instrumental', 'work'],
-    requiredForCompletion: ['terminal', 'instrumental', 'work'],
-    estimatedMinutes: 30,
-  },
-  strengths: {
-    id: 'strengths',
-    name: 'Strengths Assessment',
-    nameKo: '강점 발견',
-    description: 'Discover your unique strengths through AI conversation',
-    descriptionKo: 'AI 대화를 통해 당신만의 고유한 강점을 발견합니다',
-    route: '/discover/strengths',
-    part: 'self-discovery',
-    order: 0, // TEMPORARILY DISABLED - not in active module order
-    dependencies: [], // First module - no prerequisites
-    stages: ['conversation', 'analysis', 'summary'],
-    estimatedMinutes: 45,
-  },
   enneagram: {
     id: 'enneagram',
     name: 'Enneagram Assessment',
@@ -160,11 +134,8 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: '에니어그램 성격 유형을 진단합니다',
     route: '/discover/enneagram',
     part: 'self-discovery',
-    order: 2, // Updated: was 3, now 2 (strengths temporarily disabled)
-    dependencies: [
-      // Strengths dependency temporarily removed
-      { moduleId: 'values', required: true, dataFields: ['terminalTop3', 'instrumentalTop3', 'workTop3'] }
-    ],
+    order: 1, // First module
+    dependencies: [], // First module - no prerequisites
     stages: ['assessment', 'results'],
     estimatedMinutes: 20,
   },
@@ -176,15 +147,65 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: '커리어 구성 인터뷰를 통해 삶의 반복되는 주제를 발견합니다',
     route: '/discover/life-themes',
     part: 'self-discovery',
-    order: 3, // Updated: was 4, now 3 (strengths temporarily disabled)
+    order: 2,
     dependencies: [
       { moduleId: 'enneagram', required: true, dataFields: ['type', 'wing', 'instinct'] },
-      { moduleId: 'values', required: false, dataFields: ['top3Values'] },
-      // { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }, // Temporarily disabled
     ],
-    stages: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'patterns', 'themes', 'results'],
-    requiredForCompletion: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'themes'],
+    stages: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'findings', 'followup', 'results'],
+    requiredForCompletion: ['role-models', 'media', 'hobbies', 'mottos', 'subjects', 'memories', 'findings', 'followup'],
     estimatedMinutes: 60,
+  },
+  values: {
+    id: 'values',
+    name: 'Values Discovery',
+    nameKo: '가치관 발견',
+    description: 'Identify your terminal, instrumental, and work values',
+    descriptionKo: '당신의 궁극적 가치, 도구적 가치, 직업 가치를 발견합니다',
+    route: '/discover/values',
+    part: 'self-discovery',
+    order: 3,
+    dependencies: [
+      { moduleId: 'life-themes', required: true, dataFields: ['themes'] },
+      { moduleId: 'enneagram', required: true, dataFields: ['type', 'wing'] },
+    ],
+    stages: ['terminal', 'instrumental', 'work'],
+    requiredForCompletion: ['terminal', 'instrumental', 'work'],
+    estimatedMinutes: 30,
+  },
+  mission: {
+    id: 'mission',
+    name: 'Mission Statement',
+    nameKo: '사명 선언문',
+    description: 'Craft your personal mission statement based on your values and life themes',
+    descriptionKo: '가치관과 생애 주제를 바탕으로 개인 사명 선언문을 작성합니다',
+    route: '/discover/mission',
+    part: 'mission-roles',
+    order: 4,
+    dependencies: [
+      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] },
+      { moduleId: 'life-themes', required: true, dataFields: ['themes'] },
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
+    ],
+    stages: ['values-review', 'purpose-questions', 'mission-draft', 'mission-refinement'],
+    requiredForCompletion: ['values-review', 'purpose-questions', 'mission-draft'],
+    estimatedMinutes: 30,
+  },
+  'life-roles': {
+    id: 'life-roles',
+    name: 'Life Roles & Commitment',
+    nameKo: '생애 역할 & 헌신',
+    description: 'Define your life roles and commitment levels',
+    descriptionKo: '당신의 생애 역할과 헌신 수준을 정의합니다',
+    route: '/discover/life-roles',
+    part: 'mission-roles',
+    order: 5, // NEW module - skeleton
+    dependencies: [
+      { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
+      { moduleId: 'life-themes', required: false, dataFields: ['themes'] },
+    ],
+    stages: ['roles-definition', 'commitment-levels', 'role-balance', 'results'],
+    requiredForCompletion: ['roles-definition', 'commitment-levels'],
+    estimatedMinutes: 30,
   },
   vision: {
     id: 'vision',
@@ -193,56 +214,17 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     description: 'Craft your vision statement with integrated dreams matrix',
     descriptionKo: '꿈 매트릭스와 함께 비전 선언문을 작성합니다',
     route: '/discover/vision',
-    part: 'vision-mission',
-    order: 4, // Updated: was 5, now 4 (strengths temporarily disabled)
+    part: 'vision-options',
+    order: 6,
     dependencies: [
-      { moduleId: 'life-themes', required: true, dataFields: ['themes', 'patterns'] },
+      { moduleId: 'life-roles', required: true, dataFields: ['roles', 'commitments'] },
+      { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
+      { moduleId: 'life-themes', required: true, dataFields: ['themes'] },
       { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] },
-      // { moduleId: 'strengths', required: true, dataFields: ['topStrengths', 'strengthsSummary'] }, // Temporarily disabled
-      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] }
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
     ],
-    // Dreams is now Step 4 within Vision
     stages: ['time-horizon', 'future-imagery', 'core-aspirations', 'dreams-matrix', 'vision-statement'],
     requiredForCompletion: ['time-horizon', 'core-aspirations', 'dreams-matrix', 'vision-statement'],
-    estimatedMinutes: 45,
-  },
-  mission: {
-    id: 'mission',
-    name: 'Mission Statement',
-    nameKo: '사명 선언문',
-    description: 'Craft your personal mission statement based on your values and vision',
-    descriptionKo: '가치관과 비전을 바탕으로 개인 사명 선언문을 작성합니다',
-    route: '/discover/mission',
-    part: 'vision-mission',
-    order: 5, // Updated: was 6, now 5 (strengths temporarily disabled)
-    dependencies: [
-      { moduleId: 'vision', required: true, dataFields: ['visionStatement', 'coreAspirations'] },
-      { moduleId: 'values', required: true, dataFields: ['top3Values', 'valueThemes'] },
-      // { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }, // Temporarily disabled
-      { moduleId: 'life-themes', required: false, dataFields: ['themes'] }
-    ],
-    stages: ['values-review', 'purpose-questions', 'mission-draft', 'mission-refinement'],
-    requiredForCompletion: ['values-review', 'purpose-questions', 'mission-draft'],
-    estimatedMinutes: 30,
-  },
-  'career-options': {
-    id: 'career-options',
-    name: 'Career Options',
-    nameKo: '커리어 옵션',
-    description: 'Explore career options aligned with your values and vision',
-    descriptionKo: '가치관, 비전에 맞는 커리어 옵션을 탐색합니다',
-    route: '/discover/career-options',
-    part: 'vision-mission',
-    order: 6, // Updated: was 7, now 6 (strengths temporarily disabled)
-    dependencies: [
-      { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
-      { moduleId: 'vision', required: true, dataFields: ['visionStatement'] },
-      { moduleId: 'values', required: true, dataFields: ['workTop3'] },
-      // { moduleId: 'strengths', required: true, dataFields: ['topStrengths'] }, // Temporarily disabled
-      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] }
-    ],
-    stages: ['holland-code', 'career-exploration', 'career-research', 'career-comparison'],
-    requiredForCompletion: ['holland-code', 'career-exploration', 'career-comparison'],
     estimatedMinutes: 45,
   },
   swot: {
@@ -252,18 +234,37 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     description: 'Strategic self-analysis with AI-powered auto-fill and priority strategies',
     descriptionKo: 'AI 자동 입력과 우선순위 전략을 포함한 전략적 자기분석',
     route: '/discover/swot',
-    part: 'strategic-analysis',
-    order: 7, // Updated: was 8, now 7 (strengths temporarily disabled)
+    part: 'vision-options',
+    order: 7,
     dependencies: [
       { moduleId: 'vision', required: true, dataFields: ['visionStatement', 'dreams'] },
       { moduleId: 'values', required: true, dataFields: ['top3Values'] },
-      // { moduleId: 'strengths', required: true, dataFields: ['topStrengths'] }, // Temporarily disabled
       { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
-      { moduleId: 'life-themes', required: false, dataFields: ['themes'] }
+      { moduleId: 'life-themes', required: false, dataFields: ['themes'] },
     ],
     stages: ['analysis', 'strategy', 'prioritization', 'goals', 'action', 'reflection'],
     requiredForCompletion: ['analysis', 'strategy', 'prioritization'],
     estimatedMinutes: 60,
+  },
+  'career-options': {
+    id: 'career-options',
+    name: 'Career Options',
+    nameKo: '커리어 옵션',
+    description: 'Explore career options aligned with your values and vision',
+    descriptionKo: '가치관, 비전에 맞는 커리어 옵션을 탐색합니다',
+    route: '/discover/career-options',
+    part: 'vision-options',
+    order: 8,
+    dependencies: [
+      { moduleId: 'swot', required: true, dataFields: ['strategies', 'priorityStrategies'] },
+      { moduleId: 'vision', required: true, dataFields: ['visionStatement'] },
+      { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
+      { moduleId: 'values', required: true, dataFields: ['workTop3'] },
+      { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
+    ],
+    stages: ['holland-code', 'career-exploration', 'career-research', 'career-comparison'],
+    requiredForCompletion: ['holland-code', 'career-exploration', 'career-comparison'],
+    estimatedMinutes: 45,
   },
   goals: {
     id: 'goals',
@@ -273,12 +274,13 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: 'OKR 기반 역할 중심 목표 설정을 진행합니다',
     route: '/discover/goals',
     part: 'goal-setting',
-    order: 8, // Updated: was 9, now 8 (strengths temporarily disabled)
+    order: 9,
     dependencies: [
+      { moduleId: 'career-options', required: true, dataFields: ['topCareerChoices'] },
       { moduleId: 'swot', required: true, dataFields: ['strategies', 'priorityStrategies'] },
       { moduleId: 'vision', required: true, dataFields: ['visionStatement', 'timeHorizon'] },
       { moduleId: 'values', required: true, dataFields: ['top3Values'] },
-      // { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] } // Temporarily disabled
+      { moduleId: 'life-roles', required: false, dataFields: ['roles'] },
     ],
     stages: ['roles', 'objectives', 'key-results', 'actions', 'reflection'],
     requiredForCompletion: ['roles', 'objectives', 'key-results'],
@@ -292,16 +294,29 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     descriptionKo: '웰빙 휠 진단과 함께 전략적 인생 최적화를 실행합니다',
     route: '/discover/errc',
     part: 'goal-setting',
-    order: 9, // Updated: was 10, now 9 (strengths temporarily disabled)
+    order: 10,
     dependencies: [
       { moduleId: 'goals', required: true, dataFields: ['roles', 'objectives', 'keyResults'] },
       { moduleId: 'swot', required: true, dataFields: ['strategies', 'errc'] },
       { moduleId: 'values', required: false, dataFields: ['top3Values'] },
-      // { moduleId: 'strengths', required: false, dataFields: ['topStrengths'] }, // Temporarily disabled
     ],
     stages: ['wellbeing_before', 'canvas', 'actions', 'progress', 'journal', 'wellbeing_after', 'results'],
     requiredForCompletion: ['wellbeing_before', 'canvas', 'wellbeing_after'],
     estimatedMinutes: 60,
+  },
+  // DEPRECATED: kept for backward compatibility
+  strengths: {
+    id: 'strengths',
+    name: 'Strengths Assessment',
+    nameKo: '강점 발견',
+    description: 'Discover your unique strengths through AI conversation (DEPRECATED)',
+    descriptionKo: 'AI 대화를 통해 당신만의 고유한 강점을 발견합니다 (지원 중단)',
+    route: '/discover/strengths',
+    part: 'self-discovery',
+    order: 0, // DEPRECATED - not in active module order
+    dependencies: [],
+    stages: ['conversation', 'analysis', 'summary'],
+    estimatedMinutes: 45,
   },
 };
 
@@ -713,20 +728,53 @@ export interface CareerOptionsData {
 }
 
 // ============================================================================
+// Life Roles Data (NEW)
+// ============================================================================
+
+export interface LifeRolesData {
+  // Step 1: Roles Definition
+  roles: Array<{
+    id: string;
+    roleName: string;
+    roleDescription: string;
+    category: 'personal' | 'professional' | 'community' | 'health';
+    importance: 1 | 2 | 3 | 4 | 5;
+  }>;
+
+  // Step 2: Commitment Levels
+  commitments: Array<{
+    roleId: string;
+    currentTimePercentage: number;
+    desiredTimePercentage: number;
+    gapAnalysis: string;
+  }>;
+
+  // Step 3: Role Balance
+  balanceAssessment: {
+    currentBalance: 'balanced' | 'moderately_imbalanced' | 'severely_imbalanced';
+    suggestedAdjustments: string[];
+    notes: string;
+  };
+
+  completedAt?: string;
+}
+
+// ============================================================================
 // Module Data Map (All 10 Modules)
 // ============================================================================
 
 export interface ModuleDataMap {
-  values: ValuesData;
-  strengths: StrengthsData;
   enneagram: EnneagramData;
   'life-themes': LifeThemesData;
-  vision: VisionData;
+  values: ValuesData;
   mission: MissionData;
-  'career-options': CareerOptionsData;
+  'life-roles': LifeRolesData;
+  vision: VisionData;
   swot: SwotData;
+  'career-options': CareerOptionsData;
   goals: GoalSettingData;
   errc: ErrcData;
+  strengths: StrengthsData; // DEPRECATED
 }
 
 // ============================================================================

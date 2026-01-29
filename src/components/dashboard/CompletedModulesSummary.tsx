@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Heart, Target, User, Lightbulb, Eye, Grid3X3, CheckCircle2, Zap,
-  Flag, Briefcase, ChevronRight, ChevronDown, ChevronUp
+  Flag, Briefcase, ChevronRight, ChevronDown, ChevronUp, Users
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from '@/lib/i18n';
@@ -12,7 +12,7 @@ import {
   ModuleId, MODULE_ORDER, MODULE_CONFIGS, MODULE_PARTS, PART_NAMES,
   ValuesData, StrengthsData, EnneagramData, LifeThemesData,
   VisionData, SwotData, GoalSettingData, ErrcData,
-  MissionData, CareerOptionsData
+  MissionData, CareerOptionsData, LifeRolesData
 } from '@/lib/types/modules';
 
 // ============================================================================
@@ -34,29 +34,31 @@ interface CompletedModulesSummaryProps {
 // ============================================================================
 
 const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
-  values: Heart,
-  strengths: Target,
   enneagram: User,
   'life-themes': Lightbulb,
-  vision: Eye,
+  values: Heart,
   mission: Flag,
-  'career-options': Briefcase,
+  'life-roles': Users,
+  vision: Eye,
   swot: Grid3X3,
+  'career-options': Briefcase,
   goals: CheckCircle2,
   errc: Zap,
+  strengths: Target, // DEPRECATED
 };
 
 const MODULE_COLORS: Record<ModuleId, string> = {
-  values: 'text-rose-600 bg-rose-50',
-  strengths: 'text-blue-600 bg-blue-50',
   enneagram: 'text-teal-600 bg-teal-50',
   'life-themes': 'text-amber-600 bg-amber-50',
-  vision: 'text-purple-600 bg-purple-50',
+  values: 'text-rose-600 bg-rose-50',
   mission: 'text-fuchsia-600 bg-fuchsia-50',
-  'career-options': 'text-sky-600 bg-sky-50',
+  'life-roles': 'text-violet-600 bg-violet-50',
+  vision: 'text-purple-600 bg-purple-50',
   swot: 'text-orange-600 bg-orange-50',
+  'career-options': 'text-sky-600 bg-sky-50',
   goals: 'text-indigo-600 bg-indigo-50',
   errc: 'text-emerald-600 bg-emerald-50',
+  strengths: 'text-blue-600 bg-blue-50', // DEPRECATED
 };
 
 // ============================================================================
@@ -234,6 +236,34 @@ function CareerOptionsSummary({ data, language }: { data: CareerOptionsData | nu
   );
 }
 
+function LifeRolesSummary({ data, language }: { data: LifeRolesData | null; language: string }) {
+  if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
+
+  return (
+    <div className="space-y-2">
+      {data.roles && data.roles.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {data.roles.slice(0, 4).map((role, idx) => (
+            <span
+              key={idx}
+              className="px-2 py-0.5 text-xs bg-violet-100 text-violet-700 rounded-full"
+            >
+              {role.roleName}
+            </span>
+          ))}
+          {data.roles.length > 4 && (
+            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+              +{data.roles.length - 4} {language === 'ko' ? '더보기' : 'more'}
+            </span>
+          )}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">{language === 'ko' ? '역할이 정의되지 않았습니다.' : 'No roles defined.'}</p>
+      )}
+    </div>
+  );
+}
+
 function SwotSummary({ data, language }: { data: SwotData | null; language: string }) {
   if (!data) return <p className="text-gray-500 text-sm">{language === 'ko' ? '데이터 없음' : 'No data'}</p>;
 
@@ -344,6 +374,8 @@ function ModuleSummaryCard({
         return <VisionSummary data={data as VisionData} language={language} />;
       case 'mission':
         return <MissionSummary data={data as MissionData} language={language} />;
+      case 'life-roles':
+        return <LifeRolesSummary data={data as LifeRolesData} language={language} />;
       case 'career-options':
         return <CareerOptionsSummary data={data as CareerOptionsData} language={language} />;
       case 'swot':

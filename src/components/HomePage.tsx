@@ -17,11 +17,12 @@ import LanguageToggle from '@/components/LanguageToggle';
 /* =============================================================================
  * Terra Editorial Design - Journey Parts Configuration
  * Warm Earth Tones color scheme applied
+ * New module order: enneagram → life-themes → values → mission → life-roles → vision → swot → career-options → goals → errc
  * ============================================================================= */
 const JOURNEY_PARTS = [
   {
     id: 'self-discovery',
-    modules: ['values', 'strengths', 'enneagram', 'life-themes'] as ModuleId[],
+    modules: ['enneagram', 'life-themes', 'values'] as ModuleId[],
     icon: Compass,
     gradient: 'from-primary-500 to-primary-600',
     bgGradient: 'from-primary-50 to-primary-100/50',
@@ -30,9 +31,9 @@ const JOURNEY_PARTS = [
     iconBg: 'bg-primary-100',
   },
   {
-    id: 'vision-mission',
-    modules: ['vision', 'mission', 'career-options'] as ModuleId[],
-    icon: Eye,
+    id: 'mission-roles',
+    modules: ['mission', 'life-roles'] as ModuleId[],
+    icon: Target,
     gradient: 'from-secondary-500 to-secondary-600',
     bgGradient: 'from-secondary-50 to-secondary-100/50',
     borderColor: 'border-secondary-200',
@@ -40,8 +41,8 @@ const JOURNEY_PARTS = [
     iconBg: 'bg-secondary-100',
   },
   {
-    id: 'strategic-analysis',
-    modules: ['swot'] as ModuleId[],
+    id: 'vision-options',
+    modules: ['vision', 'swot', 'career-options'] as ModuleId[],
     icon: Mountain,
     gradient: 'from-accent-500 to-accent-600',
     bgGradient: 'from-accent-50 to-accent-100/50',

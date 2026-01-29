@@ -66,12 +66,22 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('session_id', ltSession.id);
 
+    // Extract findings from analysis (analysis_type = 'findings')
+    const findingsRecord = analysis?.find(a => a.analysis_type === 'findings');
+    const findings = findingsRecord?.content || null;
+
+    // Extract followup from analysis (analysis_type = 'followup')
+    const followupRecord = analysis?.find(a => a.analysis_type === 'followup');
+    const followup = followupRecord?.content || null;
+
     const fullSession: LifeThemesSessionFull = {
       ...ltSession,
       responses: responses || [],
       patterns: patterns || [],
       themes: themes || [],
       analysis: analysis || [],
+      findings,
+      followup,
     };
 
     return NextResponse.json(fullSession);

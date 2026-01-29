@@ -9,6 +9,8 @@ import type {
   AnalysisType,
   QuestionNumber,
   LifeThemesResponse,
+  FindingsData,
+  FindingEntry,
 } from '@/lib/types/lifeThemes';
 import { QUESTION_CONFIG } from '@/lib/types/lifeThemes';
 
@@ -163,6 +165,60 @@ export async function POST(req: NextRequest) {
       const suggestions = generateThemeSuggestions(patterns);
 
       return NextResponse.json({ suggestions });
+    }
+
+    if (action === 'findings') {
+      // Fetch all responses
+      const { data: responses } = await supabase
+        .from('life_themes_responses')
+        .select('*')
+        .eq('session_id', ltSession.id);
+
+      if (!responses || responses.length === 0) {
+        return NextResponse.json(
+          { error: 'No responses found to analyze' },
+          { status: 400 }
+        );
+      }
+
+      // Generate findings (themes + stories mapping)
+      const findingsEntries = generateFindings(responses);
+
+      // Store findings in analysis table
+      const findingsData: FindingsData = {
+        findings: findingsEntries,
+        aiGenerated: true,
+        userEdited: false,
+      };
+
+      // Upsert findings
+      const { data: existingFindings } = await supabase
+        .from('life_themes_analysis')
+        .select('id')
+        .eq('session_id', ltSession.id)
+        .eq('analysis_type', 'findings')
+        .single();
+
+      if (existingFindings) {
+        await supabase
+          .from('life_themes_analysis')
+          .update({
+            content: `${findingsEntries.length} themes identified`,
+            structured_data: findingsData,
+          })
+          .eq('id', existingFindings.id);
+      } else {
+        await supabase
+          .from('life_themes_analysis')
+          .insert({
+            session_id: ltSession.id,
+            analysis_type: 'findings',
+            content: `${findingsEntries.length} themes identified`,
+            structured_data: findingsData,
+          });
+      }
+
+      return NextResponse.json(findingsData);
     }
 
     if (action === 'analysis') {
@@ -373,6 +429,77 @@ function generateThemeSuggestions(patterns: Array<{ pattern_text: string; patter
   });
 
   return suggestions.slice(0, 5);
+}
+
+/**
+ * Generate findings (themes + relevant stories) from responses
+ * This replaces the patterns+themes two-step workflow with a single step
+ */
+function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
+  const findings: FindingEntry[] = [];
+
+  // Extract stories/content from each response
+  const stories: { question: QuestionNumber; text: string }[] = [];
+
+  responses.forEach(response => {
+    const q = response.question_number as QuestionNumber;
+    const data = response.response_data;
+
+    if (q === 6) {
+      // MemoriesData - fixed 3 fields
+      const memories = data as { memory1?: string; memory2?: string; memory3?: string };
+      if (memories.memory1) stories.push({ question: q, text: memories.memory1 });
+      if (memories.memory2) stories.push({ question: q, text: memories.memory2 });
+      if (memories.memory3) stories.push({ question: q, text: memories.memory3 });
+    } else if (q === 5) {
+      // SubjectsResponse
+      const subjects = data as { liked?: Array<{ subject: string; reasons: string }>; disliked?: Array<{ subject: string; reasons: string }> };
+      subjects.liked?.forEach(s => stories.push({ question: q, text: `${s.subject}: ${s.reasons}` }));
+      subjects.disliked?.forEach(s => stories.push({ question: q, text: `${s.subject}: ${s.reasons}` }));
+    } else if (Array.isArray(data)) {
+      data.forEach((item: Record<string, unknown>) => {
+        const values = Object.values(item).filter(v => typeof v === 'string').join(' - ');
+        if (values) stories.push({ question: q, text: values });
+      });
+    }
+  });
+
+  // Theme templates with keywords to match
+  const themeTemplates = [
+    { theme: 'Growth & Learning', keywords: ['learn', 'grow', 'develop', 'improve', 'education', 'study', 'knowledge'] },
+    { theme: 'Connection & Relationships', keywords: ['people', 'friend', 'family', 'community', 'together', 'social', 'help'] },
+    { theme: 'Achievement & Success', keywords: ['achieve', 'goal', 'success', 'accomplish', 'win', 'challenge', 'result'] },
+    { theme: 'Creativity & Expression', keywords: ['create', 'art', 'design', 'music', 'write', 'express', 'imagine'] },
+    { theme: 'Independence & Freedom', keywords: ['freedom', 'independent', 'own', 'self', 'choice', 'decide', 'control'] },
+    { theme: 'Security & Stability', keywords: ['safe', 'secure', 'stable', 'protect', 'comfort', 'trust', 'reliable'] },
+  ];
+
+  // Match stories to themes
+  themeTemplates.forEach(template => {
+    const matchedStories = stories.filter(story =>
+      template.keywords.some(kw => story.text.toLowerCase().includes(kw))
+    );
+
+    if (matchedStories.length > 0) {
+      findings.push({
+        theme: template.theme,
+        relevantStories: matchedStories.slice(0, 3).map(s => s.text.substring(0, 100)),
+      });
+    }
+  });
+
+  // Ensure we return at least 3 themes with placeholders if needed
+  if (findings.length < 3) {
+    const defaultThemes = ['Core Value', 'Life Pattern', 'Future Aspiration'];
+    for (let i = findings.length; i < 3; i++) {
+      findings.push({
+        theme: defaultThemes[i] || `Theme ${i + 1}`,
+        relevantStories: ['(Add relevant stories from your responses)'],
+      });
+    }
+  }
+
+  return findings.slice(0, 6); // Max 6 themes
 }
 
 /**

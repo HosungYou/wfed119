@@ -22,8 +22,8 @@ export type LifeThemesStep =
   | 'mottos'
   | 'subjects'
   | 'memories'
-  | 'patterns'
-  | 'themes'
+  | 'findings'
+  | 'followup'
   | 'results';
 
 export type QuestionNumber = 1 | 2 | 3 | 4 | 5 | 6;
@@ -44,7 +44,6 @@ export type AnalysisType =
 // Q1: Role Models
 export interface RoleModelEntry {
   name: string;
-  description: string;
   similarities: string;
   differences: string;
 }
@@ -52,21 +51,18 @@ export interface RoleModelEntry {
 // Q2: Media
 export interface MediaEntry {
   name: string;
-  type: 'magazine' | 'book' | 'tv_show' | 'youtube' | 'podcast' | 'other';
-  reasons: string;
+  why: string;
 }
 
 // Q3: Hobbies
 export interface HobbyEntry {
   hobby: string;
-  enjoyment_reasons: string;
+  why: string;
 }
 
 // Q4: Mottos
 export interface MottoEntry {
   motto: string;
-  source?: string;
-  meaning: string;
 }
 
 // Q5: Subjects
@@ -80,12 +76,32 @@ export interface SubjectsResponse {
   disliked: SubjectEntry[];
 }
 
-// Q6: Memories
-export interface MemoryEntry {
-  title: string;
-  content: string;
-  feelings: string;
-  age_range: string;
+// Q6: Memories (3 fixed memories)
+export interface MemoriesData {
+  memory1: string;
+  memory2: string;
+  memory3: string;
+}
+
+// Findings page (AI generates themes + stories mapping)
+export interface FindingEntry {
+  theme: string;
+  relevantStories: string[];
+}
+
+export interface FindingsData {
+  findings: FindingEntry[];
+  aiGenerated: boolean;
+  userEdited: boolean;
+}
+
+// Follow-up questions (no AI - user writes answers)
+export interface FollowUpData {
+  enneagramConnection: string;  // How themes relate to Enneagram
+  integrationNotes: string;     // Integration/modifications
+  themePriorities: string[];    // Ordered list of theme names
+  careerGuidance: string;       // How themes guide career
+  selfLearning: string;         // What you learned about yourself
 }
 
 // Union type for all response data types
@@ -95,7 +111,9 @@ export type ResponseData =
   | HobbyEntry[]
   | MottoEntry[]
   | SubjectsResponse
-  | MemoryEntry[];
+  | MemoriesData
+  | FindingsData
+  | FollowUpData;
 
 // ============================================================================
 // Database Entity Types (matching Supabase schema - snake_case)
@@ -166,6 +184,8 @@ export interface LifeThemesSessionFull extends LifeThemesSession {
   patterns: LifeThemesPattern[];
   themes: LifeTheme[];
   analysis: LifeThemesAnalysis[];
+  findings: FindingsData | null;
+  followup: FollowUpData | null;
 }
 
 export interface QuestionProgress {
@@ -385,8 +405,8 @@ export const LIFE_THEMES_STEPS: {
   { step: 'mottos', title: 'Mottos', titleKo: '좌우명', description: 'Phrases that resonate', questionNumber: 4 },
   { step: 'subjects', title: 'Subjects', titleKo: '과목', description: 'School subjects you liked/disliked', questionNumber: 5 },
   { step: 'memories', title: 'Memories', titleKo: '기억', description: 'Your earliest memories', questionNumber: 6 },
-  { step: 'patterns', title: 'Patterns', titleKo: '패턴', description: 'Discover recurring patterns' },
-  { step: 'themes', title: 'Themes', titleKo: '테마', description: 'Identify and rank your life themes' },
+  { step: 'findings', title: 'Findings', titleKo: '발견', description: 'AI-generated themes from your stories' },
+  { step: 'followup', title: 'Follow-up', titleKo: '추가 질문', description: 'Reflect on your themes' },
   { step: 'results', title: 'Results', titleKo: '결과', description: 'View your complete analysis' },
 ];
 
@@ -422,14 +442,6 @@ export const ANALYSIS_TYPE_LABELS: Record<AnalysisType, {
   },
 };
 
-export const MEDIA_TYPES: { value: MediaEntry['type']; label: string; labelKo: string }[] = [
-  { value: 'book', label: 'Book', labelKo: '책' },
-  { value: 'magazine', label: 'Magazine', labelKo: '잡지' },
-  { value: 'tv_show', label: 'TV Show', labelKo: 'TV 프로그램' },
-  { value: 'youtube', label: 'YouTube', labelKo: '유튜브' },
-  { value: 'podcast', label: 'Podcast', labelKo: '팟캐스트' },
-  { value: 'other', label: 'Other', labelKo: '기타' },
-];
 
 // ============================================================================
 // Validation and Helper Functions
@@ -447,7 +459,7 @@ export function getStepByQuestion(questionNumber: QuestionNumber): LifeThemesSte
 export function getNextStep(currentStep: LifeThemesStep): LifeThemesStep | null {
   const stepOrder: LifeThemesStep[] = [
     'role_models', 'media', 'hobbies', 'mottos', 'subjects', 'memories',
-    'patterns', 'themes', 'results'
+    'findings', 'followup', 'results'
   ];
   const currentIndex = stepOrder.indexOf(currentStep);
   if (currentIndex === -1 || currentIndex === stepOrder.length - 1) {
@@ -483,6 +495,28 @@ export function validateResponse(
     if (!data.liked || data.liked.length < 1) {
       errors.push('At least one liked subject is required');
     }
+  } else if (questionNumber === 6) {
+    // Special handling for memories (fixed 3 fields)
+    const data = responseData as MemoriesData;
+    if (!data.memory1?.trim()) {
+      errors.push('First memory is required');
+    }
+    if (!data.memory2?.trim()) {
+      errors.push('Second memory is required');
+    }
+    if (!data.memory3?.trim()) {
+      errors.push('Third memory is required');
+    }
+  } else if (questionNumber === 4) {
+    // Mottos - array of MottoEntry
+    const data = responseData as MottoEntry[];
+    if (!Array.isArray(data)) {
+      errors.push('Response must be an array');
+    } else if (data.length < config.minEntries) {
+      errors.push(`At least ${config.minEntries} entries required`);
+    } else if (data.length > config.maxEntries) {
+      errors.push(`Maximum ${config.maxEntries} entries allowed`);
+    }
   } else {
     // All other questions are arrays
     const data = responseData as unknown[];
@@ -501,7 +535,7 @@ export function validateResponse(
   };
 }
 
-export function canProceedToPatterns(
+export function canProceedToFindings(
   responses: Record<QuestionNumber, LifeThemesResponse | null>
 ): { canProceed: boolean; missingQuestions: QuestionNumber[] } {
   const required: QuestionNumber[] = [1, 2, 3, 4, 5, 6];
@@ -512,6 +546,9 @@ export function canProceedToPatterns(
     missingQuestions: missing,
   };
 }
+
+/** @deprecated Use canProceedToFindings instead */
+export const canProceedToPatterns = canProceedToFindings;
 
 export function countPatternsByQuestion(patterns: LifeThemesPattern[]): Record<QuestionNumber, number> {
   const counts: Record<QuestionNumber, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };

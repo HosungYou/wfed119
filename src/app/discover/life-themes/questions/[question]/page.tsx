@@ -4,10 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Loader2,
-  ArrowRight,
-  ArrowLeft,
-  Plus,
-  X,
   Save,
   Users,
   Tv,
@@ -15,11 +11,13 @@ import {
   Quote,
   BookOpen,
   Brain,
-  Trash2,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { TableInput, TableColumn } from '@/components/life-themes/TableInput';
 import {
   QUESTION_CONFIG,
   QuestionNumber,
@@ -29,10 +27,8 @@ import {
   MottoEntry,
   SubjectsResponse,
   SubjectEntry,
-  MemoryEntry,
+  MemoriesData,
   ResponseData,
-  MEDIA_TYPES,
-  getNextStep,
   getStepByQuestion,
 } from '@/lib/types/lifeThemes';
 
@@ -49,6 +45,7 @@ export default function QuestionPage() {
   const router = useRouter();
   const params = useParams();
   const questionNum = parseInt(params.question as string) as QuestionNumber;
+  const { language } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -103,22 +100,22 @@ export default function QuestionPage() {
   const initializeEmptyData = () => {
     switch (questionNum) {
       case 1:
-        setResponseData([{ name: '', description: '', similarities: '', differences: '' }] as RoleModelEntry[]);
+        setResponseData([{ name: '', similarities: '', differences: '' }] as RoleModelEntry[]);
         break;
       case 2:
-        setResponseData([{ name: '', type: 'book', reasons: '' }] as MediaEntry[]);
+        setResponseData([{ name: '', why: '' }] as MediaEntry[]);
         break;
       case 3:
-        setResponseData([{ hobby: '', enjoyment_reasons: '' }] as HobbyEntry[]);
+        setResponseData([{ hobby: '', why: '' }] as HobbyEntry[]);
         break;
       case 4:
-        setResponseData([{ motto: '', source: '', meaning: '' }] as MottoEntry[]);
+        setResponseData([{ motto: '' }] as MottoEntry[]);
         break;
       case 5:
-        setResponseData({ liked: [{ subject: '', reasons: '' }], disliked: [] } as SubjectsResponse);
+        setResponseData({ liked: [{ subject: '', reasons: '' }], disliked: [{ subject: '', reasons: '' }] } as SubjectsResponse);
         break;
       case 6:
-        setResponseData([{ title: '', content: '', feelings: '', age_range: '3-6' }] as MemoryEntry[]);
+        setResponseData({ memory1: '', memory2: '', memory3: '' } as MemoriesData);
         break;
     }
   };
@@ -150,13 +147,13 @@ export default function QuestionPage() {
       }
 
       if (proceed) {
-        // Navigate to next question or patterns
+        // Navigate to next question or findings
         if (questionNum < 6) {
           await updateStage(QUESTION_CONFIG[questionNum + 1 as QuestionNumber].step, (questionNum / 6) * 60);
           router.push(`/discover/life-themes/questions/${questionNum + 1}`);
         } else {
-          await updateStage('patterns', 60);
-          router.push('/discover/life-themes/patterns');
+          await updateStage('findings', 60);
+          router.push('/discover/life-themes/findings');
         }
       }
     } catch (err) {
@@ -167,82 +164,36 @@ export default function QuestionPage() {
     }
   };
 
-  // Type-specific handlers
-  const addEntry = () => {
-    if (!responseData) return;
+  // Table column configurations
+  const roleModelColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', labelKo: '이름', type: 'text', placeholder: 'Name of person', placeholderKo: '롤모델 이름', width: 'w-1/4' },
+    { key: 'similarities', label: 'Similarities', labelKo: '유사점', type: 'textarea', placeholder: 'How are you similar?', placeholderKo: '어떤 점이 비슷한가요?', width: 'flex-1' },
+    { key: 'differences', label: 'Differences', labelKo: '차이점', type: 'textarea', placeholder: 'How are you different?', placeholderKo: '어떻게 다른가요?', width: 'flex-1' },
+  ];
 
-    switch (questionNum) {
-      case 1:
-        setResponseData([...(responseData as RoleModelEntry[]), { name: '', description: '', similarities: '', differences: '' }]);
-        break;
-      case 2:
-        setResponseData([...(responseData as MediaEntry[]), { name: '', type: 'book', reasons: '' }]);
-        break;
-      case 3:
-        setResponseData([...(responseData as HobbyEntry[]), { hobby: '', enjoyment_reasons: '' }]);
-        break;
-      case 4:
-        setResponseData([...(responseData as MottoEntry[]), { motto: '', source: '', meaning: '' }]);
-        break;
-      case 6:
-        setResponseData([...(responseData as MemoryEntry[]), { title: '', content: '', feelings: '', age_range: '3-6' }]);
-        break;
-    }
-  };
+  const mediaColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', labelKo: '이름', type: 'text', placeholder: 'Book, show, channel name', placeholderKo: '책, 프로그램, 채널 이름', width: 'w-1/3' },
+    { key: 'why', label: 'Why?', labelKo: '이유', type: 'textarea', placeholder: 'Why do you enjoy it?', placeholderKo: '왜 좋아하나요?', width: 'flex-1' },
+  ];
 
-  const removeEntry = (index: number) => {
-    if (!responseData || !Array.isArray(responseData)) return;
-    setResponseData(responseData.filter((_, i) => i !== index));
-  };
+  const hobbyColumns: TableColumn[] = [
+    { key: 'hobby', label: 'Hobby', labelKo: '취미', type: 'text', placeholder: 'Activity name', placeholderKo: '활동 이름', width: 'w-1/3' },
+    { key: 'why', label: 'Why?', labelKo: '이유', type: 'textarea', placeholder: 'What brings you joy?', placeholderKo: '어떤 점이 즐거운가요?', width: 'flex-1' },
+  ];
 
-  const updateEntry = <T extends Record<string, unknown>>(index: number, field: keyof T, value: unknown) => {
-    if (!responseData) return;
-
-    if (questionNum === 5) {
-      // Handle subjects differently
-      return;
-    }
-
-    const newData = [...(responseData as T[])];
-    newData[index] = { ...newData[index], [field]: value };
-    setResponseData(newData as ResponseData);
-  };
-
-  // Question 5 specific handlers
-  const addSubject = (type: 'liked' | 'disliked') => {
-    if (questionNum !== 5 || !responseData) return;
-    const data = responseData as SubjectsResponse;
-    setResponseData({
-      ...data,
-      [type]: [...data[type], { subject: '', reasons: '' }],
-    });
-  };
-
-  const removeSubject = (type: 'liked' | 'disliked', index: number) => {
-    if (questionNum !== 5 || !responseData) return;
-    const data = responseData as SubjectsResponse;
-    setResponseData({
-      ...data,
-      [type]: data[type].filter((_, i) => i !== index),
-    });
-  };
-
-  const updateSubject = (type: 'liked' | 'disliked', index: number, field: keyof SubjectEntry, value: string) => {
-    if (questionNum !== 5 || !responseData) return;
-    const data = responseData as SubjectsResponse;
-    const newList = [...data[type]];
-    newList[index] = { ...newList[index], [field]: value };
-    setResponseData({ ...data, [type]: newList });
-  };
+  const subjectColumns: TableColumn[] = [
+    { key: 'subject', label: 'Subject', labelKo: '과목', type: 'text', placeholder: 'Subject name', placeholderKo: '과목 이름', width: 'w-1/3' },
+    { key: 'reasons', label: 'Reasons', labelKo: '이유', type: 'textarea', placeholder: 'Why?', placeholderKo: '이유', width: 'flex-1' },
+  ];
 
   if (!isValidQuestion) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
           <p className="text-gray-600">Invalid question number</p>
           <button
             onClick={() => router.push('/discover/life-themes')}
-            className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg"
+            className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg"
           >
             Go Back
           </button>
@@ -253,27 +204,33 @@ export default function QuestionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading question...</p>
         </div>
       </div>
     );
   }
 
+  const getTitle = () => language === 'ko' ? config!.titleKo : config!.title;
+  const getPrompt = () => language === 'ko' ? config!.promptKo : config!.prompt;
+  const getSubPrompt = () => language === 'ko' ? config!.subPromptKo : config!.subPrompt;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-500">Question {questionNum} of 6</span>
+            <span className="text-sm text-gray-500">
+              {language === 'ko' ? `질문 ${questionNum} / 6` : `Question ${questionNum} of 6`}
+            </span>
             <span className="text-sm text-gray-500">{Math.round((questionNum / 6) * 100)}%</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all"
+              className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 transition-all"
               style={{ width: `${(questionNum / 6) * 100}%` }}
             />
           </div>
@@ -281,12 +238,12 @@ export default function QuestionPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-4 shadow-lg text-white">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-2xl mb-4 shadow-lg text-white">
             {QUESTION_ICONS[questionNum]}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{config!.title}</h1>
-          <p className="text-lg text-gray-600 max-w-xl mx-auto">{config!.prompt}</p>
-          <p className="text-sm text-gray-500 mt-2">{config!.subPrompt}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{getTitle()}</h1>
+          <p className="text-lg text-gray-600 max-w-xl mx-auto">{getPrompt()}</p>
+          <p className="text-sm text-gray-500 mt-2">{getSubPrompt()}</p>
         </div>
 
         {/* Error Message */}
@@ -301,189 +258,64 @@ export default function QuestionPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           {/* Q1: Role Models */}
           {questionNum === 1 && responseData && (
-            <div className="space-y-6">
-              {(responseData as RoleModelEntry[]).map((entry, idx) => (
-                <div key={idx} className="p-4 border border-gray-200 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Role Model {idx + 1}</h3>
-                    {idx > 0 && (
-                      <button onClick={() => removeEntry(idx)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Name of the person you admire"
-                    value={entry.name}
-                    onChange={(e) => updateEntry<RoleModelEntry>(idx, 'name', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <textarea
-                    placeholder="Who are they? What makes them admirable?"
-                    value={entry.description}
-                    onChange={(e) => updateEntry<RoleModelEntry>(idx, 'description', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-24"
-                  />
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <textarea
-                      placeholder="How are you similar to them?"
-                      value={entry.similarities}
-                      onChange={(e) => updateEntry<RoleModelEntry>(idx, 'similarities', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-20"
-                    />
-                    <textarea
-                      placeholder="How are you different from them?"
-                      value={entry.differences}
-                      onChange={(e) => updateEntry<RoleModelEntry>(idx, 'differences', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-20"
-                    />
-                  </div>
-                </div>
-              ))}
-              {(responseData as RoleModelEntry[]).length < config!.maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Add Another Role Model
-                </button>
-              )}
-            </div>
+            <TableInput<RoleModelEntry>
+              columns={roleModelColumns}
+              data={responseData as RoleModelEntry[]}
+              onChange={(newData) => setResponseData(newData)}
+              minRows={config!.minEntries}
+              maxRows={config!.maxEntries}
+              language={language}
+              addButtonText="Add Another Role Model"
+              addButtonTextKo="롤모델 추가"
+              emptyRowTemplate={{ name: '', similarities: '', differences: '' }}
+            />
           )}
 
           {/* Q2: Media */}
           {questionNum === 2 && responseData && (
-            <div className="space-y-6">
-              {(responseData as MediaEntry[]).map((entry, idx) => (
-                <div key={idx} className="p-4 border border-gray-200 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Media {idx + 1}</h3>
-                    {idx > 0 && (
-                      <button onClick={() => removeEntry(idx)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Name of book, show, channel, etc."
-                      value={entry.name}
-                      onChange={(e) => updateEntry<MediaEntry>(idx, 'name', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <select
-                      value={entry.type}
-                      onChange={(e) => updateEntry<MediaEntry>(idx, 'type', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                    >
-                      {MEDIA_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <textarea
-                    placeholder="Why do you enjoy this? What draws you to it?"
-                    value={entry.reasons}
-                    onChange={(e) => updateEntry<MediaEntry>(idx, 'reasons', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-24"
-                  />
-                </div>
-              ))}
-              {(responseData as MediaEntry[]).length < config!.maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Add Another Media
-                </button>
-              )}
-            </div>
+            <TableInput<MediaEntry>
+              columns={mediaColumns}
+              data={responseData as MediaEntry[]}
+              onChange={(newData) => setResponseData(newData)}
+              minRows={config!.minEntries}
+              maxRows={config!.maxEntries}
+              language={language}
+              addButtonText="Add Another Media"
+              addButtonTextKo="미디어 추가"
+              emptyRowTemplate={{ name: '', why: '' }}
+            />
           )}
 
           {/* Q3: Hobbies */}
           {questionNum === 3 && responseData && (
-            <div className="space-y-6">
-              {(responseData as HobbyEntry[]).map((entry, idx) => (
-                <div key={idx} className="p-4 border border-gray-200 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Hobby {idx + 1}</h3>
-                    {idx > 0 && (
-                      <button onClick={() => removeEntry(idx)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="What is the hobby or activity?"
-                    value={entry.hobby}
-                    onChange={(e) => updateEntry<HobbyEntry>(idx, 'hobby', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <textarea
-                    placeholder="What aspects bring you joy? Why do you enjoy it?"
-                    value={entry.enjoyment_reasons}
-                    onChange={(e) => updateEntry<HobbyEntry>(idx, 'enjoyment_reasons', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-24"
-                  />
-                </div>
-              ))}
-              {(responseData as HobbyEntry[]).length < config!.maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Add Another Hobby
-                </button>
-              )}
-            </div>
+            <TableInput<HobbyEntry>
+              columns={hobbyColumns}
+              data={responseData as HobbyEntry[]}
+              onChange={(newData) => setResponseData(newData)}
+              minRows={config!.minEntries}
+              maxRows={config!.maxEntries}
+              language={language}
+              addButtonText="Add Another Hobby"
+              addButtonTextKo="취미 추가"
+              emptyRowTemplate={{ hobby: '', why: '' }}
+            />
           )}
 
           {/* Q4: Mottos */}
           {questionNum === 4 && responseData && (
-            <div className="space-y-6">
-              {(responseData as MottoEntry[]).map((entry, idx) => (
-                <div key={idx} className="p-4 border border-gray-200 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Motto {idx + 1}</h3>
-                    {idx > 0 && (
-                      <button onClick={() => removeEntry(idx)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    placeholder="The quote, phrase, or motto that resonates with you"
-                    value={entry.motto}
-                    onChange={(e) => updateEntry<MottoEntry>(idx, 'motto', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-20"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Source (optional) - where did you hear/read this?"
-                    value={entry.source || ''}
-                    onChange={(e) => updateEntry<MottoEntry>(idx, 'source', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <textarea
-                    placeholder="Why does this resonate with you? What does it mean to you?"
-                    value={entry.meaning}
-                    onChange={(e) => updateEntry<MottoEntry>(idx, 'meaning', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-24"
-                  />
-                </div>
-              ))}
-              {(responseData as MottoEntry[]).length < config!.maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Add Another Motto
-                </button>
-              )}
-            </div>
+            <TableInput<MottoEntry>
+              columns={[
+                { key: 'motto', label: 'Motto / Quote', labelKo: '좌우명 / 명언', type: 'textarea', placeholder: 'Your favorite phrase or motto', placeholderKo: '좋아하는 문구나 좌우명', width: 'flex-1' }
+              ]}
+              data={responseData as MottoEntry[]}
+              onChange={(newData) => setResponseData(newData)}
+              minRows={config!.minEntries}
+              maxRows={config!.maxEntries}
+              language={language}
+              addButtonText="Add Another Motto"
+              addButtonTextKo="좌우명 추가"
+              emptyRowTemplate={{ motto: '' }}
+            />
           )}
 
           {/* Q5: Subjects */}
@@ -491,76 +323,38 @@ export default function QuestionPage() {
             <div className="space-y-8">
               {/* Liked Subjects */}
               <div>
-                <h3 className="text-lg font-semibold text-green-700 mb-4">Subjects You Liked</h3>
-                <div className="space-y-4">
-                  {(responseData as SubjectsResponse).liked.map((entry, idx) => (
-                    <div key={idx} className="p-4 border border-green-200 bg-green-50 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-green-700">Liked Subject {idx + 1}</span>
-                        {idx > 0 && (
-                          <button onClick={() => removeSubject('liked', idx)} className="text-red-500">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Subject name"
-                        value={entry.subject}
-                        onChange={(e) => updateSubject('liked', idx, 'subject', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500"
-                      />
-                      <textarea
-                        placeholder="Why did you like this subject?"
-                        value={entry.reasons}
-                        onChange={(e) => updateSubject('liked', idx, 'reasons', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 h-20"
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => addSubject('liked')}
-                    className="w-full p-3 border-2 border-dashed border-green-300 rounded-xl text-green-600 hover:bg-green-50 flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" /> Add Liked Subject
-                  </button>
-                </div>
+                <h3 className="text-lg font-semibold text-green-700 mb-4">
+                  {language === 'ko' ? '좋아했던 과목' : 'Subjects You Liked'}
+                </h3>
+                <TableInput<SubjectEntry>
+                  columns={subjectColumns}
+                  data={(responseData as SubjectsResponse).liked}
+                  onChange={(newData) => setResponseData({ ...(responseData as SubjectsResponse), liked: newData })}
+                  minRows={1}
+                  maxRows={6}
+                  language={language}
+                  addButtonText="Add Liked Subject"
+                  addButtonTextKo="좋아한 과목 추가"
+                  emptyRowTemplate={{ subject: '', reasons: '' }}
+                />
               </div>
 
               {/* Disliked Subjects */}
               <div>
-                <h3 className="text-lg font-semibold text-red-700 mb-4">Subjects You Disliked</h3>
-                <div className="space-y-4">
-                  {(responseData as SubjectsResponse).disliked.map((entry, idx) => (
-                    <div key={idx} className="p-4 border border-red-200 bg-red-50 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-red-700">Disliked Subject {idx + 1}</span>
-                        <button onClick={() => removeSubject('disliked', idx)} className="text-red-500">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Subject name"
-                        value={entry.subject}
-                        onChange={(e) => updateSubject('disliked', idx, 'subject', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500"
-                      />
-                      <textarea
-                        placeholder="Why didn't you like this subject?"
-                        value={entry.reasons}
-                        onChange={(e) => updateSubject('disliked', idx, 'reasons', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 h-20"
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => addSubject('disliked')}
-                    className="w-full p-3 border-2 border-dashed border-red-300 rounded-xl text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" /> Add Disliked Subject
-                  </button>
-                </div>
+                <h3 className="text-lg font-semibold text-red-700 mb-4">
+                  {language === 'ko' ? '싫어했던 과목' : 'Subjects You Disliked'}
+                </h3>
+                <TableInput<SubjectEntry>
+                  columns={subjectColumns}
+                  data={(responseData as SubjectsResponse).disliked}
+                  onChange={(newData) => setResponseData({ ...(responseData as SubjectsResponse), disliked: newData })}
+                  minRows={0}
+                  maxRows={6}
+                  language={language}
+                  addButtonText="Add Disliked Subject"
+                  addButtonTextKo="싫어한 과목 추가"
+                  emptyRowTemplate={{ subject: '', reasons: '' }}
+                />
               </div>
             </div>
           )}
@@ -568,56 +362,39 @@ export default function QuestionPage() {
           {/* Q6: Memories */}
           {questionNum === 6 && responseData && (
             <div className="space-y-6">
-              {(responseData as MemoryEntry[]).map((entry, idx) => (
-                <div key={idx} className="p-4 border border-gray-200 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Memory {idx + 1}</h3>
-                    {idx > 0 && (
-                      <button onClick={() => removeEntry(idx)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Give this memory a title"
-                      value={entry.title}
-                      onChange={(e) => updateEntry<MemoryEntry>(idx, 'title', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <select
-                      value={entry.age_range}
-                      onChange={(e) => updateEntry<MemoryEntry>(idx, 'age_range', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="3-6">Ages 3-6</option>
-                      <option value="younger">Younger than 3</option>
-                      <option value="older">Older than 6</option>
-                    </select>
-                  </div>
-                  <textarea
-                    placeholder="Describe the memory in detail. What happened?"
-                    value={entry.content}
-                    onChange={(e) => updateEntry<MemoryEntry>(idx, 'content', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-32"
-                  />
-                  <textarea
-                    placeholder="What feelings do you remember having? How did you feel?"
-                    value={entry.feelings}
-                    onChange={(e) => updateEntry<MemoryEntry>(idx, 'feelings', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 h-20"
-                  />
-                </div>
-              ))}
-              {(responseData as MemoryEntry[]).length < config!.maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Add Another Memory
-                </button>
-              )}
+              <div>
+                <label className="block text-lg font-semibold text-gray-900 mb-2">
+                  {language === 'ko' ? '6.1 첫 번째 기억' : '6.1 First Memory'}
+                </label>
+                <textarea
+                  value={(responseData as MemoriesData).memory1}
+                  onChange={(e) => setResponseData({ ...(responseData as MemoriesData), memory1: e.target.value })}
+                  placeholder={language === 'ko' ? '첫 번째 어린 시절 기억을 자세히 적어주세요...' : 'Describe your first early memory in detail...'}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 h-32"
+                />
+              </div>
+              <div>
+                <label className="block text-lg font-semibold text-gray-900 mb-2">
+                  {language === 'ko' ? '6.2 두 번째 기억' : '6.2 Second Memory'}
+                </label>
+                <textarea
+                  value={(responseData as MemoriesData).memory2}
+                  onChange={(e) => setResponseData({ ...(responseData as MemoriesData), memory2: e.target.value })}
+                  placeholder={language === 'ko' ? '두 번째 어린 시절 기억을 자세히 적어주세요...' : 'Describe your second early memory in detail...'}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 h-32"
+                />
+              </div>
+              <div>
+                <label className="block text-lg font-semibold text-gray-900 mb-2">
+                  {language === 'ko' ? '6.3 세 번째 기억' : '6.3 Third Memory'}
+                </label>
+                <textarea
+                  value={(responseData as MemoriesData).memory3}
+                  onChange={(e) => setResponseData({ ...(responseData as MemoriesData), memory3: e.target.value })}
+                  placeholder={language === 'ko' ? '세 번째 어린 시절 기억을 자세히 적어주세요...' : 'Describe your third early memory in detail...'}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 h-32"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -635,7 +412,10 @@ export default function QuestionPage() {
             className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ChevronLeft className="w-5 h-5 mr-2" />
-            {questionNum === 1 ? 'Back to Overview' : 'Previous Question'}
+            {questionNum === 1
+              ? (language === 'ko' ? '개요로 돌아가기' : 'Back to Overview')
+              : (language === 'ko' ? '이전 질문' : 'Previous Question')
+            }
           </button>
 
           <div className="flex gap-3">
@@ -645,16 +425,19 @@ export default function QuestionPage() {
               className="flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <Save className="w-5 h-5 mr-2" />
-              Save Progress
+              {language === 'ko' ? '진행상황 저장' : 'Save Progress'}
             </button>
 
             <button
               onClick={() => handleSave(true)}
               disabled={saving}
-              className="flex items-center px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+              className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
-              {questionNum === 6 ? 'Continue to Patterns' : 'Next Question'}
+              {questionNum === 6
+                ? (language === 'ko' ? '발견으로 계속' : 'Continue to Findings')
+                : (language === 'ko' ? '다음 질문' : 'Next Question')
+              }
               <ChevronRight className="w-5 h-5 ml-2" />
             </button>
           </div>

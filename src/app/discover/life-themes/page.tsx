@@ -25,8 +25,8 @@ interface ModuleProgress {
     currentStep: string;
     progress: number;
     completedQuestions: QuestionNumber[];
-    hasPatterns: boolean;
-    hasThemes: boolean;
+    hasFindings: boolean;
+    hasFollowUp: boolean;
   };
 }
 
@@ -46,8 +46,8 @@ const STEP_ROUTES: Record<string, string> = {
   mottos: '/discover/life-themes/questions/4',
   subjects: '/discover/life-themes/questions/5',
   memories: '/discover/life-themes/questions/6',
-  patterns: '/discover/life-themes/patterns',
-  themes: '/discover/life-themes/themes',
+  findings: '/discover/life-themes/findings',
+  followup: '/discover/life-themes/followup',
   results: '/discover/life-themes/results',
 };
 
@@ -82,8 +82,8 @@ export default function LifeThemesLanding() {
           currentStep: data.current_step || 'role_models',
           progress: calculateProgress(data.current_step, completedQuestions),
           completedQuestions,
-          hasPatterns: data.patterns?.length > 0,
-          hasThemes: data.themes?.length > 0,
+          hasFindings: data.findings?.findings?.length > 0,
+          hasFollowUp: !!data.followup,
         },
       };
 
@@ -98,8 +98,8 @@ export default function LifeThemesLanding() {
   function calculateProgress(step: string, completedQuestions: QuestionNumber[]): number {
     const questionProgress = (completedQuestions.length / 6) * 60;
     const stepProgress = {
-      patterns: 70,
-      themes: 85,
+      findings: 70,
+      followup: 85,
       results: 100,
     };
     if (step in stepProgress) {
@@ -119,9 +119,9 @@ export default function LifeThemesLanding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading module status...</p>
         </div>
       </div>
@@ -129,11 +129,11 @@ export default function LifeThemesLanding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-2xl mb-6 shadow-lg">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -148,7 +148,7 @@ export default function LifeThemesLanding() {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">About This Module</h2>
 
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 mb-6">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl p-6 mb-6">
             <p className="text-gray-700 leading-relaxed">
               Based on <strong>Mark Savickas&apos; Career Construction Interview</strong>, this module guides you through
               6 carefully designed questions that reveal your core life themes. By reflecting on your role models,
@@ -169,12 +169,12 @@ export default function LifeThemesLanding() {
                   className={`p-4 rounded-xl border-2 transition-all ${
                     isCompleted
                       ? 'border-green-300 bg-green-50'
-                      : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                      : 'border-gray-200 hover:border-primary-300 hover:bg-primary-50'
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`p-2 rounded-lg ${
-                      isCompleted ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-indigo-600'
+                      isCompleted ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-primary-600'
                     }`}>
                       {QUESTION_ICONS[num]}
                     </div>
@@ -202,7 +202,7 @@ export default function LifeThemesLanding() {
                 <div key={stepConfig.step} className="flex items-center">
                   <div className={`
                     px-3 py-1.5 rounded-full text-sm font-medium transition-all
-                    ${isActive ? 'bg-indigo-600 text-white' :
+                    ${isActive ? 'bg-primary-600 text-white' :
                       isCompleted ? 'bg-green-100 text-green-700' :
                       'bg-gray-100 text-gray-500'}
                   `}>
@@ -224,7 +224,7 @@ export default function LifeThemesLanding() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <OverviewCard
-              icon={<Brain className="w-8 h-8 text-indigo-600" />}
+              icon={<Brain className="w-8 h-8 text-primary-600" />}
               title="Deep Self-Reflection"
               description="Explore your admired figures, interests, memories, and values through guided questions"
             />
@@ -241,7 +241,7 @@ export default function LifeThemesLanding() {
           </div>
 
           {/* Learning Objectives */}
-          <div className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6">
+          <div className="mt-8 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Learning Objectives</h3>
             <ul className="space-y-2 text-gray-700">
               <li className="flex items-start">
@@ -267,7 +267,7 @@ export default function LifeThemesLanding() {
             <div className="relative">
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-primary-500 to-secondary-600 transition-all duration-500"
                   style={{ width: `${moduleProgress.lifeThemes.progress}%` }}
                 />
               </div>
@@ -300,7 +300,7 @@ export default function LifeThemesLanding() {
         <div className="text-center">
           <button
             onClick={handleStartOrContinue}
-            className="inline-flex items-center px-8 py-4 rounded-xl font-semibold text-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-xl hover:scale-105 transition-all duration-200 shadow-lg"
+            className="inline-flex items-center px-8 py-4 rounded-xl font-semibold text-lg bg-gradient-to-r from-primary-500 to-secondary-600 text-white hover:shadow-xl hover:scale-105 transition-all duration-200 shadow-lg"
           >
             {moduleProgress?.lifeThemes.exists ? 'Continue Discovery' : 'Start Discovery'}
             <ArrowRight className="ml-2 w-6 h-6" />

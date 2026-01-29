@@ -5,6 +5,8 @@ import type {
   UpdateLifeThemesSessionRequest,
   LifeThemesSessionFull,
   QuestionNumber,
+  FindingsData,
+  FollowUpData,
 } from '@/lib/types/lifeThemes';
 
 /**
@@ -67,12 +69,14 @@ export async function GET(req: NextRequest) {
       .eq('session_id', ltSession.id);
 
     // Extract findings from analysis (analysis_type = 'findings')
+    // BUG FIX: Use structured_data (JSONB) instead of content (string summary)
     const findingsRecord = analysis?.find(a => a.analysis_type === 'findings');
-    const findings = findingsRecord?.content || null;
+    const findings = (findingsRecord?.structured_data as FindingsData | null) || null;
 
     // Extract followup from analysis (analysis_type = 'followup')
+    // BUG FIX: Use structured_data (JSONB) instead of content (string summary)
     const followupRecord = analysis?.find(a => a.analysis_type === 'followup');
-    const followup = followupRecord?.content || null;
+    const followup = (followupRecord?.structured_data as FollowUpData | null) || null;
 
     const fullSession: LifeThemesSessionFull = {
       ...ltSession,

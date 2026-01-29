@@ -200,83 +200,104 @@ export default function FindingsPage() {
           </div>
         )}
 
-        {/* Findings Table */}
+        {/* Findings Table - VS Diverge Enhanced Design */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-1/3">
-                  {language === 'ko' ? '테마' : 'Theme'}
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                  {language === 'ko' ? '관련 스토리' : 'Relevant Stories'}
-                </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-24">
-                  {language === 'ko' ? '편집' : 'Edit'}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {findings.map((finding, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors">
-                  {editingIndex === index && editForm ? (
-                    <>
-                      <td className="px-6 py-4">
-                        <input
-                          type="text"
-                          value={editForm.theme}
-                          onChange={(e) => setEditForm({ ...editForm, theme: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <textarea
-                          value={editForm.relevantStories.join('\n')}
-                          onChange={(e) => setEditForm({
-                            ...editForm,
-                            relevantStories: e.target.value.split('\n').filter(s => s.trim())
-                          })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 h-24"
-                          placeholder={language === 'ko' ? '각 스토리를 새 줄에 입력' : 'Enter each story on a new line'}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-2">
-                          <button onClick={saveEdit} className="p-2 text-green-600 hover:bg-green-50 rounded-lg">
-                            <Check className="w-5 h-5" />
-                          </button>
-                          <button onClick={cancelEditing} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-6 py-4">
-                        <span className="font-medium text-gray-900">{finding.theme}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <ul className="list-disc list-inside space-y-1">
-                          {finding.relevantStories.map((story, i) => (
-                            <li key={i} className="text-gray-600 text-sm">{story}</li>
-                          ))}
-                        </ul>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => startEditing(index)}
-                          className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </>
-                  )}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-1/3">
+                    {language === 'ko' ? '테마' : 'Theme'}
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    {language === 'ko' ? '관련 스토리' : 'Relevant Stories'}
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-24">
+                    {language === 'ko' ? '편집' : 'Edit'}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {findings.map((finding, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gradient-to-r hover:from-primary-50/30 hover:to-transparent transition-all duration-500 group animate-fade-in-up-stagger"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    {editingIndex === index && editForm ? (
+                      <>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.theme}
+                            onChange={(e) => setEditForm({ ...editForm, theme: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <textarea
+                            value={editForm.relevantStories.join('\n')}
+                            onChange={(e) => setEditForm({
+                              ...editForm,
+                              relevantStories: e.target.value.split('\n').filter(s => s.trim())
+                            })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 h-24"
+                            placeholder={language === 'ko' ? '각 스토리를 새 줄에 입력' : 'Enter each story on a new line'}
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button onClick={saveEdit} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all hover:scale-110">
+                              <Check className="w-5 h-5" />
+                            </button>
+                            <button onClick={cancelEditing} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all hover:scale-110">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-5 relative">
+                          {/* Rank badge */}
+                          <div className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                            {index + 1}
+                          </div>
+
+                          <span className="font-semibold text-gray-900 ml-10 text-lg relative inline-block">
+                            {finding.theme}
+                            {/* Animated underline */}
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-secondary-600 group-hover:w-full transition-all duration-500" />
+                          </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <ul className="space-y-2">
+                            {finding.relevantStories.map((story, i) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-2 text-gray-600 text-sm leading-relaxed"
+                              >
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+                                {story}
+                              </li>
+                            ))}
+                          </ul>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          <button
+                            onClick={() => startEditing(index)}
+                            className="p-2.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all hover:scale-110"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {findings.length === 0 && !generating && (
             <div className="text-center py-12">

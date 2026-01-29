@@ -202,37 +202,73 @@ export default function LifeThemesLanding() {
             </p>
           </div>
 
-          {/* 6 Questions Overview */}
-          <h3 className="font-semibold text-gray-900 mb-4">The 6 Questions</h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {([1, 2, 3, 4, 5, 6] as QuestionNumber[]).map((num) => {
-              const config = QUESTION_CONFIG[num];
-              const isCompleted = moduleProgress?.lifeThemes.completedQuestions.includes(num);
+          {/* 6 Questions Overview - VS Diverge Design with Parallax Depth */}
+          <h3 className="font-semibold text-gray-900 mb-4">
+            {language === 'en' ? 'The 6 Questions' : '6가지 질문'}
+          </h3>
+          <div className="relative mb-6">
+            {/* Parallax depth layers - Ambient floating elements */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute top-10 right-10 w-32 h-32 bg-primary-200/20 rounded-full blur-3xl animate-float" />
+              <div className="absolute bottom-10 left-10 w-40 h-40 bg-secondary-200/20 rounded-full blur-3xl animate-float-delayed" />
+            </div>
 
-              return (
-                <div
-                  key={num}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    isCompleted
-                      ? 'border-green-300 bg-green-50'
-                      : 'border-gray-200 hover:border-primary-300 hover:bg-primary-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`p-2 rounded-lg ${
-                      isCompleted ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-primary-600'
-                    }`}>
-                      {QUESTION_ICONS[num]}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900">{config.title}</span>
-                      {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+            {/* Asymmetric masonry-style grid */}
+            <div className="grid grid-cols-12 gap-4 relative">
+              {([1, 2, 3, 4, 5, 6] as QuestionNumber[]).map((num, idx) => {
+                const config = QUESTION_CONFIG[num];
+                const isCompleted = moduleProgress?.lifeThemes.completedQuestions.includes(num);
+
+                // Asymmetric column spans: 1,2 = 6 cols, 3,4 = 4 cols, 5,6 = 6 cols
+                const colSpan = idx === 2 || idx === 3 ? 'col-span-12 md:col-span-4' : 'col-span-12 md:col-span-6';
+
+                return (
+                  <div
+                    key={num}
+                    className={`${colSpan} group relative animate-fade-in-up-stagger`}
+                    style={{
+                      animationDelay: `${idx * 100}ms`,
+                    }}
+                  >
+                    <div className={`
+                      relative p-5 rounded-2xl border-2 transition-all duration-500
+                      hover:scale-[1.02] hover:rotate-[-0.5deg]
+                      ${isCompleted
+                        ? 'border-green-300 bg-green-50 shadow-[0_8px_30px_rgba(74,222,128,0.15)]'
+                        : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50 hover:shadow-[0_8px_30px_rgba(226,107,66,0.1)]'
+                      }
+                    `}>
+                      {/* Ambient glow on hover */}
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-200/0 to-secondary-200/0 group-hover:from-primary-200/20 group-hover:to-secondary-200/10 transition-all duration-500 pointer-events-none" />
+
+                      <div className="relative flex items-start gap-4">
+                        {/* Icon with micro-interaction */}
+                        <div className={`
+                          p-3 rounded-xl transition-all duration-300
+                          group-hover:rotate-[-8deg] group-hover:scale-110
+                          ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-primary-100 text-primary-600'}
+                        `}>
+                          {QUESTION_ICONS[num]}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-gray-900 text-lg">{config.title}</span>
+                            {isCompleted && (
+                              <CheckCircle2 className="w-5 h-5 text-green-600 animate-scale-in" />
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 leading-relaxed">{config.prompt}</p>
+                        </div>
+                      </div>
+
+                      {/* Progress indicator dot */}
+                      <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-primary-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">{config.prompt}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           {/* Journey Steps */}

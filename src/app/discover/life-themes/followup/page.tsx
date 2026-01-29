@@ -203,23 +203,41 @@ export default function FollowUpPage() {
             </div>
           ))}
 
-          {/* Question 3 - Theme Priority (Drag & Drop) */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          {/* Question 3 - Theme Priority (VS Diverge Glassmorphic Drag & Drop) */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-white/50">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {language === 'ko' ? '3. 테마 우선순위' : '3. Theme Priorities'}
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-6">
               {language === 'ko'
                 ? '테마를 드래그하여 중요도 순으로 정렬하세요 (위가 가장 중요)'
                 : 'Drag themes to prioritize them (top = most important)'}
             </p>
-            <div className="space-y-2">
+
+            <div className="space-y-3 relative">
+              {/* Drag zone indicator */}
+              <div className="absolute inset-0 border-2 border-dashed border-primary-200 rounded-xl opacity-0 transition-opacity pointer-events-none" id="drag-zone" />
+
               {formData.themePriorities.map((theme, index) => (
                 <div
                   key={theme}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200 cursor-move hover:bg-primary-50 hover:border-primary-200 transition-colors"
+                  className={`
+                    relative flex items-center gap-4 p-4 rounded-xl border-2 cursor-move
+                    transition-all duration-300 group glow-on-drag
+                    ${index === 0 ? 'bg-gradient-to-r from-amber-50 to-amber-100 border-amber-300 shadow-[0_4px_20px_rgba(251,191,36,0.3)]' :
+                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300 shadow-[0_4px_20px_rgba(156,163,175,0.2)]' :
+                      index === 2 ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-[0_4px_20px_rgba(251,146,60,0.2)]' :
+                      'bg-gradient-to-r from-white to-gray-50 border-gray-200'}
+                    hover:scale-[1.02] hover:shadow-[0_8px_30px_rgba(226,107,66,0.15)]
+                  `}
                   draggable
-                  onDragStart={(e) => e.dataTransfer.setData('text/plain', index.toString())}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', index.toString());
+                    e.currentTarget.classList.add('opacity-50');
+                  }}
+                  onDragEnd={(e) => {
+                    e.currentTarget.classList.remove('opacity-50');
+                  }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -227,11 +245,32 @@ export default function FollowUpPage() {
                     moveTheme(fromIndex, index);
                   }}
                 >
-                  <GripVertical className="w-5 h-5 text-gray-400" />
-                  <span className="w-8 h-8 flex items-center justify-center bg-primary-100 text-primary-700 rounded-full text-sm font-semibold">
+                  {/* Ambient glow effect */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary-200/0 via-primary-200/0 to-secondary-200/0 group-hover:from-primary-200/20 group-hover:via-secondary-200/10 group-hover:to-primary-200/20 transition-all duration-500 pointer-events-none" />
+
+                  <GripVertical className="w-6 h-6 text-gray-400 group-hover:text-primary-600 transition-colors relative z-10" />
+
+                  {/* Priority badge */}
+                  <span className={`
+                    relative z-10 w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold shadow-md
+                    ${index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' :
+                      index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white' :
+                      index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
+                      'bg-gradient-to-br from-primary-400 to-primary-600 text-white'}
+                  `}>
                     {index + 1}
                   </span>
-                  <span className="flex-1 font-medium text-gray-900">{theme}</span>
+
+                  <span className="flex-1 font-semibold text-gray-900 relative z-10 text-lg">
+                    {theme}
+                  </span>
+
+                  {/* Medal icons for top 3 */}
+                  {index < 3 && (
+                    <span className="relative z-10 text-2xl">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

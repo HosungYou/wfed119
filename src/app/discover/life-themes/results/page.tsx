@@ -49,15 +49,51 @@ const QUESTION_ICONS: Record<QuestionNumber, React.ReactNode> = {
   6: <Brain className="w-5 h-5" />,
 };
 
+// Confetti colors matching Terra Editorial Design
+const CONFETTI_COLORS = ['#e26b42', '#889c5c', '#f5b89d', '#cbba96', '#d04f2a'];
+
 export default function LifeThemesResultsPage() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<LifeThemesSessionFull | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const { completeModule } = useModuleProgress('life-themes');
+
+  // Confetti celebration effect on page load
+  useEffect(() => {
+    if (!loading && session) {
+      setShowConfetti(true);
+
+      // Create confetti particles
+      const confettiCount = 50;
+      const confettiElements: HTMLDivElement[] = [];
+
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-particle';
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+        confetti.style.backgroundColor = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        document.body.appendChild(confetti);
+        confettiElements.push(confetti);
+      }
+
+      // Clean up confetti after animation
+      const timeout = setTimeout(() => {
+        confettiElements.forEach(el => el.remove());
+        setShowConfetti(false);
+      }, 3000);
+
+      return () => {
+        clearTimeout(timeout);
+        confettiElements.forEach(el => el.remove());
+      };
+    }
+  }, [loading, session]);
 
   async function downloadAsImage() {
     if (!resultsRef.current) return;
@@ -190,15 +226,28 @@ export default function LifeThemesResultsPage() {
 
         {/* Results Content - Wrapped for Image Export */}
         <div ref={resultsRef} className="bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-2xl p-4">
-          {/* Header */}
+          {/* Header with VS Diverge Celebration Animation */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full mb-6 shadow-lg transform hover:scale-105 transition-transform">
-              <Trophy className="w-10 h-10 text-white" />
+            {/* Animated Trophy with Pulsing Rings */}
+            <div className="relative inline-flex items-center justify-center mb-6">
+              {/* Pulsing rings */}
+              <div className="absolute w-20 h-20 rounded-full bg-amber-400/20 animate-ping" />
+              <div className="absolute w-24 h-24 rounded-full bg-amber-400/10 animate-pulse-ring" />
+
+              {/* Trophy */}
+              <div className="relative w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full shadow-2xl flex items-center justify-center animate-bounce-slow">
+                <Trophy className="w-10 h-10 text-white animate-wiggle" />
+
+                {/* Sparkles */}
+                <div className="absolute -top-2 -right-2 w-3 h-3 bg-yellow-300 rounded-full animate-ping" />
+                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full animate-ping animation-delay-500" />
+              </div>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+
+            <h1 className="text-4xl font-bold text-gray-900 mb-4 animate-fade-in-up-stagger">
               {language === 'en' ? 'Your Life Themes Discovered!' : '당신의 생애 주제가 발견되었습니다!'}
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in-up-stagger animation-delay-200">
               {language === 'en'
                 ? 'You\'ve completed the Career Construction Interview and uncovered your core life themes'
                 : '커리어 구성 인터뷰를 완료하고 핵심 생애 주제를 발견했습니다'}
@@ -238,8 +287,78 @@ export default function LifeThemesResultsPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <Star className="w-6 h-6 text-amber-500" />
-            <h2 className="text-2xl font-semibold text-gray-900">Your Core Life Themes</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {language === 'en' ? 'Your Core Life Themes' : '핵심 생애 주제'}
+            </h2>
           </div>
+
+          {/* VS Diverge Design: Orbital Theme Visualization */}
+          {session?.findings?.findings && session.findings.findings.length > 0 && (
+            <div className="relative h-80 mb-8 flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-2xl overflow-hidden">
+              {/* Ambient floating elements */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-10 right-20 w-20 h-20 bg-primary-200/30 rounded-full blur-2xl animate-float" />
+                <div className="absolute bottom-10 left-20 w-24 h-24 bg-secondary-200/30 rounded-full blur-2xl animate-float-delayed" />
+              </div>
+
+              {/* Center core - YOU */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center text-white font-bold shadow-lg z-10">
+                  <span className="text-lg">{language === 'en' ? 'YOU' : '나'}</span>
+                </div>
+              </div>
+
+              {/* Orbiting themes */}
+              {session.findings.findings.slice(0, 5).map((finding, idx) => {
+                const priorityIdx = session.followup?.themePriorities?.indexOf(finding.theme) ?? idx;
+                const themeCount = Math.min(session.findings!.findings.length, 5);
+                const radius = 100 + (priorityIdx * 15);
+                const angle = (360 / themeCount) * idx - 90; // Start from top
+                const x = Math.cos((angle * Math.PI) / 180) * radius;
+                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                const size = priorityIdx === 0 ? 'w-24 h-24 text-sm' :
+                            priorityIdx === 1 ? 'w-20 h-20 text-xs' :
+                            'w-16 h-16 text-xs';
+                const color = priorityIdx === 0 ? 'from-amber-400 to-amber-600' :
+                              priorityIdx === 1 ? 'from-gray-400 to-gray-600' :
+                              'from-primary-400 to-primary-600';
+
+                return (
+                  <div
+                    key={finding.theme}
+                    className={`absolute ${size} rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-semibold shadow-xl hover:scale-110 transition-transform duration-300 cursor-pointer group z-20`}
+                    style={{
+                      transform: `translate(${x}px, ${y}px)`,
+                    }}
+                  >
+                    <span className="text-center px-2 leading-tight line-clamp-2">{finding.theme}</span>
+
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full mb-2 hidden group-hover:block bg-neutral-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg z-30">
+                      {language === 'en' ? 'Priority' : '우선순위'}: {priorityIdx + 1}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Connection lines (decorative) */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {session.findings.findings.slice(0, 5).map((finding, idx) => {
+                  const themeCount = Math.min(session.findings!.findings.length, 5);
+                  const angle = (360 / themeCount) * idx - 90;
+                  return (
+                    <div
+                      key={`line-${idx}`}
+                      className="absolute w-24 h-0.5 bg-gradient-to-r from-primary-300/50 to-transparent origin-left"
+                      style={{
+                        transform: `rotate(${angle}deg)`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {session?.findings?.findings && session.findings.findings.length > 0 ? (
             <div className="space-y-4">

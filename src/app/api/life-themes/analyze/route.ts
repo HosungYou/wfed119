@@ -168,13 +168,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'findings') {
+      console.log('[Life Themes Analyze] Action: findings - Starting...');
+
       // Fetch all responses
       const { data: responses } = await supabase
         .from('life_themes_responses')
         .select('*')
         .eq('session_id', ltSession.id);
 
+      console.log('[Life Themes Analyze] Responses found:', responses?.length || 0);
+
       if (!responses || responses.length === 0) {
+        console.log('[Life Themes Analyze] ERROR: No responses found');
         return NextResponse.json(
           { error: 'No responses found to analyze' },
           { status: 400 }
@@ -183,6 +188,7 @@ export async function POST(req: NextRequest) {
 
       // Generate findings (themes + stories mapping)
       const findingsEntries = generateFindings(responses);
+      console.log('[Life Themes Analyze] Generated findings:', findingsEntries.length);
 
       // Store findings in analysis table
       const findingsData: FindingsData = {
@@ -200,15 +206,23 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (existingFindings) {
-        await supabase
+        console.log('[Life Themes Analyze] Updating existing findings record:', existingFindings.id);
+        const { error: updateError } = await supabase
           .from('life_themes_analysis')
           .update({
             content: `${findingsEntries.length} themes identified`,
             structured_data: findingsData,
           })
           .eq('id', existingFindings.id);
+
+        if (updateError) {
+          console.error('[Life Themes Analyze] Update error:', updateError);
+        } else {
+          console.log('[Life Themes Analyze] Update successful');
+        }
       } else {
-        await supabase
+        console.log('[Life Themes Analyze] Inserting new findings record');
+        const { error: insertError } = await supabase
           .from('life_themes_analysis')
           .insert({
             session_id: ltSession.id,
@@ -216,8 +230,15 @@ export async function POST(req: NextRequest) {
             content: `${findingsEntries.length} themes identified`,
             structured_data: findingsData,
           });
+
+        if (insertError) {
+          console.error('[Life Themes Analyze] Insert error:', insertError);
+        } else {
+          console.log('[Life Themes Analyze] Insert successful');
+        }
       }
 
+      console.log('[Life Themes Analyze] Returning findingsData with', findingsData.findings.length, 'themes');
       return NextResponse.json(findingsData);
     }
 
@@ -436,6 +457,8 @@ function generateThemeSuggestions(patterns: Array<{ pattern_text: string; patter
  * This replaces the patterns+themes two-step workflow with a single step
  */
 function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
+  console.log('[generateFindings] Starting with', responses.length, 'responses');
+
   const findings: FindingEntry[] = [];
 
   // Extract stories/content from each response
@@ -444,6 +467,7 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
   responses.forEach(response => {
     const q = response.question_number as QuestionNumber;
     const data = response.response_data;
+    console.log(`[generateFindings] Processing Q${q}, data type:`, typeof data, Array.isArray(data) ? `(array of ${(data as []).length})` : '');
 
     if (q === 6) {
       // MemoriesData - fixed 3 fields
@@ -464,14 +488,43 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
     }
   });
 
-  // Theme templates with keywords to match
+  console.log('[generateFindings] Extracted', stories.length, 'stories');
+  if (stories.length > 0) {
+    console.log('[generateFindings] Sample story:', stories[0].text.substring(0, 100));
+  }
+
+  // Theme templates with bilingual keywords (English + Korean)
   const themeTemplates = [
-    { theme: 'Growth & Learning', keywords: ['learn', 'grow', 'develop', 'improve', 'education', 'study', 'knowledge'] },
-    { theme: 'Connection & Relationships', keywords: ['people', 'friend', 'family', 'community', 'together', 'social', 'help'] },
-    { theme: 'Achievement & Success', keywords: ['achieve', 'goal', 'success', 'accomplish', 'win', 'challenge', 'result'] },
-    { theme: 'Creativity & Expression', keywords: ['create', 'art', 'design', 'music', 'write', 'express', 'imagine'] },
-    { theme: 'Independence & Freedom', keywords: ['freedom', 'independent', 'own', 'self', 'choice', 'decide', 'control'] },
-    { theme: 'Security & Stability', keywords: ['safe', 'secure', 'stable', 'protect', 'comfort', 'trust', 'reliable'] },
+    {
+      theme: 'Growth & Learning',
+      keywords: ['learn', 'grow', 'develop', 'improve', 'education', 'study', 'knowledge',
+                 '배우', '성장', '발전', '개선', '교육', '공부', '지식', '학습', '향상']
+    },
+    {
+      theme: 'Connection & Relationships',
+      keywords: ['people', 'friend', 'family', 'community', 'together', 'social', 'help',
+                 '사람', '친구', '가족', '공동체', '함께', '사회', '도움', '관계', '소통', '협력']
+    },
+    {
+      theme: 'Achievement & Success',
+      keywords: ['achieve', 'goal', 'success', 'accomplish', 'win', 'challenge', 'result',
+                 '성취', '목표', '성공', '달성', '승리', '도전', '결과', '완수', '업적']
+    },
+    {
+      theme: 'Creativity & Expression',
+      keywords: ['create', 'art', 'design', 'music', 'write', 'express', 'imagine',
+                 '창작', '예술', '디자인', '음악', '글', '표현', '상상', '창의', '창조', '그림']
+    },
+    {
+      theme: 'Independence & Freedom',
+      keywords: ['freedom', 'independent', 'own', 'self', 'choice', 'decide', 'control',
+                 '자유', '독립', '자신', '선택', '결정', '통제', '자율', '주체']
+    },
+    {
+      theme: 'Security & Stability',
+      keywords: ['safe', 'secure', 'stable', 'protect', 'comfort', 'trust', 'reliable',
+                 '안전', '안정', '보호', '편안', '신뢰', '믿음', '안심', '든든']
+    },
   ];
 
   // Match stories to themes
@@ -480,6 +533,8 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
       template.keywords.some(kw => story.text.toLowerCase().includes(kw))
     );
 
+    console.log(`[generateFindings] Theme "${template.theme}": ${matchedStories.length} matches`);
+
     if (matchedStories.length > 0) {
       findings.push({
         theme: template.theme,
@@ -487,6 +542,8 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
       });
     }
   });
+
+  console.log('[generateFindings] Total themes found:', findings.length);
 
   // Ensure we return at least 3 themes with placeholders if needed
   if (findings.length < 3) {

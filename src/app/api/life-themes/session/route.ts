@@ -68,9 +68,19 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('session_id', ltSession.id);
 
+    // DEBUG: Log analysis records
+    console.log('[Life Themes Session] Analysis records:', analysis?.length || 0);
+    console.log('[Life Themes Session] Analysis types:', analysis?.map(a => a.analysis_type));
+
     // Extract findings from analysis (analysis_type = 'findings')
     // BUG FIX: Use structured_data (JSONB) instead of content (string summary)
     const findingsRecord = analysis?.find(a => a.analysis_type === 'findings');
+
+    // DEBUG: Log findings extraction
+    console.log('[Life Themes Session] Findings record found:', !!findingsRecord);
+    console.log('[Life Themes Session] Findings structured_data type:', typeof findingsRecord?.structured_data);
+    console.log('[Life Themes Session] Findings structured_data:', JSON.stringify(findingsRecord?.structured_data)?.substring(0, 200));
+
     const findings = (findingsRecord?.structured_data as FindingsData | null) || null;
 
     // Extract followup from analysis (analysis_type = 'followup')

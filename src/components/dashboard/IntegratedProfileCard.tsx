@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Heart, Target, User, Lightbulb, Eye, Sparkles, Grid3X3, CheckCircle2, Zap,
+  Heart, Target, User, Users, Lightbulb, Eye, Sparkles, Grid3X3, CheckCircle2, Zap,
   ChevronRight, TrendingUp, Award, Compass, RefreshCw, Lock, Flag
 } from 'lucide-react';
 import {
@@ -274,6 +274,7 @@ const MODULE_ICONS: Record<ModuleId, React.ElementType> = {
   'life-themes': Lightbulb,
   vision: Eye,
   mission: Flag,
+  'life-roles': Users,
   'career-options': Compass,
   swot: Grid3X3,
   goals: CheckCircle2,
@@ -288,6 +289,7 @@ const MODULE_COLORS: Record<ModuleId, { bg: string; text: string; fill: string }
   'life-themes': { bg: 'bg-amber-100', text: 'text-amber-600', fill: '#d97706' },
   vision: { bg: 'bg-purple-100', text: 'text-purple-600', fill: '#9333ea' },
   mission: { bg: 'bg-primary-100', text: 'text-primary-700', fill: '#d04f2a' },
+  'life-roles': { bg: 'bg-violet-100', text: 'text-violet-600', fill: '#7c3aed' },
   'career-options': { bg: 'bg-secondary-100', text: 'text-secondary-700', fill: '#6a7d44' },
   swot: { bg: 'bg-orange-100', text: 'text-orange-600', fill: '#ea580c' },
   goals: { bg: 'bg-emerald-100', text: 'text-emerald-600', fill: '#059669' },

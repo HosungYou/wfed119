@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import html2canvas from 'html2canvas';
 import {
   Loader2,
   ArrowLeft,
@@ -20,8 +21,12 @@ import {
   Home,
   Download,
   Share2,
+  LayoutDashboard,
+  ChevronRight,
+  Camera,
 } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
+import { useLanguage } from '@/lib/i18n';
 import {
   LifeThemesSessionFull,
   LifeTheme,
@@ -46,10 +51,40 @@ const QUESTION_ICONS: Record<QuestionNumber, React.ReactNode> = {
 
 export default function LifeThemesResultsPage() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<LifeThemesSessionFull | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const { completeModule } = useModuleProgress('life-themes');
+
+  async function downloadAsImage() {
+    if (!resultsRef.current) return;
+    setDownloading(true);
+
+    try {
+      const canvas = await html2canvas(resultsRef.current, {
+        scale: 2,
+        backgroundColor: '#f8fafc',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `life-themes-results-${new Date().toISOString().split('T')[0]}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('[Life Themes Results] Download error:', err);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   const fetchSession = useCallback(async () => {
     try {
@@ -94,20 +129,81 @@ export default function LifeThemesResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full mb-6 shadow-lg">
-            <Trophy className="w-10 h-10 text-white" />
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-8">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-sm">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
+            >
+              <Home className="w-4 h-4" />
+              <span>{language === 'en' ? 'Home' : '홈'}</span>
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <button
+              onClick={() => router.push('/discover')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>{language === 'en' ? 'Dashboard' : '대시보드'}</span>
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <button
+              onClick={() => router.push('/discover/life-themes')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>{language === 'en' ? 'Life Themes' : '생애 주제'}</span>
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <span className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg font-medium">
+              {language === 'en' ? 'Results' : '결과'}
+            </span>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Your Life Themes Discovered!
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            You&apos;ve completed the Career Construction Interview and uncovered your core life themes
-          </p>
+
+          {/* Export Button */}
+          <button
+            onClick={downloadAsImage}
+            disabled={downloading}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm disabled:opacity-50"
+          >
+            {downloading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm font-medium text-gray-700">
+                  {language === 'en' ? 'Saving...' : '저장 중...'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">
+                  {language === 'en' ? 'Save as Image' : '이미지로 저장'}
+                </span>
+              </>
+            )}
+          </button>
         </div>
+
+        {/* Results Content - Wrapped for Image Export */}
+        <div ref={resultsRef} className="bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-2xl p-4">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full mb-6 shadow-lg transform hover:scale-105 transition-transform">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {language === 'en' ? 'Your Life Themes Discovered!' : '당신의 생애 주제가 발견되었습니다!'}
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              {language === 'en'
+                ? 'You\'ve completed the Career Construction Interview and uncovered your core life themes'
+                : '커리어 구성 인터뷰를 완료하고 핵심 생애 주제를 발견했습니다'}
+            </p>
+          </div>
 
         {/* Summary Stats */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
@@ -391,35 +487,52 @@ export default function LifeThemesResultsPage() {
           </ul>
         </div>
 
-        {/* Action Buttons */}
+        {/* Key Takeaways End - Close resultsRef wrapper */}
+        </div>
+
+        {/* Action Buttons - Outside of image export */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">What&apos;s Next?</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {language === 'en' ? 'What\'s Next?' : '다음 단계는?'}
+          </h2>
           <div className="grid md:grid-cols-3 gap-4">
             <button
               onClick={() => router.push('/discover/life-themes/findings')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left group"
             >
-              <Star className="w-6 h-6 text-primary-600 mb-2" />
-              <h3 className="font-semibold text-gray-900">Review Findings</h3>
-              <p className="text-sm text-gray-600">Edit themes and stories</p>
+              <Star className="w-6 h-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
+              <h3 className="font-semibold text-gray-900">
+                {language === 'en' ? 'Review Findings' : '결과 검토'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {language === 'en' ? 'Edit themes and stories' : '주제와 이야기 수정'}
+              </p>
             </button>
 
             <button
               onClick={() => router.push('/discover/errc')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left group"
             >
-              <Target className="w-6 h-6 text-primary-600 mb-2" />
-              <h3 className="font-semibold text-gray-900">ERRC Action Plan</h3>
-              <p className="text-sm text-gray-600">Create behavior change actions</p>
+              <Target className="w-6 h-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
+              <h3 className="font-semibold text-gray-900">
+                {language === 'en' ? 'ERRC Action Plan' : 'ERRC 실행 계획'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {language === 'en' ? 'Create behavior change actions' : '행동 변화 계획 수립'}
+              </p>
             </button>
 
             <button
               onClick={() => router.push('/discover')}
-              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left"
+              className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left group"
             >
-              <Home className="w-6 h-6 text-primary-600 mb-2" />
-              <h3 className="font-semibold text-gray-900">Explore More</h3>
-              <p className="text-sm text-gray-600">Discover other modules</p>
+              <Home className="w-6 h-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
+              <h3 className="font-semibold text-gray-900">
+                {language === 'en' ? 'Explore More' : '더 탐색하기'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {language === 'en' ? 'Discover other modules' : '다른 모듈 알아보기'}
+              </p>
             </button>
           </div>
         </div>
@@ -428,17 +541,17 @@ export default function LifeThemesResultsPage() {
         <div className="flex justify-between items-center">
           <button
             onClick={() => router.push('/discover/life-themes/followup')}
-            className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-white/50"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Follow-up
+            {language === 'en' ? 'Back to Follow-up' : '후속 질문으로'}
           </button>
 
           <button
             onClick={() => router.push('/discover')}
-            className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
           >
-            Continue to Dashboard
+            {language === 'en' ? 'Continue to Dashboard' : '대시보드로 이동'}
             <ArrowRight className="w-5 h-5 ml-2" />
           </button>
         </div>

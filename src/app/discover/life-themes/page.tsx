@@ -15,9 +15,15 @@ import {
   Brain,
   Sparkles,
   Target,
+  Home,
+  LayoutDashboard,
+  ChevronRight,
+  RotateCcw,
 } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
+import { useLanguage } from '@/lib/i18n';
 import { QUESTION_CONFIG, LIFE_THEMES_STEPS, QuestionNumber } from '@/lib/types/lifeThemes';
+import { SessionResetButton } from '@/components/modules/SessionResetButton';
 
 interface ModuleProgress {
   lifeThemes: {
@@ -53,14 +59,16 @@ const STEP_ROUTES: Record<string, string> = {
 
 export default function LifeThemesLanding() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress | null>(null);
   const { startModule } = useModuleProgress('life-themes');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     startModule();
     fetchModuleProgress();
-  }, [startModule]);
+  }, [startModule, refreshKey]);
 
   async function fetchModuleProgress() {
     try {
@@ -129,18 +137,56 @@ export default function LifeThemesLanding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-8">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-sm">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
+            >
+              <Home className="w-4 h-4" />
+              <span>{language === 'en' ? 'Home' : '홈'}</span>
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <button
+              onClick={() => router.push('/discover')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>{language === 'en' ? 'Dashboard' : '대시보드'}</span>
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <span className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg font-medium">
+              {language === 'en' ? 'Life Themes' : '생애 주제'}
+            </span>
+          </div>
+
+          {/* Session Reset Button */}
+          {moduleProgress?.lifeThemes.exists && (
+            <SessionResetButton
+              moduleId="life-themes"
+              moduleName={{ ko: '생애 주제', en: 'Life Themes' }}
+              apiEndpoint="/api/life-themes/session"
+              onReset={() => setRefreshKey(k => k + 1)}
+            />
+          )}
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-2xl mb-6 shadow-lg transform hover:scale-105 transition-transform">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Life Themes Discovery
+            {language === 'en' ? 'Life Themes Discovery' : '생애 주제 발견'}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover the recurring themes that shape your identity through 6 reflective questions
+            {language === 'en'
+              ? 'Discover the recurring themes that shape your identity through 6 reflective questions'
+              : '6가지 성찰적 질문을 통해 당신의 정체성을 형성하는 반복적인 주제를 발견하세요'}
           </p>
         </div>
 

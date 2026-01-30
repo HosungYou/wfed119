@@ -312,16 +312,19 @@ export default function LifeThemesResultsPage() {
               {session.findings.findings.slice(0, 5).map((finding, idx) => {
                 const priorityIdx = session.followup?.themePriorities?.indexOf(finding.theme) ?? idx;
                 const themeCount = Math.min(session.findings!.findings.length, 5);
-                const radius = 100 + (priorityIdx * 15);
+                const radius = 120; // Fixed radius for cleaner layout
                 const angle = (360 / themeCount) * idx - 90; // Start from top
                 const x = Math.cos((angle * Math.PI) / 180) * radius;
                 const y = Math.sin((angle * Math.PI) / 180) * radius;
-                const size = priorityIdx === 0 ? 'w-24 h-24 text-sm' :
-                            priorityIdx === 1 ? 'w-20 h-20 text-xs' :
-                            'w-16 h-16 text-xs';
+                // Larger sizes for better text visibility
+                const size = priorityIdx === 0 ? 'w-20 h-20' :
+                            priorityIdx === 1 ? 'w-18 h-18' :
+                            'w-16 h-16';
                 const color = priorityIdx === 0 ? 'from-amber-400 to-amber-600' :
                               priorityIdx === 1 ? 'from-gray-400 to-gray-600' :
                               'from-primary-400 to-primary-600';
+                // Extract short name (first word or abbreviation)
+                const shortName = finding.theme.split(' ')[0].replace('&', '');
 
                 return (
                   <div
@@ -331,11 +334,12 @@ export default function LifeThemesResultsPage() {
                       transform: `translate(${x}px, ${y}px)`,
                     }}
                   >
-                    <span className="text-center px-2 leading-tight line-clamp-2">{finding.theme}</span>
+                    <span className="text-center text-xs px-1 leading-tight">{shortName}</span>
 
-                    {/* Tooltip on hover */}
+                    {/* Tooltip on hover - shows full theme name */}
                     <div className="absolute bottom-full mb-2 hidden group-hover:block bg-neutral-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg z-30">
-                      {language === 'en' ? 'Priority' : '우선순위'}: {priorityIdx + 1}
+                      <div className="font-semibold">{finding.theme}</div>
+                      <div className="text-gray-300">{language === 'en' ? 'Priority' : '우선순위'}: {priorityIdx + 1}</div>
                     </div>
                   </div>
                 );

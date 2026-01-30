@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     const findingsData = data.structured_data as FindingsData | null;
     return NextResponse.json(findingsData || { findings: [] });
   } catch (error) {
-    console.error('[Findings] Unexpected error:', error);
+    console.error('[Findings GET] Unexpected error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result.structured_data);
   } catch (error) {
-    console.error('[Findings] Unexpected error:', error);
+    console.error('[Findings POST] Unexpected error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

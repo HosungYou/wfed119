@@ -216,26 +216,32 @@ export async function POST(req: NextRequest) {
           .eq('id', existingFindings.id);
 
         if (updateError) {
-          console.error('[Life Themes Analyze] Update error:', updateError);
-        } else {
-          console.log('[Life Themes Analyze] Update successful');
+          console.error('[Life Themes Analyze] Update error:', JSON.stringify(updateError, null, 2));
+          return NextResponse.json({ error: 'Failed to update findings', details: updateError }, { status: 500 });
         }
+        console.log('[Life Themes Analyze] Update successful');
       } else {
         console.log('[Life Themes Analyze] Inserting new findings record');
-        const { error: insertError } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from('life_themes_analysis')
           .insert({
             session_id: ltSession.id,
             analysis_type: 'findings',
             content: `${findingsEntries.length} themes identified`,
             structured_data: findingsData,
-          });
+          })
+          .select()
+          .single();
 
         if (insertError) {
-          console.error('[Life Themes Analyze] Insert error:', insertError);
-        } else {
-          console.log('[Life Themes Analyze] Insert successful');
+          console.error('[Life Themes Analyze] Insert error:', JSON.stringify(insertError, null, 2));
+          console.error('[Life Themes Analyze] Insert error code:', insertError.code);
+          console.error('[Life Themes Analyze] Insert error message:', insertError.message);
+          console.error('[Life Themes Analyze] Insert error details:', insertError.details);
+          console.error('[Life Themes Analyze] Insert error hint:', insertError.hint);
+          return NextResponse.json({ error: 'Failed to save findings', details: insertError }, { status: 500 });
         }
+        console.log('[Life Themes Analyze] Insert successful, id:', insertedData?.id);
       }
 
       console.log('[Life Themes Analyze] Returning findingsData with', findingsData.findings.length, 'themes');

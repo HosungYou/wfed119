@@ -35,7 +35,9 @@ export type AnalysisType =
   | 'theme_suggestion'
   | 'enneagram_insight'
   | 'career_implication'
-  | 'final_synthesis';
+  | 'final_synthesis'
+  | 'findings'    // Theme + story mapping from findings page
+  | 'followup';   // Follow-up reflection questions
 
 // ============================================================================
 // Response Data Types (for JSONB fields)

@@ -336,11 +336,11 @@ export default function FindingsPage() {
         {/* Navigation */}
         <div className="flex justify-between items-center">
           <button
-            onClick={() => router.push('/discover/life-themes/questions/6')}
+            onClick={() => router.push('/discover/life-themes/conversation')}
             className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            {language === 'ko' ? '질문으로 돌아가기' : 'Back to Questions'}
+            {language === 'ko' ? '대화로 돌아가기' : 'Back to Conversation'}
           </button>
 
           <button

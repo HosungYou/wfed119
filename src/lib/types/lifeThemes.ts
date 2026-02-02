@@ -22,6 +22,7 @@ export type LifeThemesStep =
   | 'mottos'
   | 'subjects'
   | 'memories'
+  | 'conversation'  // NEW: AI conversation step between Q6 and Findings
   | 'findings'
   | 'followup'
   | 'results';
@@ -106,6 +107,44 @@ export interface FollowUpData {
   selfLearning: string;         // What you learned about yourself
 }
 
+// ============================================================================
+// Conversation Types (NEW: AI Conversation Step)
+// ============================================================================
+
+export interface ConversationMessage {
+  role: 'ai' | 'user';
+  content: string;
+  timestamp: string;
+}
+
+export interface SuggestedThemeData {
+  name: string;
+  description: string;
+  evidence: string[];  // Stories/responses that support this theme
+  confidence: number;  // 0-100
+}
+
+export interface ConversationState {
+  messages: ConversationMessage[];
+  exchangeCount: number;  // Number of back-and-forth exchanges (user + AI = 1 exchange)
+  themesSuggested: boolean;
+  themesConfirmed: boolean;
+  suggestedThemes?: SuggestedThemeData[];
+}
+
+// Database entity for conversation
+export interface LifeThemesConversation {
+  id: string;
+  session_id: string;
+  messages: ConversationMessage[];
+  themes_suggested: boolean;
+  themes_confirmed: boolean;
+  suggested_themes: SuggestedThemeData[] | null;
+  exchange_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Union type for all response data types
 export type ResponseData =
   | RoleModelEntry[]
@@ -186,6 +225,7 @@ export interface LifeThemesSessionFull extends LifeThemesSession {
   patterns: LifeThemesPattern[];
   themes: LifeTheme[];
   analysis: LifeThemesAnalysis[];
+  conversation: ConversationState | null;  // NEW: AI conversation state
   findings: FindingsData | null;
   followup: FollowUpData | null;
 }
@@ -407,6 +447,7 @@ export const LIFE_THEMES_STEPS: {
   { step: 'mottos', title: 'Mottos', titleKo: '좌우명', description: 'Phrases that resonate', questionNumber: 4 },
   { step: 'subjects', title: 'Subjects', titleKo: '과목', description: 'School subjects you liked/disliked', questionNumber: 5 },
   { step: 'memories', title: 'Memories', titleKo: '기억', description: 'Your earliest memories', questionNumber: 6 },
+  { step: 'conversation', title: 'Conversation', titleKo: '대화', description: 'Explore deeper with AI' },
   { step: 'findings', title: 'Findings', titleKo: '발견', description: 'AI-generated themes from your stories' },
   { step: 'followup', title: 'Follow-up', titleKo: '추가 질문', description: 'Reflect on your themes' },
   { step: 'results', title: 'Results', titleKo: '결과', description: 'View your complete analysis' },
@@ -461,7 +502,7 @@ export function getStepByQuestion(questionNumber: QuestionNumber): LifeThemesSte
 export function getNextStep(currentStep: LifeThemesStep): LifeThemesStep | null {
   const stepOrder: LifeThemesStep[] = [
     'role_models', 'media', 'hobbies', 'mottos', 'subjects', 'memories',
-    'findings', 'followup', 'results'
+    'conversation', 'findings', 'followup', 'results'
   ];
   const currentIndex = stepOrder.indexOf(currentStep);
   if (currentIndex === -1 || currentIndex === stepOrder.length - 1) {

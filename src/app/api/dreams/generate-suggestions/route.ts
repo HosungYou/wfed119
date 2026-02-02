@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
@@ -169,30 +169,31 @@ function analyzeDreamPatterns(dreams: any[]) {
   };
 }
 
-// Generate AI suggestions using Claude
+// Generate AI suggestions using Groq
 async function generateAISuggestions(context: any) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
     // Return fallback suggestions without AI
     console.warn('[Dreams AI] API key not configured, returning fallback suggestions');
     return generateFallbackSuggestions(context);
   }
 
-  const anthropic = new Anthropic({ apiKey });
+  const groq = new Groq({ apiKey });
 
   const prompt = buildAIPrompt(context);
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 2000,
       messages: [{
         role: 'user',
         content: prompt
-      }]
+      }],
+      response_format: { type: "json_object" }
     });
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = completion.choices[0]?.message?.content || '';
 
     // Extract JSON from response
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);

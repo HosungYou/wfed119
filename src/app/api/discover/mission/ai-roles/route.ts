@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/mission/ai-roles
@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       return NextResponse.json({
         roles: generateFallbackRoles(),
         source: 'fallback',
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate AI suggestions
-    const anthropic = new Anthropic({ apiKey });
-    const roles = await generateAIRoles(anthropic, context);
+    const groq = new Groq({ apiKey });
+    const roles = await generateAIRoles(groq, context);
 
     return NextResponse.json({
       roles,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateAIRoles(
-  anthropic: Anthropic,
+  groq: Groq,
   context: {
     values: any;
     strengths: any;
@@ -115,18 +115,19 @@ Include diverse roles across:
 - Creative/hobby roles`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    let cleanedText = content.text.trim();
+    let cleanedText = content.trim();
     if (cleanedText.startsWith('```json')) {
       cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     } else if (cleanedText.startsWith('```')) {

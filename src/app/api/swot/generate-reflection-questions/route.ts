@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 export async function POST(request: NextRequest) {
   try {
     // Check for API key first
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'AI service not configured. Please set ANTHROPIC_API_KEY.' },
+        { error: 'AI service not configured. Please set GROQ_API_KEY.' },
         { status: 503 }
       );
     }
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
     });
 
     const body = await request.json();
@@ -40,18 +40,19 @@ Generate 5 open-ended questions that encourage deep reflection. Each question sh
 Return ONLY a JSON array of 5 questions (no markdown, no code blocks):
 ["Question 1", "질문 2", "질문 3", "질문 4", "질문 5"]`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    let cleanedText = content.text.trim();
+    let cleanedText = content.trim();
     if (cleanedText.startsWith('```')) {
       cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import {
   TYPE_PROFILES,
   getTypeProfile,
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       // Return template-based interpretation
       const fallback = generateFallbackInterpretation(enneagram, strengths, typeProfile, locale);
       return NextResponse.json({
@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate AI interpretation
-    const anthropic = new Anthropic({ apiKey });
+    const groq = new Groq({ apiKey });
     const interpretation = await generateAIInterpretation(
-      anthropic,
+      groq,
       enneagram,
       strengths,
       typeProfile,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateAIInterpretation(
-  anthropic: Anthropic,
+  groq: Groq,
   enneagram: InterpretRequest['enneagram'],
   strengths: InterpretRequest['strengths'] | undefined,
   typeProfile: EnneagramTypeProfile,
@@ -202,21 +202,22 @@ Return a JSON object with EXACTLY these keys:
 
 Important: Return ONLY the JSON object, no markdown formatting or additional text.`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-3-haiku-20240307',
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
     max_tokens: 1536,  // Increased for integratedInsight
     temperature: 0.7,
     messages: [{ role: 'user', content: prompt }],
+    response_format: { type: "json_object" }
   });
 
   // Extract text content
-  const textContent = response.content.find(c => c.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
+  const textContent = completion.choices[0]?.message?.content;
+  if (!textContent) {
     throw new Error('No text content in response');
   }
 
   // Parse JSON response
-  const jsonStr = textContent.text.trim();
+  const jsonStr = textContent.trim();
   try {
     const parsed = JSON.parse(jsonStr);
     return {

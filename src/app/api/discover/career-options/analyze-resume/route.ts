@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import mammoth from 'mammoth';
 
 interface ONetCareer {
@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       return NextResponse.json({
         analysis: generateFallbackAnalysis(hollandCode),
         source: 'fallback',
@@ -118,9 +118,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Analyze with AI
-    const anthropic = new Anthropic({ apiKey });
+    const groq = new Groq({ apiKey });
     const analysis = await analyzeResumeWithAI(
-      anthropic,
+      groq,
       isPdf ? '' : resumeContent,
       isPdf ? pdfBase64 : undefined,
       hollandCode,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function analyzeResumeWithAI(
-  anthropic: Anthropic,
+  groq: Groq,
   resumeText: string,
   pdfBase64: string | undefined,
   hollandCode: string,
@@ -195,52 +195,31 @@ Important:
 - Ensure all links follow the exact O*NET format`;
 
   try {
-    let messages: any[];
-
+    // Note: Groq doesn't support PDF documents directly, so we need to convert PDF to text first
+    // For now, we'll only support text-based resume analysis with Groq
+    let messageContent = '';
     if (pdfBase64) {
-      // Send PDF as document
-      messages = [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: pdfBase64,
-              },
-            },
-            {
-              type: 'text',
-              text: prompt,
-            },
-          ],
-        },
-      ];
+      // PDF support requires text extraction - fallback to text prompt
+      console.warn('[Analyze Resume] PDF detected but Groq does not support direct PDF analysis. User should upload text/docx.');
+      messageContent = `${prompt}\n\n## Note: PDF content could not be directly analyzed. Please upload a .docx or .txt file for full analysis.`;
     } else {
-      // Send text content
-      messages = [
-        {
-          role: 'user',
-          content: `${prompt}\n\n## Resume Content:\n${resumeText}`,
-        },
-      ];
+      messageContent = `${prompt}\n\n## Resume Content:\n${resumeText}`;
     }
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 3000,
-      messages,
+      messages: [{ role: 'user', content: messageContent }],
+      response_format: { type: "json_object" }
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
     // Parse JSON response
-    let cleanedText = content.text.trim();
+    let cleanedText = content.trim();
     if (cleanedText.startsWith('```json')) {
       cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     } else if (cleanedText.startsWith('```')) {

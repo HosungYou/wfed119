@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 type LifeStage = '20s' | '30s' | '40s' | '50s' | '60s' | '70s+';
@@ -329,9 +329,9 @@ async function generateAIRecommendations(context: {
   vision: any;
   swot: any;
 }): Promise<Recommendation[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.warn('ANTHROPIC_API_KEY not configured, returning empty recommendations');
+    console.warn('GROQ_API_KEY not configured, returning empty recommendations');
     return [];
   }
 
@@ -348,7 +348,7 @@ async function generateAIRecommendations(context: {
     }));
   }
 
-  const anthropic = new Anthropic({ apiKey });
+  const groq = new Groq({ apiKey });
 
   let prompt = `You are a life coach helping users create personalized dream goals.
 
@@ -408,13 +408,14 @@ Format:
 ]`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = completion.choices[0]?.message?.content || '';
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
 
     if (jsonMatch) {

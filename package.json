@@ -13,7 +13,6 @@
     "hooks:setup": "git config core.hooksPath .githooks && chmod +x .githooks/post-commit scripts/*.sh || true"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.60.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.76.1",
@@ -26,6 +25,7 @@
     "chartjs-plugin-zoom": "^2.2.0",
     "d3": "^7.9.0",
     "framer-motion": "^12.23.12",
+    "groq-sdk": "^0.37.0",
     "html-to-image": "^1.11.11",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/mission/ai-questions
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       return NextResponse.json({
         questions: generateFallbackQuestions(dimension),
         source: 'fallback',
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate AI questions
-    const anthropic = new Anthropic({ apiKey });
-    const questions = await generateAIQuestions(anthropic, dimension, context);
+    const groq = new Groq({ apiKey });
+    const questions = await generateAIQuestions(groq, dimension, context);
 
     return NextResponse.json({
       questions,
@@ -101,7 +101,7 @@ const DIMENSION_INFO: Record<string, { name: string; nameKo: string; description
 };
 
 async function generateAIQuestions(
-  anthropic: Anthropic,
+  groq: Groq,
   dimension: string,
   context: {
     values: any;
@@ -143,18 +143,19 @@ Respond with ONLY valid JSON array, no markdown formatting:
 ]`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    let cleanedText = content.text.trim();
+    let cleanedText = content.trim();
     if (cleanedText.startsWith('```json')) {
       cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     } else if (cleanedText.startsWith('```')) {

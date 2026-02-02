@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 
 type LifeStage = '20s' | '30s' | '40s' | '50s' | '60s' | '70s+';
@@ -124,7 +124,7 @@ async function generateFinalFeedback(
   values: string[] | null,
   vision: string | null
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   // Analyze dream distribution
   const areaCount: Partial<Record<WellbeingArea, number>> = {};
@@ -160,7 +160,7 @@ async function generateFinalFeedback(
   }
 
   // Generate AI feedback
-  const anthropic = new Anthropic({ apiKey });
+  const groq = new Groq({ apiKey });
 
   let prompt = `You are a life coach providing encouraging, personalized feedback on a user's dream life matrix.
 
@@ -191,13 +191,13 @@ Provide a single paragraph (2-3 sentences, max 200 characters) of personalized, 
 Be warm, specific, and actionable. Don't be generic. Reference their actual dreams and areas.`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 300,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = completion.choices[0]?.message?.content || '';
     return responseText.trim();
   } catch (error) {
     console.error('Error calling Claude API:', error);

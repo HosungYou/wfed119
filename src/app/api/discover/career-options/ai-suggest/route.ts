@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/career-options/ai-suggest
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       return NextResponse.json({
         suggestions: generateFallbackCareers(hollandCode),
         source: 'fallback',
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate AI suggestions
-    const anthropic = new Anthropic({ apiKey });
-    const suggestions = await generateAICareerSuggestions(anthropic, {
+    const groq = new Groq({ apiKey });
+    const suggestions = await generateAICareerSuggestions(groq, {
       hollandCode,
       hollandScores,
       values,
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateAICareerSuggestions(
-  anthropic: Anthropic,
+  groq: Groq,
   data: {
     hollandCode: string;
     hollandScores: any;
@@ -191,19 +191,20 @@ Important:
 - Match scores should reflect combined Holland + Resume + Values alignment`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
     // Parse JSON
-    let cleanedText = content.text.trim();
+    let cleanedText = content.trim();
     if (cleanedText.startsWith('```json')) {
       cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     } else if (cleanedText.startsWith('```')) {

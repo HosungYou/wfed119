@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/vision/ai-chat
@@ -15,13 +15,13 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
 
   // Validate API key early
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
     const errorStream = new ReadableStream({
       start(controller) {
         const errorData = JSON.stringify({
           type: 'error',
-          message: 'AI service is not configured. Please set ANTHROPIC_API_KEY in environment variables.'
+          message: 'AI service is not configured. Please set GROQ_API_KEY in environment variables.'
         });
         controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
         controller.close();
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const anthropic = new Anthropic({ apiKey });
+  const groq = new Groq({ apiKey });
 
   try {
     const supabase = await createServerSupabaseClient();
@@ -65,24 +65,25 @@ export async function POST(req: NextRequest) {
     const systemPrompt = getSystemPromptForStep(step, context);
 
     // 3. 대화 히스토리 구성
-    const messages: Anthropic.MessageParam[] = [
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
       ...conversationHistory.map((msg: any) => ({
-        role: msg.role,
+        role: msg.role as 'user' | 'assistant',
         content: msg.content
       })),
       {
-        role: 'user',
+        role: 'user' as const,
         content: userMessage
       }
     ];
 
-    // 4. Claude API 스트리밍 호출
-    const stream = await anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
+    // 4. Groq API 스트리밍 호출
+    const stream = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 2048,
       temperature: 0.7,
-      system: systemPrompt,
-      messages: messages
+      messages: messages,
+      stream: true
     });
 
     // 5. SSE 스트림 설정
@@ -94,8 +95,8 @@ export async function POST(req: NextRequest) {
 
         try {
           for await (const chunk of stream) {
-            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-              const text = chunk.delta.text;
+            const text = chunk.choices[0]?.delta?.content || '';
+            if (text) {
               fullResponse += text;
 
               // SSE 형식으로 전송
@@ -103,8 +104,9 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(`data: ${data}\n\n`));
             }
 
-            if (chunk.type === 'message_delta' && chunk.usage) {
-              totalTokens = chunk.usage.output_tokens || 0;
+            // Groq provides usage info in the final chunk
+            if (chunk.usage) {
+              totalTokens = chunk.usage.completion_tokens || 0;
             }
           }
 
@@ -498,7 +500,7 @@ async function saveConversationLog(
             type: 'vision_ai',
             vision_statement_id: visionData.id,
             step_number: step,
-            model_used: 'claude-sonnet-4-20250514',
+            model_used: 'llama-3.3-70b-versatile',
             tokens_used: tokens,
             response_time_ms: responseTime
           }
@@ -512,7 +514,7 @@ async function saveConversationLog(
             type: 'vision_ai',
             vision_statement_id: visionData.id,
             step_number: step,
-            model_used: 'claude-sonnet-4-20250514',
+            model_used: 'llama-3.3-70b-versatile',
             tokens_used: tokens,
             response_time_ms: responseTime
           }

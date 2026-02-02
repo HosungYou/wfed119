@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Loader2,
@@ -51,8 +51,60 @@ export default function QuestionPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [responseData, setResponseData] = useState<ResponseData | null>(null);
+  const [isValid, setIsValid] = useState(false);
 
   const { updateStage } = useModuleProgress('life-themes');
+
+  // Validate that all required fields are filled
+  const validateData = useCallback((data: ResponseData | null): boolean => {
+    if (!data) return false;
+
+    switch (questionNum) {
+      case 1: {
+        const entries = data as RoleModelEntry[];
+        return entries.length > 0 && entries.every(e =>
+          e.name?.trim() && e.similarities?.trim() && e.differences?.trim()
+        );
+      }
+      case 2: {
+        const entries = data as MediaEntry[];
+        return entries.length > 0 && entries.every(e =>
+          e.name?.trim() && e.why?.trim()
+        );
+      }
+      case 3: {
+        const entries = data as HobbyEntry[];
+        return entries.length > 0 && entries.every(e =>
+          e.hobby?.trim() && e.why?.trim()
+        );
+      }
+      case 4: {
+        const entries = data as MottoEntry[];
+        return entries.length > 0 && entries.every(e =>
+          e.motto?.trim()
+        );
+      }
+      case 5: {
+        const subjects = data as SubjectsResponse;
+        // At least one liked subject is required with all fields filled
+        return subjects.liked.length > 0 &&
+          subjects.liked.every(s => s.subject?.trim() && s.reasons?.trim()) &&
+          // Disliked subjects are optional, but if present must be complete
+          subjects.disliked.every(s => !s.subject?.trim() || (s.subject?.trim() && s.reasons?.trim()));
+      }
+      case 6: {
+        const memories = data as MemoriesData;
+        return !!memories.memory1?.trim() && !!memories.memory2?.trim() && !!memories.memory3?.trim();
+      }
+      default:
+        return false;
+    }
+  }, [questionNum]);
+
+  // Update validation state when data changes
+  useEffect(() => {
+    setIsValid(validateData(responseData));
+  }, [responseData, validateData]);
 
   // Validate question number
   const isValidQuestion = questionNum >= 1 && questionNum <= 6;
@@ -127,6 +179,16 @@ export default function QuestionPage() {
   const handleSave = async (proceed: boolean = false) => {
     if (!responseData || !config) return;
 
+    // If proceeding to next step, validate all fields are filled
+    if (proceed && !isValid) {
+      setError(
+        language === 'ko'
+          ? '모든 필수 필드를 작성해주세요. 빈 항목이 있습니다.'
+          : 'Please fill in all required fields. Some entries are empty.'
+      );
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -147,13 +209,14 @@ export default function QuestionPage() {
       }
 
       if (proceed) {
-        // Navigate to next question or findings
+        // Navigate to next question or conversation
         if (questionNum < 6) {
           await updateStage(QUESTION_CONFIG[questionNum + 1 as QuestionNumber].step, (questionNum / 6) * 60);
           router.push(`/discover/life-themes/questions/${questionNum + 1}`);
         } else {
-          await updateStage('findings', 60);
-          router.push('/discover/life-themes/findings');
+          // Q6 complete - go to AI conversation step
+          await updateStage('conversation', 60);
+          router.push('/discover/life-themes/conversation');
         }
       }
     } catch (err) {
@@ -399,6 +462,18 @@ export default function QuestionPage() {
           )}
         </div>
 
+        {/* Validation Status */}
+        {!isValid && responseData && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm flex items-center gap-2">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            {language === 'ko'
+              ? '모든 필수 필드를 작성해야 다음 단계로 진행할 수 있습니다.'
+              : 'Please complete all required fields to proceed to the next step.'}
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex justify-between items-center">
           <button
@@ -430,12 +505,17 @@ export default function QuestionPage() {
 
             <button
               onClick={() => handleSave(true)}
-              disabled={saving}
-              className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+              disabled={saving || !isValid}
+              className={`flex items-center px-8 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                isValid
+                  ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white hover:shadow-lg'
+                  : 'bg-gray-300 text-gray-500'
+              }`}
+              title={!isValid ? (language === 'ko' ? '모든 필드를 작성해주세요' : 'Please fill all required fields') : ''}
             >
               {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
               {questionNum === 6
-                ? (language === 'ko' ? '발견으로 계속' : 'Continue to Findings')
+                ? (language === 'ko' ? 'AI 대화로 계속' : 'Continue to AI Conversation')
                 : (language === 'ko' ? '다음 질문' : 'Next Question')
               }
               <ChevronRight className="w-5 h-5 ml-2" />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/vision/validate
@@ -12,8 +12,8 @@ import Anthropic from '@anthropic-ai/sdk';
  */
 export async function POST(req: NextRequest) {
   // Validate API key early
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
     // Return a basic validation without AI
     const body = await req.json();
     const { statement } = body;
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const anthropic = new Anthropic({ apiKey });
+  const groq = new Groq({ apiKey });
 
   try {
     const supabase = await createServerSupabaseClient();
@@ -100,22 +100,20 @@ Return a JSON object with:
 
 Does it meet all four criteria (Concise, Clear, Inspiring, Unique) based on my context?`;
 
-    // 3. Claude API 호출
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    // 3. Groq API 호출
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1024,
       temperature: 0.5,
-      system: systemPrompt,
       messages: [
-        {
-          role: 'user',
-          content: userMessage
-        }
-      ]
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      response_format: { type: "json_object" }
     });
 
     // 4. 응답 파싱
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = completion.choices[0]?.message?.content || '';
 
     // JSON 추출 (마크다운 코드블록 제거)
     let jsonText = responseText.trim();

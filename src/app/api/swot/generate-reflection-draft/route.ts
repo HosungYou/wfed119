@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 export async function POST(request: NextRequest) {
   try {
     // Check for API key first
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'AI service not configured. Please set ANTHROPIC_API_KEY.' },
+        { error: 'AI service not configured. Please set GROQ_API_KEY.' },
         { status: 503 }
       );
     }
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
     });
 
     const body = await request.json();
@@ -43,18 +43,18 @@ The essay should be written in first person, as if the user is reflecting on the
 
 Return ONLY the reflection text in ENGLISH (no JSON, no markdown, just the text):`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    const reflection = content.text.trim();
+    const reflection = content.trim();
 
     return NextResponse.json({ reflection });
   } catch (error) {

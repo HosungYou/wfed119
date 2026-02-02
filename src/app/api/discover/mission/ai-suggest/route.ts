@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 /**
  * POST /api/discover/mission/ai-suggest
@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     const { values, purposeAnswers, context, type = 'draft' } = body;
 
     // Check for API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || apiKey === 'your_anthropic_api_key_here' || apiKey.length < 10) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your_groq_api_key_here' || apiKey.length < 10) {
       // Return fallback suggestion
       return NextResponse.json({
         suggestion: generateFallbackMission(values, purposeAnswers),
@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate AI suggestion
-    const anthropic = new Anthropic({ apiKey });
-    const suggestion = await generateAISuggestion(anthropic, {
+    const groq = new Groq({ apiKey });
+    const suggestion = await generateAISuggestion(groq, {
       values,
       purposeAnswers,
       context,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateAISuggestion(
-  anthropic: Anthropic,
+  groq: Groq,
   data: {
     values: any;
     purposeAnswers: any;
@@ -140,20 +140,20 @@ Provide feedback in JSON format:
   }
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
     if (type === 'feedback') {
       // Parse JSON for feedback with robust error handling
-      let cleanedText = content.text.trim();
+      let cleanedText = content.trim();
       if (cleanedText.startsWith('```json')) {
         cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       } else if (cleanedText.startsWith('```')) {
@@ -176,7 +176,7 @@ Provide feedback in JSON format:
       }
     }
 
-    return content.text.trim();
+    return content.trim();
   } catch (error) {
     console.error('[Mission AI Suggest] AI error:', error);
     throw error;

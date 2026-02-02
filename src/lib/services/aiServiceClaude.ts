@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import OpenAI from 'openai';
 import { buildSystemPrompt, STRENGTH_EXTRACTION_EXAMPLES } from '../prompts/systemPromptV2';
 
-// Initialize Claude client (using Anthropic API)
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+// Initialize Groq client (primary AI provider)
+const groq = process.env.GROQ_API_KEY ? new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 }) : null;
 
 // Keep OpenAI as fallback
@@ -48,23 +48,21 @@ export class AIService {
       'Do not add bullet points or extra commentary.',
     ].join(' ');
 
-    if (anthropic) {
+    if (groq) {
       try {
-        const completion = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307",
-          messages: [{ role: 'user', content: prompt }],
-          system: systemPrompt,
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
           max_tokens: 120,
           temperature: 0.4,
         });
 
-        const response = completion.content[0];
-        if (response.type === 'text') {
-          return response.text.trim();
-        }
-        throw new Error('Unexpected response format from Claude');
+        return completion.choices[0]?.message?.content?.trim() || 'Suggestion unavailable. Please try again.';
       } catch (error) {
-        console.error('Claude Goal Suggestion Error:', error);
+        console.error('Groq Goal Suggestion Error:', error);
         if (openai) {
           return this.generateOpenAIGoalSuggestion(systemPrompt, prompt);
         }
@@ -76,7 +74,7 @@ export class AIService {
       return this.generateOpenAIGoalSuggestion(systemPrompt, prompt);
     }
 
-    throw new Error('No AI service configured. Please add ANTHROPIC_API_KEY or OPENAI_API_KEY to your environment.');
+    throw new Error('No AI service configured. Please add GROQ_API_KEY or OPENAI_API_KEY to your environment.');
   }
 
   private async generateOpenAIGoalSuggestion(systemPrompt: string, prompt: string): Promise<string> {
@@ -267,30 +265,25 @@ export class AIService {
       ? `\n\nCONVERSATION CONTEXT:\nYou have ${messages.length} messages in this conversation. Review ALL of them carefully before responding. The user has already shared their work experiences and you may have already provided a strength analysis.`
       : '';
 
-    // Try Claude first, fallback to OpenAI
-    if (anthropic) {
+    // Try Groq first, fallback to OpenAI
+    if (groq) {
       try {
-        // Convert messages format for Claude
-        const claudeMessages = messages.map(msg => ({
-          role: msg.role === 'system' ? 'assistant' as const : msg.role as 'user' | 'assistant',
-          content: msg.content
-        }));
-
-        const completion = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307", // Most cost-effective model
-          messages: claudeMessages,
-          system: systemPrompt + conversationSummary,
-          max_tokens: 800, // Increased for summary stage
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: 'system', content: systemPrompt + conversationSummary },
+            ...messages.map(msg => ({
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content
+            }))
+          ],
+          max_tokens: 800,
           temperature: 0.7,
         });
 
-        const response = completion.content[0];
-        if (response.type === 'text') {
-          return response.text;
-        }
-        throw new Error('Unexpected response format from Claude');
+        return completion.choices[0]?.message?.content || 'I apologize, but I encountered an issue generating a response. Could you please try again?';
       } catch (error) {
-        console.error('Claude API Error:', error);
+        console.error('Groq API Error:', error);
         // Fallback to OpenAI
         if (openai) {
           return this.generateOpenAIResponse(messages, sessionContext);
@@ -300,7 +293,7 @@ export class AIService {
     } else if (openai) {
       return this.generateOpenAIResponse(messages, sessionContext);
     } else {
-      throw new Error('No AI service configured. Please add ANTHROPIC_API_KEY or OPENAI_API_KEY to your environment.');
+      throw new Error('No AI service configured. Please add GROQ_API_KEY or OPENAI_API_KEY to your environment.');
     }
   }
 
@@ -367,29 +360,30 @@ export class AIService {
       ? `\n\nCONVERSATION CONTEXT:\nYou have ${messages.length} messages in this conversation. Review ALL of them carefully before responding. The user has already shared their work experiences and you may have already provided a strength analysis.`
       : '';
 
-    if (anthropic) {
+    if (groq) {
       try {
-        const claudeMessages = messages.map(msg => ({
-          role: msg.role === 'system' ? 'assistant' as const : msg.role as 'user' | 'assistant',
-          content: msg.content
-        }));
-
-        const stream = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307",
-          messages: claudeMessages,
-          system: systemPrompt + conversationSummary,
-          max_tokens: 800, // Increased for summary stage
+        const stream = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: 'system', content: systemPrompt + conversationSummary },
+            ...messages.map(msg => ({
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content
+            }))
+          ],
+          max_tokens: 800,
           temperature: 0.7,
           stream: true,
         });
 
         for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-            yield chunk.delta.text;
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) {
+            yield content;
           }
         }
       } catch (error) {
-        console.error('Claude Streaming Error:', error);
+        console.error('Groq Streaming Error:', error);
         // Fallback to OpenAI
         if (openai) {
           yield* this.generateOpenAIStreaming(messages, sessionContext);
@@ -400,7 +394,7 @@ export class AIService {
     } else if (openai) {
       yield* this.generateOpenAIStreaming(messages, sessionContext);
     } else {
-      yield 'No AI service configured. Please add ANTHROPIC_API_KEY or OPENAI_API_KEY to your environment.';
+      yield 'No AI service configured. Please add GROQ_API_KEY or OPENAI_API_KEY to your environment.';
     }
   }
 
@@ -490,20 +484,21 @@ If invalid (no real examples), return:
 }`;
 
     try {
-      if (anthropic) {
-        const completion = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307",
+      if (groq) {
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
           messages: [
+            { role: 'system', content: 'You are a career strength analyzer. Extract strengths from specific work experiences. Follow the examples shown. Return valid JSON only.' },
             { role: 'user', content: analysisPrompt }
           ],
-          system: 'You are a career strength analyzer. Extract strengths from specific work experiences. Follow the examples shown. Return valid JSON only.',
           max_tokens: 400,
-          temperature: 0.2, // Lower temperature for more consistent extraction
+          temperature: 0.2,
+          response_format: { type: "json_object" }
         });
 
-        const response = completion.content[0];
-        if (response.type === 'text') {
-          return JSON.parse(response.text);
+        const result = completion.choices[0]?.message?.content;
+        if (result) {
+          return JSON.parse(result);
         }
       } else if (openai) {
         const completion = await openai.chat.completions.create({

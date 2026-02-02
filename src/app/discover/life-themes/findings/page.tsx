@@ -288,7 +288,7 @@ export default function FindingsPage() {
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-secondary-600 group-hover:w-full transition-all duration-500" />
                           </span>
                         </td>
-                        <td className="px-6 py-5 max-w-md">
+                        <td className="px-6 py-5">
                           <ul className="space-y-2">
                             {finding.relevantStories.map((story, i) => (
                               <li
@@ -296,7 +296,7 @@ export default function FindingsPage() {
                                 className="flex items-start gap-2 text-gray-600 text-sm leading-relaxed"
                               >
                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
-                                <span className="break-words">{story}</span>
+                                <span className="break-words whitespace-normal">{story}</span>
                               </li>
                             ))}
                           </ul>

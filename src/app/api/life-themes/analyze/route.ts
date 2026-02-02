@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getVerifiedUser } from '@/lib/supabase-server';
 import { checkDevAuth, requireAuth } from '@/lib/dev-auth-helper';
+import Groq from 'groq-sdk';
 import type {
   GenerateAnalysisRequest,
   AnalyzePatternRequest,
@@ -186,8 +187,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Generate findings (themes + stories mapping)
-      const findingsEntries = generateFindings(responses);
+      // Generate findings with AI (themes + stories mapping)
+      const findingsEntries = await generateFindingsWithAI(responses);
       console.log('[Life Themes Analyze] Generated findings:', findingsEntries.length);
 
       // Store findings in analysis table
@@ -459,30 +460,25 @@ function generateThemeSuggestions(patterns: Array<{ pattern_text: string; patter
 }
 
 /**
- * Generate findings (themes + relevant stories) from responses
- * This replaces the patterns+themes two-step workflow with a single step
+ * Generate findings (themes + relevant stories) from responses using AI
+ * This uses Groq LLM for intelligent theme identification
  */
-function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
-  console.log('[generateFindings] Starting with', responses.length, 'responses');
+async function generateFindingsWithAI(responses: LifeThemesResponse[]): Promise<FindingEntry[]> {
+  console.log('[generateFindings] Starting AI analysis with', responses.length, 'responses');
 
-  const findings: FindingEntry[] = [];
-
-  // Extract stories/content from each response
+  // Extract all stories/content from responses
   const stories: { question: QuestionNumber; text: string }[] = [];
 
   responses.forEach(response => {
     const q = response.question_number as QuestionNumber;
     const data = response.response_data;
-    console.log(`[generateFindings] Processing Q${q}, data type:`, typeof data, Array.isArray(data) ? `(array of ${(data as []).length})` : '');
 
     if (q === 6) {
-      // MemoriesData - fixed 3 fields
       const memories = data as { memory1?: string; memory2?: string; memory3?: string };
       if (memories.memory1) stories.push({ question: q, text: memories.memory1 });
       if (memories.memory2) stories.push({ question: q, text: memories.memory2 });
       if (memories.memory3) stories.push({ question: q, text: memories.memory3 });
     } else if (q === 5) {
-      // SubjectsResponse
       const subjects = data as { liked?: Array<{ subject: string; reasons: string }>; disliked?: Array<{ subject: string; reasons: string }> };
       subjects.liked?.forEach(s => stories.push({ question: q, text: `${s.subject}: ${s.reasons}` }));
       subjects.disliked?.forEach(s => stories.push({ question: q, text: `${s.subject}: ${s.reasons}` }));
@@ -494,64 +490,109 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
     }
   });
 
-  console.log('[generateFindings] Extracted', stories.length, 'stories');
-  if (stories.length > 0) {
-    console.log('[generateFindings] Sample story:', stories[0].text.substring(0, 100));
+  console.log('[generateFindings] Extracted', stories.length, 'stories for AI analysis');
+
+  // Prepare stories summary for AI
+  const storiesSummary = stories.map((s, i) => `${i + 1}. [Q${s.question}] ${s.text}`).join('\n');
+
+  // Check if Groq API key is available
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey.length < 10) {
+    console.log('[generateFindings] No Groq API key, using fallback');
+    return generateFindingsFallback(stories);
   }
 
-  // Theme templates with bilingual keywords (English + Korean)
+  try {
+    const groq = new Groq({ apiKey });
+
+    const prompt = `You are a career counselor analyzing responses from a Career Construction Interview (Mark Savickas methodology).
+
+## User's Stories and Responses:
+${storiesSummary}
+
+## Task:
+Identify 4-6 life themes from these responses. For each theme:
+1. Give it a clear, descriptive name (e.g., "Growth & Learning", "Creative Expression")
+2. Select 2-3 EXACT quotes from the stories above that support this theme (copy the FULL text, do not truncate)
+
+Return JSON with this EXACT structure:
+{
+  "findings": [
+    {
+      "theme": "Theme Name",
+      "relevantStories": ["Full story text 1", "Full story text 2"]
+    }
+  ]
+}
+
+IMPORTANT:
+- Copy the COMPLETE story text for relevantStories - do NOT truncate or shorten them
+- Each relevantStories entry should be a FULL sentence or paragraph from the input
+- Return 4-6 themes that represent recurring patterns`;
+
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+    });
+
+    const content = completion.choices[0]?.message?.content || '';
+    console.log('[generateFindings] AI response received');
+
+    try {
+      const parsed = JSON.parse(content);
+      const findings: FindingEntry[] = (parsed.findings || []).map((f: { theme?: string; relevantStories?: string[] }) => ({
+        theme: f.theme || 'Unnamed Theme',
+        relevantStories: Array.isArray(f.relevantStories) ? f.relevantStories : [],
+      }));
+
+      console.log('[generateFindings] AI generated', findings.length, 'themes');
+
+      // Ensure minimum 3 themes
+      if (findings.length < 3) {
+        return [...findings, ...generateFindingsFallback(stories).slice(0, 3 - findings.length)];
+      }
+
+      return findings.slice(0, 6);
+    } catch (parseError) {
+      console.error('[generateFindings] JSON parse error:', parseError);
+      return generateFindingsFallback(stories);
+    }
+  } catch (error) {
+    console.error('[generateFindings] AI error:', error);
+    return generateFindingsFallback(stories);
+  }
+}
+
+/**
+ * Fallback: Generate findings using keyword matching (no AI)
+ */
+function generateFindingsFallback(stories: { question: QuestionNumber; text: string }[]): FindingEntry[] {
+  const findings: FindingEntry[] = [];
+
   const themeTemplates = [
-    {
-      theme: 'Growth & Learning',
-      keywords: ['learn', 'grow', 'develop', 'improve', 'education', 'study', 'knowledge',
-                 '배우', '성장', '발전', '개선', '교육', '공부', '지식', '학습', '향상']
-    },
-    {
-      theme: 'Connection & Relationships',
-      keywords: ['people', 'friend', 'family', 'community', 'together', 'social', 'help',
-                 '사람', '친구', '가족', '공동체', '함께', '사회', '도움', '관계', '소통', '협력']
-    },
-    {
-      theme: 'Achievement & Success',
-      keywords: ['achieve', 'goal', 'success', 'accomplish', 'win', 'challenge', 'result',
-                 '성취', '목표', '성공', '달성', '승리', '도전', '결과', '완수', '업적']
-    },
-    {
-      theme: 'Creativity & Expression',
-      keywords: ['create', 'art', 'design', 'music', 'write', 'express', 'imagine',
-                 '창작', '예술', '디자인', '음악', '글', '표현', '상상', '창의', '창조', '그림']
-    },
-    {
-      theme: 'Independence & Freedom',
-      keywords: ['freedom', 'independent', 'own', 'self', 'choice', 'decide', 'control',
-                 '자유', '독립', '자신', '선택', '결정', '통제', '자율', '주체']
-    },
-    {
-      theme: 'Security & Stability',
-      keywords: ['safe', 'secure', 'stable', 'protect', 'comfort', 'trust', 'reliable',
-                 '안전', '안정', '보호', '편안', '신뢰', '믿음', '안심', '든든']
-    },
+    { theme: 'Growth & Learning', keywords: ['learn', 'grow', 'develop', 'improve', 'education', 'study', 'knowledge', '배우', '성장', '발전', '교육', '공부', '지식'] },
+    { theme: 'Connection & Relationships', keywords: ['people', 'friend', 'family', 'community', 'together', 'social', 'help', '사람', '친구', '가족', '함께', '도움', '관계'] },
+    { theme: 'Achievement & Success', keywords: ['achieve', 'goal', 'success', 'accomplish', 'win', 'challenge', '성취', '목표', '성공', '달성', '도전'] },
+    { theme: 'Creativity & Expression', keywords: ['create', 'art', 'design', 'music', 'write', 'express', '창작', '예술', '디자인', '음악', '표현', '창의'] },
+    { theme: 'Independence & Freedom', keywords: ['freedom', 'independent', 'own', 'self', 'choice', 'decide', '자유', '독립', '자신', '선택', '결정'] },
   ];
 
-  // Match stories to themes
   themeTemplates.forEach(template => {
     const matchedStories = stories.filter(story =>
       template.keywords.some(kw => story.text.toLowerCase().includes(kw))
     );
 
-    console.log(`[generateFindings] Theme "${template.theme}": ${matchedStories.length} matches`);
-
     if (matchedStories.length > 0) {
       findings.push({
         theme: template.theme,
-        relevantStories: matchedStories.slice(0, 3).map(s => s.text),  // Full text, no truncation
+        relevantStories: matchedStories.slice(0, 3).map(s => s.text),
       });
     }
   });
 
-  console.log('[generateFindings] Total themes found:', findings.length);
-
-  // Ensure we return at least 3 themes with placeholders if needed
+  // Ensure minimum 3 themes
   if (findings.length < 3) {
     const defaultThemes = ['Core Value', 'Life Pattern', 'Future Aspiration'];
     for (let i = findings.length; i < 3; i++) {
@@ -562,7 +603,7 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
     }
   }
 
-  return findings.slice(0, 6); // Max 6 themes
+  return findings.slice(0, 6);
 }
 
 /**

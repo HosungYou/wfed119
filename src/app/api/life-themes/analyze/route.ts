@@ -544,7 +544,7 @@ function generateFindings(responses: LifeThemesResponse[]): FindingEntry[] {
     if (matchedStories.length > 0) {
       findings.push({
         theme: template.theme,
-        relevantStories: matchedStories.slice(0, 3).map(s => s.text.substring(0, 100)),
+        relevantStories: matchedStories.slice(0, 3).map(s => s.text),  // Full text, no truncation
       });
     }
   });

@@ -20,10 +20,11 @@ import {
   ChevronRight,
   RotateCcw,
 } from 'lucide-react';
-import { useModuleProgress } from '@/hooks/useModuleProgress';
+import { useModuleProgress, useAllModulesProgress } from '@/hooks/useModuleProgress';
 import { useLanguage } from '@/lib/i18n';
 import { QUESTION_CONFIG, LIFE_THEMES_STEPS, QuestionNumber } from '@/lib/types/lifeThemes';
 import { SessionResetButton } from '@/components/modules/SessionResetButton';
+import { AlertTriangle } from 'lucide-react';
 
 interface ModuleProgress {
   lifeThemes: {
@@ -63,12 +64,28 @@ export default function LifeThemesLanding() {
   const [loading, setLoading] = useState(true);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress | null>(null);
   const { startModule } = useModuleProgress('life-themes');
+  const { completedModules, loading: prerequisiteLoading } = useAllModulesProgress();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [prerequisiteMet, setPrerequisiteMet] = useState<boolean | null>(null);
 
+  // Check prerequisite: Enneagram must be completed first
   useEffect(() => {
+    if (prerequisiteLoading) return;
+
+    const completedSet = new Set(completedModules);
+    const hasEnneagram = completedSet.has('enneagram');
+    setPrerequisiteMet(hasEnneagram);
+
+    if (!hasEnneagram) {
+      // Don't redirect immediately - show a message first
+      setLoading(false);
+      return;
+    }
+
+    // Prerequisite met - start module and fetch progress
     startModule();
     fetchModuleProgress();
-  }, [startModule, refreshKey]);
+  }, [completedModules, prerequisiteLoading, refreshKey, startModule]);
 
   async function fetchModuleProgress() {
     try {
@@ -125,12 +142,52 @@ export default function LifeThemesLanding() {
     }
   }
 
-  if (loading) {
+  // Show loading state
+  if (loading || prerequisiteLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading module status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show prerequisite not met message
+  if (prerequisiteMet === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-8 px-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-6">
+              <AlertTriangle className="w-8 h-8 text-amber-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              {language === 'en' ? 'Complete Enneagram First' : '에니어그램을 먼저 완료하세요'}
+            </h1>
+            <p className="text-gray-600 mb-6">
+              {language === 'en'
+                ? 'You need to complete the Enneagram assessment before starting Life Themes. This ensures a better personalized experience.'
+                : 'Life Themes를 시작하기 전에 에니어그램 진단을 완료해야 합니다. 이를 통해 더 나은 맞춤형 경험을 제공할 수 있습니다.'}
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => router.push('/discover/enneagram')}
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                {language === 'en' ? 'Go to Enneagram' : '에니어그램으로 이동'}
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </button>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="inline-flex items-center justify-center px-6 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl font-medium transition-all"
+              >
+                <LayoutDashboard className="mr-2 w-5 h-5" />
+                {language === 'en' ? 'Back to Dashboard' : '대시보드로 돌아가기'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -152,7 +209,7 @@ export default function LifeThemesLanding() {
             </button>
             <ChevronRight className="w-4 h-4 text-gray-400" />
             <button
-              onClick={() => router.push('/discover')}
+              onClick={() => router.push('/dashboard')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
             >
               <LayoutDashboard className="w-4 h-4" />

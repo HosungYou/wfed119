@@ -322,7 +322,7 @@ export default function ERRCResultsPage() {
             </button>
 
             <button
-              onClick={() => router.push('/discover')}
+              onClick={() => router.push('/dashboard')}
               className="p-4 rounded-xl border-2 border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition-all text-left"
             >
               <Home className="w-6 h-6 text-rose-600 mb-2" />
@@ -376,7 +376,7 @@ export default function ERRCResultsPage() {
           </button>
 
           <button
-            onClick={() => router.push('/discover')}
+            onClick={() => router.push('/dashboard')}
             className="flex items-center px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Continue to Dashboard

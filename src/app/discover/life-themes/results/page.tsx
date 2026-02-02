@@ -180,7 +180,7 @@ export default function LifeThemesResultsPage() {
             </button>
             <ChevronRight className="w-4 h-4 text-gray-400" />
             <button
-              onClick={() => router.push('/discover')}
+              onClick={() => router.push('/dashboard')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-white/80 rounded-lg transition-all"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -646,7 +646,7 @@ export default function LifeThemesResultsPage() {
             </button>
 
             <button
-              onClick={() => router.push('/discover')}
+              onClick={() => router.push('/dashboard')}
               className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all text-left group"
             >
               <Home className="w-6 h-6 text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
@@ -671,7 +671,7 @@ export default function LifeThemesResultsPage() {
           </button>
 
           <button
-            onClick={() => router.push('/discover')}
+            onClick={() => router.push('/dashboard')}
             className="flex items-center px-8 py-3 bg-gradient-to-r from-primary-500 to-secondary-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
           >
             {language === 'en' ? 'Continue to Dashboard' : '대시보드로 이동'}

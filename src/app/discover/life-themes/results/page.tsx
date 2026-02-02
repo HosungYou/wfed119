@@ -294,7 +294,7 @@ export default function LifeThemesResultsPage() {
 
           {/* VS Diverge Design: Orbital Theme Visualization */}
           {session?.findings?.findings && session.findings.findings.length > 0 && (
-            <div className="relative h-80 mb-8 flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-2xl overflow-hidden">
+            <div className="relative h-96 mb-8 flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-2xl overflow-hidden">
               {/* Ambient floating elements */}
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-10 right-20 w-20 h-20 bg-primary-200/30 rounded-full blur-2xl animate-float" />
@@ -303,8 +303,8 @@ export default function LifeThemesResultsPage() {
 
               {/* Center core - YOU */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center text-white font-bold shadow-lg z-10">
-                  <span className="text-lg">{language === 'en' ? 'YOU' : '나'}</span>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center text-white font-bold shadow-lg z-10">
+                  <span className="text-base">{language === 'en' ? 'YOU' : '나'}</span>
                 </div>
               </div>
 
@@ -312,14 +312,10 @@ export default function LifeThemesResultsPage() {
               {session.findings.findings.slice(0, 5).map((finding, idx) => {
                 const priorityIdx = session.followup?.themePriorities?.indexOf(finding.theme) ?? idx;
                 const themeCount = Math.min(session.findings!.findings.length, 5);
-                const radius = 120; // Fixed radius for cleaner layout
+                const radius = 140; // Increased radius for better spacing
                 const angle = (360 / themeCount) * idx - 90; // Start from top
                 const x = Math.cos((angle * Math.PI) / 180) * radius;
                 const y = Math.sin((angle * Math.PI) / 180) * radius;
-                // Larger sizes for better text visibility
-                const size = priorityIdx === 0 ? 'w-20 h-20' :
-                            priorityIdx === 1 ? 'w-18 h-18' :
-                            'w-16 h-16';
                 const color = priorityIdx === 0 ? 'from-amber-400 to-amber-600' :
                               priorityIdx === 1 ? 'from-gray-400 to-gray-600' :
                               'from-primary-400 to-primary-600';
@@ -329,12 +325,12 @@ export default function LifeThemesResultsPage() {
                 return (
                   <div
                     key={finding.theme}
-                    className={`absolute ${size} rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-semibold shadow-xl hover:scale-110 transition-transform duration-300 cursor-pointer group z-20`}
+                    className={`absolute w-16 h-16 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-semibold shadow-xl hover:scale-110 transition-transform duration-300 cursor-pointer group z-20`}
                     style={{
                       transform: `translate(${x}px, ${y}px)`,
                     }}
                   >
-                    <span className="text-center text-xs px-1 leading-tight">{shortName}</span>
+                    <span className="text-center text-[10px] px-1 leading-tight max-w-[56px] truncate">{shortName}</span>
 
                     {/* Tooltip on hover - shows full theme name */}
                     <div className="absolute bottom-full mb-2 hidden group-hover:block bg-neutral-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg z-30">
@@ -353,7 +349,7 @@ export default function LifeThemesResultsPage() {
                   return (
                     <div
                       key={`line-${idx}`}
-                      className="absolute w-24 h-0.5 bg-gradient-to-r from-primary-300/50 to-transparent origin-left"
+                      className="absolute w-32 h-0.5 bg-gradient-to-r from-primary-300/50 to-transparent origin-left"
                       style={{
                         transform: `rotate(${angle}deg)`,
                       }}

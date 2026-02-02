@@ -157,8 +157,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, canContinue: true });
     }
 
-    // Normal message sending
-    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    // Check if this is an initialization request (AI starts conversation)
+    const isInitMessage = message === '__INIT__';
+
+    // Normal message sending - require non-empty message unless it's init
+    if (!isInitMessage && (!message || typeof message !== 'string' || message.trim().length === 0)) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
@@ -193,13 +196,17 @@ export async function POST(request: NextRequest) {
     const messages: ConversationMessage[] = conversation.messages || [];
     const exchangeCount = conversation.exchange_count || 0;
 
-    // Add user message
-    const userMessage: ConversationMessage = {
-      role: 'user',
-      content: message.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    messages.push(userMessage);
+    // For init messages, don't add user message or increment exchange count
+    // Just generate the initial AI greeting
+    if (!isInitMessage) {
+      // Add user message only for real messages
+      const userMessage: ConversationMessage = {
+        role: 'user',
+        content: message.trim(),
+        timestamp: new Date().toISOString(),
+      };
+      messages.push(userMessage);
+    }
 
     // Fetch Q1-Q6 responses for context
     const { data: responses } = await supabase
@@ -221,8 +228,22 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GROQ_API_KEY;
     let aiResponse: string;
     let suggestedThemes: SuggestedThemeData[] | null = null;
-    const newExchangeCount = exchangeCount + 1;
-    const shouldSuggestThemes = newExchangeCount >= MIN_EXCHANGES_FOR_THEMES && !conversation.themes_suggested;
+
+    // Only increment exchange count for real user messages, not init
+    const newExchangeCount = isInitMessage ? exchangeCount : exchangeCount + 1;
+
+    // Should suggest themes when: 3+ real exchanges AND themes not already suggested
+    const shouldSuggestThemes = !isInitMessage &&
+      newExchangeCount >= MIN_EXCHANGES_FOR_THEMES &&
+      !conversation.themes_suggested;
+
+    console.log('[Life Themes Conversation] Exchange info:', {
+      isInitMessage,
+      exchangeCount,
+      newExchangeCount,
+      shouldSuggestThemes,
+      themes_suggested: conversation.themes_suggested,
+    });
 
     if (!apiKey || apiKey.length < 10) {
       // Fallback response without AI
@@ -259,9 +280,16 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (shouldSuggestThemes && suggestedThemes) {
+    // Only mark themes_suggested = true if we actually have themes with content
+    // This prevents the flag from being set on empty arrays
+    const hasValidThemes = suggestedThemes && Array.isArray(suggestedThemes) && suggestedThemes.length > 0;
+
+    if (shouldSuggestThemes && hasValidThemes) {
       updateData.themes_suggested = true;
       updateData.suggested_themes = suggestedThemes;
+      console.log('[Life Themes Conversation] Themes generated:', suggestedThemes.length);
+    } else if (shouldSuggestThemes && !hasValidThemes) {
+      console.warn('[Life Themes Conversation] shouldSuggestThemes=true but no valid themes generated');
     }
 
     const { error: updateError } = await supabase
@@ -274,11 +302,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save conversation' }, { status: 500 });
     }
 
+    // Only indicate themes suggested if we actually have valid themes
+    const actuallyHasThemes = shouldSuggestThemes && hasValidThemes;
+
     return NextResponse.json({
       message: aiMessage,
       exchangeCount: newExchangeCount,
-      themesSuggested: shouldSuggestThemes,
-      suggestedThemes: shouldSuggestThemes ? suggestedThemes : null,
+      themesSuggested: actuallyHasThemes,
+      suggestedThemes: actuallyHasThemes ? suggestedThemes : null,
       canContinue: newExchangeCount < MAX_EXCHANGES,
     });
   } catch (error) {

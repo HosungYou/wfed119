@@ -341,24 +341,44 @@ export default function LifeThemesResultsPage() {
                 );
               })}
 
-              {/* Connection lines (decorative) */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {/* Connection lines using SVG for precise center-to-center connections */}
+              <svg
+                className="absolute pointer-events-none z-0"
+                viewBox="-200 -200 400 400"
+                style={{
+                  width: '400px',
+                  height: '400px',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <defs>
+                  <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0.3" />
+                  </linearGradient>
+                </defs>
                 {session.findings.findings.slice(0, 5).map((finding, idx) => {
                   const themeCount = Math.min(session.findings!.findings.length, 5);
+                  const radius = 160;
                   const angle = (360 / themeCount) * idx - 90;
-                  const lineLength = 160; // Match the radius
+                  const endX = Math.cos((angle * Math.PI) / 180) * radius;
+                  const endY = Math.sin((angle * Math.PI) / 180) * radius;
                   return (
-                    <div
+                    <line
                       key={`line-${idx}`}
-                      className="absolute h-0.5 bg-gradient-to-r from-primary-300/50 to-transparent origin-left"
-                      style={{
-                        width: `${lineLength}px`,
-                        transform: `rotate(${angle}deg)`,
-                      }}
+                      x1={0}
+                      y1={0}
+                      x2={endX}
+                      y2={endY}
+                      stroke="url(#lineGradient)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
                     />
                   );
                 })}
-              </div>
+              </svg>
             </div>
           )}
 

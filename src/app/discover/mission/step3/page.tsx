@@ -2,111 +2,62 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Heart, Brain, Users, Sparkles, DollarSign, HelpCircle, MessageCircle, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Sparkles, CheckCircle, Edit2, Target, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
-interface WellbeingDimension {
-  key: string;
-  reflection: string;
-}
-
-interface AIQuestion {
-  question: string;
-  questionKo: string;
-}
-
 const STEPS = [
-  { id: 'step1', label: 'Values Review', labelKo: '가치관 검토' },
-  { id: 'step2', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step3', label: 'Self-Role Reflection', labelKo: '자기 역할 성찰' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Mission Statement', labelKo: '사명 선언문' },
+  { id: 'step1', label: 'Values Summary', labelKo: '가치관 요약' },
+  { id: 'step2', label: 'Mission Components', labelKo: '사명 구성요소' },
+  { id: 'step3', label: 'Mission Drafting', labelKo: '사명 작성' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
-const WELLBEING_DIMENSIONS = [
-  {
-    key: 'physical',
-    icon: Heart,
-    color: 'rose',
-    title: 'Physical Well-being',
-    titleKo: '신체적 웰빙',
-    description: 'Exercise, nutrition, rest, and stress management.',
-    descriptionKo: '운동, 영양, 휴식, 스트레스 관리.',
-    placeholder: 'e.g., I will exercise 3 times a week to maintain my energy...',
-    placeholderKo: '예: 에너지 유지를 위해 주 3회 운동을 할 것입니다...',
-    example: 'Engage in regular exercise to enhance my physical well-being and energy.',
-    exampleKo: '신체적 웰빙과 에너지를 향상시키기 위해 규칙적인 운동에 참여한다.',
-  },
-  {
-    key: 'intellectual',
-    icon: Brain,
-    color: 'blue',
-    title: 'Intellectual Well-being',
-    titleKo: '지적 웰빙',
-    description: 'Learning, reading, critical thinking, and mental stimulation.',
-    descriptionKo: '학습, 독서, 비판적 사고, 정신적 자극.',
-    placeholder: 'e.g., I will dedicate time each week to read books that stimulate my intellectual curiosity...',
-    placeholderKo: '예: 매주 지적 호기심을 자극하는 책을 읽는 시간을 갖겠습니다...',
-    example: 'Dedicate time each week to read books that stimulate my intellectual curiosity.',
-    exampleKo: '지적 호기심을 자극하는 책을 읽는 시간을 매주 할애한다.',
-  },
-  {
-    key: 'social_emotional',
-    icon: Users,
-    color: 'amber',
-    title: 'Social/Emotional Well-being',
-    titleKo: '사회적/정서적 웰빙',
-    description: 'Relationships, emotional intelligence, and empathy.',
-    descriptionKo: '관계, 감성 지능, 공감.',
-    placeholder: 'e.g., I will invest in relationships and activities that nurture my emotional well-being...',
-    placeholderKo: '예: 정서적 웰빙을 키우는 관계와 활동에 투자하겠습니다...',
-    example: 'Invest in relationships and activities that nurture my emotional well-being.',
-    exampleKo: '정서적 웰빙을 키우는 관계와 활동에 투자한다.',
-  },
-  {
-    key: 'spiritual',
-    icon: Sparkles,
-    color: 'purple',
-    title: 'Spiritual Well-being',
-    titleKo: '영적 웰빙',
-    description: 'Purpose, meditation, values, and connection to something greater.',
-    descriptionKo: '목적, 명상, 가치관, 더 큰 것과의 연결.',
-    placeholder: 'e.g., I will explore and practice spiritual activities that resonate with my beliefs and values...',
-    placeholderKo: '예: 내 신념과 가치에 부합하는 영적 활동을 탐구하고 실천하겠습니다...',
-    example: 'Explore and practice spiritual activities that resonate with my beliefs and values.',
-    exampleKo: '내 신념과 가치에 부합하는 영적 활동을 탐구하고 실천한다.',
-  },
-  {
-    key: 'financial',
-    icon: DollarSign,
-    color: 'green',
-    title: 'Financial Well-being',
-    titleKo: '재정적 웰빙',
-    description: 'Budgeting, saving, financial education, and security.',
-    descriptionKo: '예산 관리, 저축, 재정 교육, 안정성.',
-    placeholder: 'e.g., I will develop healthy financial habits by creating a realistic budget...',
-    placeholderKo: '예: 현실적인 예산을 세워 건강한 재정 습관을 기르겠습니다...',
-    example: 'Develop healthy financial habits by creating a realistic budget, building an emergency fund, and educating myself about personal finance.',
-    exampleKo: '현실적인 예산 수립, 비상 자금 마련, 개인 재정에 대한 교육을 통해 건강한 재정 습관을 기른다.',
-  },
-];
+interface Round3Analysis {
+  clarity: { score: number; feedback: string };
+  inspiration: { score: number; feedback: string };
+  altruism: { score: number; feedback: string };
+  conciseness: { score: number; feedback: string };
+  overall: number;
+  suggestions: string[];
+}
 
 export default function MissionStep3() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [wellbeing, setWellbeing] = useState<Record<string, string>>({
-    physical: '',
-    intellectual: '',
-    social_emotional: '',
-    spiritual: '',
-    financial: '',
-  });
-  const [activeDimension, setActiveDimension] = useState<string | null>('physical');
-  const [aiQuestions, setAiQuestions] = useState<Record<string, AIQuestion[]>>({});
-  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [session, setSession] = useState<any>(null);
+
+  // Components from previous step
+  const [selectedVerbs, setSelectedVerbs] = useState<string[]>([]);
+  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const [missionValues, setMissionValues] = useState<string[]>([]);
+
+  // Current round (1, 2, or 3)
+  const [currentRound, setCurrentRound] = useState(1);
+
+  // Round 1 state
+  const [r1Option, setR1Option] = useState<'option1' | 'option2' | 'freewrite'>('option1');
+  const [r1AiOption1, setR1AiOption1] = useState('');
+  const [r1AiOption2, setR1AiOption2] = useState('');
+  const [r1Text, setR1Text] = useState('');
+  const [r1Reason, setR1Reason] = useState('');
+  const [r1Loading, setR1Loading] = useState(false);
+
+  // Round 2 state
+  const [r2Text, setR2Text] = useState('');
+  const [r2AiSuggestion, setR2AiSuggestion] = useState('');
+  const [r2AiTips, setR2AiTips] = useState<string[]>([]);
+  const [r2Loading, setR2Loading] = useState(false);
+  const [r2ChangeNote, setR2ChangeNote] = useState('');
+
+  // Round 3 state
+  const [r3Text, setR3Text] = useState('');
+  const [r3Assessment, setR3Assessment] = useState({ clear: false, inspiring: false, altruistic: false, concise: false });
+  const [r3Analysis, setR3Analysis] = useState<Round3Analysis | null>(null);
+  const [r3AnalysisLoading, setR3AnalysisLoading] = useState(false);
+  const [r3PolishLoading, setR3PolishLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -122,12 +73,41 @@ export default function MissionStep3() {
         return;
       }
 
-      // Load existing wellbeing reflections if any
-      if (data.wellbeing_reflections) {
-        setWellbeing(prev => ({
-          ...prev,
-          ...data.wellbeing_reflections,
-        }));
+      setSession(data);
+
+      // Load components
+      const verbs = [...(data.selected_verbs || []), ...(data.custom_verbs || [])];
+      const targets = [...(data.selected_targets || []), ...(data.custom_targets || [])];
+      const values = data.top3_mission_values || [];
+      setSelectedVerbs(verbs.slice(0, 3));
+      setSelectedTargets(targets.slice(0, 3));
+      setMissionValues(values.slice(0, 3));
+
+      // Restore round data
+      const r1 = data.round1_data || {};
+      const r2 = data.round2_data || {};
+      const r3 = data.round3_data || {};
+
+      if (r1.text) {
+        setR1Option(r1.selectedOption || 'option1');
+        setR1Text(r1.text);
+        setR1AiOption1(r1.aiOption1 || '');
+        setR1AiOption2(r1.aiOption2 || '');
+        if (r2.text) {
+          setR2Text(r2.text);
+          setR2AiSuggestion(r2.aiSuggestion || '');
+          setCurrentRound(r3.text ? 3 : 2);
+          if (r3.text) {
+            setR3Text(r3.text);
+            setR3Assessment(r3.selfAssessment || { clear: false, inspiring: false, altruistic: false, concise: false });
+            setR3Analysis(r3.aiAnalysis || null);
+          }
+        } else {
+          setCurrentRound(2);
+        }
+      } else {
+        // Generate Round 1 templates
+        generateR1Templates(verbs.slice(0, 3), targets.slice(0, 3), values.slice(0, 3));
       }
 
       setLoading(false);
@@ -137,76 +117,172 @@ export default function MissionStep3() {
     }
   }
 
-  async function loadAIQuestions(dimensionKey: string) {
-    setAiLoading(prev => ({ ...prev, [dimensionKey]: true }));
+  async function generateR1Templates(verbs: string[], targets: string[], values: string[]) {
+    setR1Loading(true);
     try {
-      const res = await fetch('/api/discover/mission/ai-questions', {
+      const res = await fetch('/api/discover/mission/ai-suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'wellbeing_questions',
-          dimension: dimensionKey,
-        }),
+        body: JSON.stringify({ type: 'mission_composer', verbs, targets, values }),
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.questions) {
-          setAiQuestions(prev => ({
-            ...prev,
-            [dimensionKey]: data.questions,
-          }));
-        }
+      const data = await res.json();
+      const suggestion = data.suggestion;
+      if (suggestion?.option1) {
+        setR1AiOption1(suggestion.option1);
+        setR1Text(suggestion.option1);
+      }
+      if (suggestion?.option2) {
+        setR1AiOption2(suggestion.option2);
       }
     } catch (error) {
-      console.error('[Mission Step 3] AI questions error:', error);
+      console.error('[Mission Step 3] Template error:', error);
+      // Fallback templates
+      const v = verbs.slice(0, 3);
+      const t = targets.slice(0, 3);
+      const val = values.slice(0, 3);
+      const opt1 = `My mission is to ${v.join(', ')} for ${t.join(', ')} guided by ${val.join(', ')}.`;
+      const opt2 = `My mission is to ${v[0]} and ${v[1]} in ${t[0]} and ${t[1]}, driven by ${val[0]}, so that I can ${v[2]} meaningful change in ${t[2]}.`;
+      setR1AiOption1(opt1);
+      setR1AiOption2(opt2);
+      setR1Text(opt1);
     } finally {
-      setAiLoading(prev => ({ ...prev, [dimensionKey]: false }));
+      setR1Loading(false);
     }
   }
 
-  function updateWellbeing(key: string, value: string) {
-    setWellbeing(prev => ({ ...prev, [key]: value }));
+  function selectR1Option(opt: 'option1' | 'option2' | 'freewrite') {
+    setR1Option(opt);
+    if (opt === 'option1') setR1Text(r1AiOption1);
+    else if (opt === 'option2') setR1Text(r1AiOption2);
+    else if (opt === 'freewrite') setR1Text('');
   }
 
-  async function handleSave() {
+  async function saveRound1AndNext() {
+    if (!r1Text.trim()) {
+      alert(language === 'ko' ? 'Round 1 텍스트를 입력해주세요.' : 'Please enter Round 1 text.');
+      return;
+    }
     setSaving(true);
     try {
       await fetch('/api/discover/mission/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          wellbeing_reflections: wellbeing,
+          round1_data: { selectedOption: r1Option, text: r1Text, aiOption1: r1AiOption1, aiOption2: r1AiOption2, reason: r1Reason },
         }),
       });
-      alert(language === 'ko' ? '저장되었습니다.' : 'Saved!');
+      setR2Text(r1Text);
+      setCurrentRound(2);
     } catch (error) {
-      console.error('[Mission Step 3] Save error:', error);
+      console.error('[Mission Step 3] Save R1 error:', error);
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleNext() {
-    const filledCount = Object.values(wellbeing).filter(v => v.trim()).length;
-    if (filledCount < 3) {
-      alert(language === 'ko'
-        ? '최소 3개의 영역에 대한 성찰을 작성해주세요.'
-        : 'Please complete reflections for at least 3 dimensions.');
+  async function getR2AiSuggestion() {
+    setR2Loading(true);
+    try {
+      const res = await fetch('/api/discover/mission/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'sentence_refiner', currentDraft: r2Text, round1Text: r1Text }),
+      });
+      const data = await res.json();
+      const suggestion = data.suggestion;
+      if (suggestion?.refined) setR2AiSuggestion(suggestion.refined);
+      if (suggestion?.tips) setR2AiTips(suggestion.tips);
+    } catch (error) {
+      console.error('[Mission Step 3] R2 AI error:', error);
+    } finally {
+      setR2Loading(false);
+    }
+  }
+
+  async function saveRound2AndNext() {
+    if (!r2Text.trim()) {
+      alert(language === 'ko' ? 'Round 2 텍스트를 입력해주세요.' : 'Please enter Round 2 text.');
       return;
     }
-
     setSaving(true);
     try {
       await fetch('/api/discover/mission/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          current_step: 4,
-          wellbeing_reflections: wellbeing,
+          round2_data: { text: r2Text, aiSuggestion: r2AiSuggestion, changeNote: r2ChangeNote },
         }),
       });
+      setR3Text(r2Text);
+      setCurrentRound(3);
+    } catch (error) {
+      console.error('[Mission Step 3] Save R2 error:', error);
+    } finally {
+      setSaving(false);
+    }
+  }
 
+  async function analyzeR3() {
+    if (!r3Text.trim()) return;
+    setR3AnalysisLoading(true);
+    try {
+      const res = await fetch('/api/discover/mission/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'mission_analyst', missionText: r3Text }),
+      });
+      const data = await res.json();
+      if (data.suggestion) setR3Analysis(data.suggestion);
+    } catch (error) {
+      console.error('[Mission Step 3] R3 analysis error:', error);
+    } finally {
+      setR3AnalysisLoading(false);
+    }
+  }
+
+  async function polishR3() {
+    setR3PolishLoading(true);
+    try {
+      const res = await fetch('/api/discover/mission/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'polish_suggest', missionText: r3Text, analysis: r3Analysis }),
+      });
+      const data = await res.json();
+      if (data.suggestion && typeof data.suggestion === 'string') {
+        setR3Text(data.suggestion);
+      }
+    } catch (error) {
+      console.error('[Mission Step 3] R3 polish error:', error);
+    } finally {
+      setR3PolishLoading(false);
+    }
+  }
+
+  async function handleNext() {
+    if (!r3Text.trim()) {
+      alert(language === 'ko' ? '최종 사명 선언문을 입력해주세요.' : 'Please enter your final mission statement.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Build draft versions
+      const draftVersions = [];
+      if (r1Text) draftVersions.push({ version: 1, text: r1Text, createdAt: new Date().toISOString(), source: 'round1' as const });
+      if (r2Text && r2Text !== r1Text) draftVersions.push({ version: 2, text: r2Text, createdAt: new Date().toISOString(), source: 'round2' as const });
+      if (r3Text) draftVersions.push({ version: 3, text: r3Text, createdAt: new Date().toISOString(), source: 'round3' as const });
+
+      await fetch('/api/discover/mission/session', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          current_step: 4,
+          round3_data: { text: r3Text, selfAssessment: r3Assessment, aiAnalysis: r3Analysis },
+          final_statement: r3Text,
+          draft_versions: draftVersions,
+        }),
+      });
       router.push('/discover/mission/step4');
     } catch (error) {
       console.error('[Mission Step 3] Save error:', error);
@@ -215,19 +291,19 @@ export default function MissionStep3() {
     }
   }
 
-  const activities = createActivitiesFromSteps(STEPS, '/discover/mission', 3, [1, 2]);
-  const filledCount = Object.values(wellbeing).filter(v => v.trim()).length;
+  function getScoreColor(score: number) {
+    if (score >= 8) return 'text-green-600';
+    if (score >= 5) return 'text-yellow-600';
+    return 'text-red-600';
+  }
 
-  const getColorClasses = (color: string, isActive: boolean) => {
-    const colors: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-      rose: { bg: 'bg-rose-50', border: 'border-rose-300', text: 'text-rose-700', icon: 'text-rose-500' },
-      blue: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700', icon: 'text-blue-500' },
-      amber: { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700', icon: 'text-amber-500' },
-      purple: { bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-700', icon: 'text-purple-500' },
-      green: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', icon: 'text-green-500' },
-    };
-    return colors[color] || colors.blue;
-  };
+  function getScoreBg(score: number) {
+    if (score >= 8) return 'bg-green-100';
+    if (score >= 5) return 'bg-yellow-100';
+    return 'bg-red-100';
+  }
+
+  const activities = createActivitiesFromSteps(STEPS, '/discover/mission', 3, [1, 2]);
 
   if (loading) {
     return (
@@ -241,186 +317,338 @@ export default function MissionStep3() {
     <ModuleShell
       moduleId="mission"
       currentStep={3}
-      totalSteps={5}
-      title={language === 'ko' ? '자기 역할 성찰' : 'Self-Role Reflection'}
+      totalSteps={4}
+      title={language === 'ko' ? '사명 작성' : 'Mission Drafting'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Instruction Card */}
-        <ModuleCard padding="normal">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
-            {language === 'ko' ? '2. 자기 역할 성찰 (Sharpen the Saw)' : '2. Reflecting on Self-Role (Sharpen the Saw)'}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {language === 'ko'
-              ? '다양한 삶의 역할을 고려할 때, 자신과의 관계를 생각하는 것이 중요합니다. Stephen Covey의 "톱날 갈기" 개념을 활용하여 다음 네 가지 차원(+재정)에서 웰빙을 향상시키는 방법을 생각해보세요.'
-              : 'While considering different life roles, it\'s crucial to consider the relationship with yourself. Using Stephen Covey\'s "Sharpen the Saw" concept, think about ways to enhance your well-being in these four dimensions (+financial).'}
-          </p>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">
-                {language === 'ko' ? '출처: ' : 'Source: '}
-              </span>
-              Covey, S. R. (1991). <em>The seven habits of highly effective people</em>. Simon & Schuster.
-            </p>
+        {/* Components Summary */}
+        <ModuleCard padding="normal" className="bg-gray-50">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            {language === 'ko' ? '선택된 구성요소' : 'Selected Components'}
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {selectedVerbs.map(v => (
+              <span key={v} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{v}</span>
+            ))}
+            {selectedTargets.map(t => (
+              <span key={t} className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">{t}</span>
+            ))}
+            {missionValues.map(v => (
+              <span key={v} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">{v}</span>
+            ))}
           </div>
         </ModuleCard>
 
-        {/* Wellbeing Dimensions */}
-        <div className="space-y-4">
-          {WELLBEING_DIMENSIONS.map((dim) => {
-            const Icon = dim.icon;
-            const isActive = activeDimension === dim.key;
-            const hasContent = wellbeing[dim.key]?.trim().length > 0;
-            const colorClasses = getColorClasses(dim.color, isActive);
-            const dimensionQuestions = aiQuestions[dim.key] || [];
-            const isLoadingQuestions = aiLoading[dim.key];
+        {/* Round Progress Indicator */}
+        <div className="flex items-center justify-center gap-2">
+          {[1, 2, 3].map(r => (
+            <div key={r} className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                currentRound > r ? 'bg-teal-500 text-white' :
+                currentRound === r ? 'bg-teal-100 text-teal-700 border-2 border-teal-500' :
+                'bg-gray-200 text-gray-500'
+              }`}>
+                {currentRound > r ? '✓' : r}
+              </div>
+              {r < 3 && <div className={`w-12 h-0.5 ${currentRound > r ? 'bg-teal-500' : 'bg-gray-200'}`} />}
+            </div>
+          ))}
+        </div>
 
-            return (
-              <ModuleCard
-                key={dim.key}
-                padding="normal"
-                className={`transition-all cursor-pointer ${
-                  isActive
-                    ? `ring-2 ring-teal-500 ${colorClasses.bg} ${colorClasses.border}`
-                    : hasContent
-                    ? 'bg-green-50 border-green-200'
-                    : 'hover:border-gray-300'
-                }`}
-              >
-                <div
-                  onClick={() => setActiveDimension(isActive ? null : dim.key)}
-                  className="flex items-start gap-3"
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    hasContent ? 'bg-green-100' : colorClasses.bg
-                  }`}>
-                    {hasContent ? (
-                      <span className="text-green-600 font-bold">✓</span>
-                    ) : (
-                      <Icon className={`w-5 h-5 ${colorClasses.icon}`} />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">
-                      {language === 'ko' ? dim.titleKo : dim.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {language === 'ko' ? dim.descriptionKo : dim.description}
-                    </p>
-                  </div>
+        {/* ============ ROUND 1 ============ */}
+        {currentRound >= 1 && (
+          <ModuleCard padding="normal" className={currentRound === 1 ? 'ring-2 ring-teal-500' : 'opacity-80'}>
+            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs">1</span>
+              {language === 'ko' ? 'Round 1: 기본 구조' : 'Round 1: Basic Structure'}
+            </h2>
+
+            {r1Loading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">{language === 'ko' ? 'AI가 템플릿을 생성하고 있습니다...' : 'AI is generating templates...'}</p>
+              </div>
+            ) : (
+              <>
+                {/* Option Selection */}
+                <div className="space-y-3 mb-4">
+                  {/* Option 1 */}
+                  <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-all ${r1Option === 'option1' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={r1Option === 'option1'} onChange={() => selectR1Option('option1')} className="text-teal-600" />
+                      <span className="font-medium text-sm">{language === 'ko' ? '구조 1 (기본)' : 'Structure 1 (Standard)'}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2 ml-7">{r1AiOption1 || '...'}</p>
+                  </label>
+
+                  {/* Option 2 */}
+                  <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-all ${r1Option === 'option2' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={r1Option === 'option2'} onChange={() => selectR1Option('option2')} className="text-teal-600" />
+                      <span className="font-medium text-sm">{language === 'ko' ? '구조 2 (통합)' : 'Structure 2 (Integrated)'}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2 ml-7">{r1AiOption2 || '...'}</p>
+                  </label>
+
+                  {/* Freewrite */}
+                  <label className={`block p-4 rounded-lg border-2 cursor-pointer transition-all ${r1Option === 'freewrite' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={r1Option === 'freewrite'} onChange={() => selectR1Option('freewrite')} className="text-teal-600" />
+                      <span className="font-medium text-sm">{language === 'ko' ? '자유 작성' : 'Free Write'}</span>
+                    </div>
+                  </label>
                 </div>
 
-                {isActive && (
-                  <div className="mt-4 space-y-3">
-                    {/* AI Questions Section */}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                        <MessageCircle className="w-4 h-4 text-purple-500" />
-                        {language === 'ko' ? 'AI 성찰 질문' : 'AI Reflection Questions'}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          loadAIQuestions(dim.key);
-                        }}
-                        disabled={isLoadingQuestions}
-                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 px-2 py-1 rounded-lg hover:bg-purple-50"
-                      >
-                        {isLoadingQuestions ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3 h-3" />
-                        )}
-                        {language === 'ko' ? '질문 생성' : 'Generate'}
-                      </button>
-                    </div>
+                {/* Editable textarea */}
+                <textarea
+                  value={r1Text}
+                  onChange={(e) => setR1Text(e.target.value)}
+                  rows={4}
+                  placeholder={language === 'ko' ? '사명 선언문을 작성하세요...' : 'Write your mission statement...'}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base"
+                  disabled={currentRound !== 1}
+                />
 
-                    {dimensionQuestions.length > 0 && (
-                      <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
-                        {dimensionQuestions.map((q, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-purple-800">
-                              {language === 'ko' ? q.questionKo : q.question}
-                            </p>
-                          </div>
+                {currentRound === 1 && (
+                  <div className="flex justify-end mt-3">
+                    <ModuleButton onClick={saveRound1AndNext} disabled={saving || !r1Text.trim()}>
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {language === 'ko' ? 'Round 2로 이동' : 'Go to Round 2'}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </ModuleButton>
+                  </div>
+                )}
+              </>
+            )}
+          </ModuleCard>
+        )}
+
+        {/* ============ ROUND 2 ============ */}
+        {currentRound >= 2 && (
+          <ModuleCard padding="normal" className={currentRound === 2 ? 'ring-2 ring-teal-500' : 'opacity-80'}>
+            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs">2</span>
+              {language === 'ko' ? 'Round 2: 완성된 문장' : 'Round 2: Complete Sentence'}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              {language === 'ko'
+                ? '순서를 바꾸고 동사와 명사를 결합하여 하나의 자연스러운 완성 문장을 만드세요.'
+                : 'Rearrange and combine verbs and nouns to create one natural, complete sentence.'}
+            </p>
+
+            {/* Reference: Round 1 result */}
+            <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 mb-4">
+              <span className="font-medium">{language === 'ko' ? 'Round 1 결과: ' : 'Round 1 result: '}</span>
+              {r1Text}
+            </div>
+
+            <textarea
+              value={r2Text}
+              onChange={(e) => setR2Text(e.target.value)}
+              rows={4}
+              placeholder={language === 'ko' ? '자연스러운 문장으로 다시 작성하세요...' : 'Rewrite as a natural sentence...'}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base"
+              disabled={currentRound !== 2}
+            />
+            <p className="text-xs text-gray-400 mt-1">{r2Text.length} {language === 'ko' ? '자' : 'chars'}</p>
+
+            {currentRound === 2 && (
+              <>
+                {/* AI Suggestion */}
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    onClick={getR2AiSuggestion}
+                    disabled={r2Loading || !r2Text.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 text-sm font-medium disabled:opacity-50"
+                  >
+                    {r2Loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {language === 'ko' ? 'AI 제안 받기' : 'Get AI Suggestion'}
+                  </button>
+                </div>
+
+                {r2AiSuggestion && (
+                  <div className="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm font-medium text-purple-800 mb-2">AI {language === 'ko' ? '제안' : 'Suggestion'}:</p>
+                    <p className="text-sm text-purple-900 mb-3">{r2AiSuggestion}</p>
+                    {r2AiTips.length > 0 && (
+                      <div className="space-y-1">
+                        {r2AiTips.map((tip, i) => (
+                          <p key={i} className="text-xs text-purple-600">- {tip}</p>
                         ))}
                       </div>
                     )}
-
-                    <textarea
-                      value={wellbeing[dim.key]}
-                      onChange={(e) => updateWellbeing(dim.key, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      placeholder={language === 'ko' ? dim.placeholderKo : dim.placeholder}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                    />
-                    <div className="flex items-start gap-2 p-3 bg-white/50 rounded-lg">
-                      <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">
-                          {language === 'ko' ? '예시: ' : 'Example: '}
-                        </span>
-                        {language === 'ko' ? dim.exampleKo : dim.example}
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => setR2Text(r2AiSuggestion)}
+                      className="mt-2 text-xs text-purple-700 hover:text-purple-900 underline"
+                    >
+                      {language === 'ko' ? 'AI 제안 채택' : 'Use AI suggestion'}
+                    </button>
                   </div>
                 )}
-              </ModuleCard>
-            );
-          })}
-        </div>
 
-        {/* Progress Summary */}
-        <ModuleCard padding="normal" className={filledCount >= 3 ? 'bg-green-50 border-green-200' : 'bg-gray-50'}>
-          <div className="flex items-center justify-between">
-            <p className={filledCount >= 3 ? 'text-green-700' : 'text-gray-600'}>
+                <div className="flex justify-end mt-4">
+                  <ModuleButton onClick={saveRound2AndNext} disabled={saving || !r2Text.trim()}>
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {language === 'ko' ? 'Round 3으로 이동' : 'Go to Round 3'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </ModuleButton>
+                </div>
+              </>
+            )}
+          </ModuleCard>
+        )}
+
+        {/* ============ ROUND 3 ============ */}
+        {currentRound >= 3 && (
+          <ModuleCard padding="normal" className={currentRound === 3 ? 'ring-2 ring-teal-500' : ''}>
+            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs">3</span>
+              {language === 'ko' ? 'Round 3: 최종 다듬기' : 'Round 3: Final Polish'}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
               {language === 'ko'
-                ? `${filledCount}/5 영역 완성 (최소 3개 필요)`
-                : `${filledCount}/5 dimensions completed (minimum 3 required)`}
+                ? '더 매력적이고 간결하게 만드세요. 아래 4가지 기준을 참고하세요.'
+                : 'Make it more compelling and concise. Refer to the 4 criteria below.'}
             </p>
-            <div className="flex gap-1">
-              {WELLBEING_DIMENSIONS.map((dim) => {
-                const hasContent = wellbeing[dim.key]?.trim().length > 0;
-                return (
-                  <div
-                    key={dim.key}
-                    className={`w-3 h-3 rounded-full ${hasContent ? 'bg-green-500' : 'bg-gray-300'}`}
-                  />
-                );
-              })}
+
+            {/* Reference: Round 2 result */}
+            <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 mb-4">
+              <span className="font-medium">{language === 'ko' ? 'Round 2 결과: ' : 'Round 2 result: '}</span>
+              {r2Text}
             </div>
-          </div>
-        </ModuleCard>
+
+            <textarea
+              value={r3Text}
+              onChange={(e) => setR3Text(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base"
+              placeholder={language === 'ko' ? '최종 사명 선언문...' : 'Final mission statement...'}
+            />
+            <p className="text-xs text-gray-400 mt-1">{r3Text.length} {language === 'ko' ? '자' : 'chars'}</p>
+
+            {/* Self-Assessment Checklist */}
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-medium text-amber-800 mb-3">
+                {language === 'ko' ? '자기평가 체크리스트' : 'Self-Assessment Checklist'}
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { key: 'clear' as const, ko: '10살 아이도 이해할 만큼 명확한가 (Clear)', en: 'Clear enough for a 10-year-old to understand' },
+                  { key: 'inspiring' as const, ko: '나에게 에너지를 주는 영감이 있는가 (Inspiring)', en: 'Inspiring - gives you energy' },
+                  { key: 'altruistic' as const, ko: '타인의 지지를 얻을 만큼 이타적인가 (Altruistic)', en: 'Altruistic - others would support it' },
+                  { key: 'concise' as const, ko: '외울 수 있을 만큼 간결한가 (Concise)', en: 'Concise - can be memorized' },
+                ].map(item => (
+                  <label key={item.key} className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={r3Assessment[item.key]}
+                      onChange={() => setR3Assessment(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                      className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-amber-900">{language === 'ko' ? item.ko : item.en}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Analysis & Polish buttons */}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                onClick={analyzeR3}
+                disabled={r3AnalysisLoading || !r3Text.trim()}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 text-sm font-medium disabled:opacity-50"
+              >
+                {r3AnalysisLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
+                {language === 'ko' ? 'AI 분석' : 'AI Analyze'}
+              </button>
+              <button
+                onClick={polishR3}
+                disabled={r3PolishLoading || !r3Text.trim()}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 text-sm font-medium disabled:opacity-50"
+              >
+                {r3PolishLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {language === 'ko' ? 'AI로 다듬기' : 'AI Polish'}
+              </button>
+            </div>
+
+            {/* AI Analysis Results */}
+            {r3Analysis && (
+              <div className="mt-4 p-4 bg-white border rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {language === 'ko' ? 'AI 분석 결과' : 'AI Analysis Results'}
+                </h4>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {[
+                    { key: 'clarity', label: language === 'ko' ? '명확성' : 'Clarity' },
+                    { key: 'inspiration', label: language === 'ko' ? '영감' : 'Inspiration' },
+                    { key: 'altruism', label: language === 'ko' ? '이타성' : 'Altruism' },
+                    { key: 'conciseness', label: language === 'ko' ? '간결성' : 'Conciseness' },
+                  ].map(item => {
+                    const data = r3Analysis[item.key as keyof Round3Analysis] as { score: number; feedback: string };
+                    return (
+                      <div key={item.key} className={`p-3 rounded-lg ${getScoreBg(data.score)}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                          <span className={`font-bold ${getScoreColor(data.score)}`}>{data.score}/10</span>
+                        </div>
+                        <p className="text-xs text-gray-600">{data.feedback}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="text-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">{language === 'ko' ? '종합' : 'Overall'}: </span>
+                  <span className={`text-lg font-bold ${getScoreColor(r3Analysis.overall)}`}>{r3Analysis.overall}/10</span>
+                </div>
+                {r3Analysis.suggestions?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-gray-700 mb-1">{language === 'ko' ? '개선 제안:' : 'Suggestions:'}</p>
+                    {r3Analysis.suggestions.map((s, i) => (
+                      <p key={i} className="text-xs text-gray-600">- {s}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Final Mission Highlight */}
+            {r3Text.trim() && (
+              <div className="mt-6 p-6 bg-gradient-to-br from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-xl">
+                <Target className="w-6 h-6 text-teal-600 mx-auto mb-2" />
+                <p className="text-center text-lg font-medium text-gray-900 leading-relaxed">
+                  &ldquo;{r3Text}&rdquo;
+                </p>
+              </div>
+            )}
+          </ModuleCard>
+        )}
 
         {/* Navigation */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <ModuleButton
-            onClick={() => router.push('/discover/mission/step2')}
+            onClick={() => {
+              if (currentRound > 1) {
+                setCurrentRound(currentRound - 1);
+              } else {
+                router.push('/discover/mission/step2');
+              }
+            }}
             variant="secondary"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {language === 'ko' ? '이전' : 'Back'}
           </ModuleButton>
-          <div className="flex gap-3">
-            <ModuleButton
-              onClick={handleSave}
-              variant="ghost"
-              disabled={saving}
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {language === 'ko' ? '저장' : 'Save'}
-            </ModuleButton>
+          {currentRound === 3 && (
             <ModuleButton
               onClick={handleNext}
-              disabled={saving || filledCount < 3}
+              disabled={saving || !r3Text.trim()}
             >
-              {language === 'ko' ? '다음 단계' : 'Next Step'}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {language === 'ko' ? '다음: 성찰' : 'Next: Reflection'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </ModuleButton>
-          </div>
+          )}
         </div>
       </div>
     </ModuleShell>

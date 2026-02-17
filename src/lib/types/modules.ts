@@ -176,8 +176,8 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
     id: 'mission',
     name: 'Mission Statement',
     nameKo: '사명 선언문',
-    description: 'Craft your personal mission statement based on your values and life themes',
-    descriptionKo: '가치관과 생애 주제를 바탕으로 개인 사명 선언문을 작성합니다',
+    description: 'Craft your personal mission statement by assembling values, targets, and action verbs',
+    descriptionKo: '가치관, 기여대상, 행동동사를 조합하여 개인 사명 선언문을 작성합니다',
     route: '/discover/mission',
     part: 'mission-roles',
     order: 4,
@@ -186,9 +186,9 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       { moduleId: 'life-themes', required: true, dataFields: ['themes'] },
       { moduleId: 'enneagram', required: false, dataFields: ['type', 'wing'] },
     ],
-    stages: ['values-review', 'purpose-questions', 'mission-draft', 'mission-refinement'],
-    requiredForCompletion: ['values-review', 'purpose-questions', 'mission-draft'],
-    estimatedMinutes: 30,
+    stages: ['values-summary', 'mission-components', 'mission-drafting', 'reflection'],
+    requiredForCompletion: ['values-summary', 'mission-components', 'mission-drafting'],
+    estimatedMinutes: 35,
   },
   'life-roles': {
     id: 'life-roles',
@@ -203,9 +203,9 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
       { moduleId: 'life-themes', required: false, dataFields: ['themes'] },
     ],
-    stages: ['relationship-map', 'life-rainbow', 'rc-table', 'reflection'],
+    stages: ['relationship-map', 'wellbeing-reflection', 'life-rainbow', 'rc-table', 'reflection'],
     requiredForCompletion: ['relationship-map', 'rc-table'],
-    estimatedMinutes: 30,
+    estimatedMinutes: 40,
   },
   vision: {
     id: 'vision',
@@ -625,32 +625,67 @@ export interface ErrcData {
 // ============================================================================
 
 export interface MissionData {
-  // Step 1: Values Review
+  // Step 1: 가치관 요약 및 선택
   valuesUsed: Array<{
     type: 'terminal' | 'instrumental' | 'work';
     name: string;
     relevance: string;
+    selected: boolean;
   }>;
+  top3MissionValues: string[];
+  aiValuesInsight?: string;
 
-  // Step 2: Purpose Questions
-  purposeAnswers: {
-    whatDoYouDo: string;       // What do you do?
-    forWhom: string;           // For whom?
-    howDoYouDoIt: string;      // How do you do it?
-    whatImpact: string;        // What impact do you want to make?
-    whyDoesItMatter: string;   // Why does it matter to you?
+  // Step 2: 사명 구성요소
+  selectedTargets: string[];
+  selectedVerbs: string[];
+  customTargets?: string[];
+  customVerbs?: string[];
+
+  // Step 3: 사명 작성 (3라운드)
+  round1: {
+    selectedOption: 'option1' | 'option2' | 'freewrite';
+    text: string;
+    aiOption1?: string;
+    aiOption2?: string;
+  };
+  round2: {
+    text: string;
+    aiSuggestion?: string;
+  };
+  round3: {
+    text: string;
+    selfAssessment: {
+      clear: boolean;
+      inspiring: boolean;
+      altruistic: boolean;
+      concise: boolean;
+    };
+    aiAnalysis?: {
+      clarity: { score: number; feedback: string };
+      inspiration: { score: number; feedback: string };
+      altruism: { score: number; feedback: string };
+      conciseness: { score: number; feedback: string };
+      overall: number;
+      suggestions: string[];
+    };
   };
 
-  // Step 3: Mission Draft
+  // Step 4: 성찰
+  reflections: {
+    inspiration: string;
+    alignment: string;
+    feedback: string;
+  };
+  aiFollowUpInsights?: string[];
+
+  // 최종
+  finalStatement: string;
   draftVersions: Array<{
     version: number;
     text: string;
     createdAt: string;
-    aiGenerated: boolean;
+    source: 'round1' | 'round2' | 'round3' | 'manual';
   }>;
-
-  // Step 4: Final Mission
-  finalStatement: string;
   completedAt?: string;
 }
 
@@ -732,30 +767,40 @@ export interface CareerOptionsData {
 // ============================================================================
 
 export interface LifeRolesData {
-  // Step 1: Relationship Mind Map
+  // Step 1: Relationship Mind Map (관계 마인드맵)
   roles: Array<{
     id: string;
-    entity: string;       // relationship entity (e.g., "Family", "Workplace")
-    role: string;          // role name (e.g., "Son/Daughter", "Team Member")
+    entity: string;       // Relationship entity (e.g., "가족", "직장")
+    role: string;          // Role name (e.g., "자녀", "팀원")
+    category: 'personal' | 'professional' | 'community' | 'health';
+    importance: 1 | 2 | 3 | 4 | 5;
   }>;
 
-  // Step 2: Life Rainbow
+  // Step 2: Wellbeing Reflections - Sharpen the Saw (톱날 갈기)
+  wellbeingReflections: Record<string, {
+    reflection: string;
+    currentLevel: number;
+    goals: string;
+  }>;
+
+  // Step 3: Life Rainbow (인생 무지개 - Super's Life-Span Model)
   rainbowData: {
     currentAge: number;
-    slots: Array<{ roleId: string; roleName: string; ageStart: number; ageEnd: number; intensity: number }>;
-    notes?: string;
+    slots: Array<{ roleId: string; ageStart: number; ageEnd: number; intensity: number }>;
   };
 
-  // Step 3: R&C Table
+  // Step 4: R&C Table (역할과 헌신 표)
   commitments: Array<{
     roleId: string;
     roleName: string;
     commitment: string;
     currentTimePercentage: number;
     desiredTimePercentage: number;
+    gapAnalysis: string;
   }>;
+  wellbeingCommitments: Record<string, string>;
 
-  // Step 4: Reflection
+  // Step 5: Reflection & Balance Assessment (성찰)
   balanceAssessment: {
     currentBalance: 'balanced' | 'moderately_imbalanced' | 'severely_imbalanced';
     suggestedAdjustments: string[];

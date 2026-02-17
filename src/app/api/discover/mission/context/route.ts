@@ -20,12 +20,13 @@ export async function GET(request: NextRequest) {
     const userId = auth.userId;
 
     // Fetch all module data in parallel
-    const [valuesResult, strengthsResult, enneagramResult, visionResult, userResult] = await Promise.all([
+    const [valuesResult, strengthsResult, enneagramResult, visionResult, userResult, lifeThemesResult] = await Promise.all([
       fetchValuesData(supabase, userId),
       fetchStrengthsData(supabase, userId),
       fetchEnneagramData(supabase, userId),
       fetchVisionData(supabase, userId),
       fetchUserData(supabase, userId),
+      fetchLifeThemesData(supabase, userId),
     ]);
 
     return NextResponse.json({
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
       enneagram: enneagramResult,
       vision: visionResult,
       user: userResult,
+      lifeThemes: lifeThemesResult,
     });
   } catch (error) {
     console.error('[Mission Context] Error:', error);
@@ -155,5 +157,27 @@ async function fetchUserData(supabase: any, userId: string) {
     };
   } catch (error) {
     return { name: 'User', email: '' };
+  }
+}
+
+async function fetchLifeThemesData(supabase: any, userId: string) {
+  try {
+    const { data } = await supabase
+      .from('life_themes_sessions')
+      .select('themes, life_narrative')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data?.themes) return null;
+
+    const themes = Array.isArray(data.themes) ? data.themes : [];
+    return {
+      themes: themes.map((t: any) => t.theme || t.name || t).slice(0, 5),
+      narrative: data.life_narrative || '',
+    };
+  } catch (error) {
+    return null;
   }
 }

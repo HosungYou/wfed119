@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle, Heart, Briefcase, Compass } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle, Heart, Briefcase, Compass, Sparkles, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
@@ -14,11 +14,10 @@ interface ValueItem {
 }
 
 const STEPS = [
-  { id: 'step1', label: 'Values Review', labelKo: '가치관 검토' },
-  { id: 'step2', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step3', label: 'Self-Role Reflection', labelKo: '자기 역할 성찰' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Mission Statement', labelKo: '사명 선언문' },
+  { id: 'step1', label: 'Values Summary', labelKo: '가치관 요약' },
+  { id: 'step2', label: 'Mission Components', labelKo: '사명 구성요소' },
+  { id: 'step3', label: 'Mission Drafting', labelKo: '사명 작성' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
 export default function MissionStep1() {
@@ -28,6 +27,10 @@ export default function MissionStep1() {
   const [saving, setSaving] = useState(false);
   const [context, setContext] = useState<any>(null);
   const [selectedValues, setSelectedValues] = useState<ValueItem[]>([]);
+  const [top3MissionValues, setTop3MissionValues] = useState<string[]>([]);
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [aiInsightLoading, setAiInsightLoading] = useState(false);
+  const [showAiInsight, setShowAiInsight] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -46,6 +49,9 @@ export default function MissionStep1() {
 
       if (sessionData.values_used && sessionData.values_used.length > 0) {
         setSelectedValues(sessionData.values_used);
+        if (sessionData.top3_mission_values) {
+          setTop3MissionValues(sessionData.top3_mission_values);
+        }
       } else {
         // Pre-populate with user's values
         const initialValues: ValueItem[] = [];
@@ -76,6 +82,42 @@ export default function MissionStep1() {
     }
   }
 
+  async function loadAiValuesInsight() {
+    setAiInsightLoading(true);
+    try {
+      const selected = selectedValues.filter(v => v.selected);
+      const res = await fetch('/api/discover/mission/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'values_connector',
+          values: selected,
+        }),
+      });
+      const data = await res.json();
+      if (data.suggestion) {
+        setAiInsight(typeof data.suggestion === 'string' ? data.suggestion : JSON.stringify(data.suggestion));
+        setShowAiInsight(true);
+      }
+    } catch (error) {
+      console.error('[Mission Step 1] AI insight error:', error);
+    } finally {
+      setAiInsightLoading(false);
+    }
+  }
+
+  function toggleTop3Value(name: string) {
+    setTop3MissionValues(prev => {
+      if (prev.includes(name)) {
+        return prev.filter(v => v !== name);
+      }
+      if (prev.length >= 3) {
+        return prev;
+      }
+      return [...prev, name];
+    });
+  }
+
   function toggleValue(index: number) {
     setSelectedValues(prev => {
       const updated = [...prev];
@@ -101,6 +143,13 @@ export default function MissionStep1() {
       return;
     }
 
+    if (top3MissionValues.length < 3) {
+      alert(language === 'ko'
+        ? '사명과 가장 연결되는 가치 3개를 선택해주세요.'
+        : 'Please select 3 values most connected to your mission.');
+      return;
+    }
+
     setSaving(true);
     try {
       await fetch('/api/discover/mission/session', {
@@ -108,7 +157,9 @@ export default function MissionStep1() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_step: 2,
-          values_used: selected,
+          values_used: selectedValues,
+          top3_mission_values: top3MissionValues,
+          ai_insights: aiInsight ? { values_insight: aiInsight } : undefined,
         }),
       });
 
@@ -162,7 +213,7 @@ export default function MissionStep1() {
     <ModuleShell
       moduleId="mission"
       currentStep={1}
-      totalSteps={5}
+      totalSteps={4}
       title={language === 'ko' ? '가치관 검토' : 'Values Review'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
@@ -281,6 +332,76 @@ export default function MissionStep1() {
             )}
           </div>
         </ModuleCard>
+
+        {/* Top 3 Mission Values Selection */}
+        {selectedCount >= 3 && (
+          <ModuleCard padding="normal">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              {language === 'ko' ? '사명과 가장 연결되는 가치 3개 선택' : 'Select 3 Values Most Connected to Your Mission'}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              {language === 'ko'
+                ? '위에서 선택한 가치 중 사명 선언문의 핵심이 될 3개를 골라주세요.'
+                : 'From your selected values above, choose the 3 that will form the core of your mission statement.'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {selectedValues.filter(v => v.selected).map((value, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => toggleTop3Value(value.name)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    top3MissionValues.includes(value.name)
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : top3MissionValues.length >= 3
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-teal-100 hover:text-teal-700'
+                  }`}
+                >
+                  {value.name}
+                  {top3MissionValues.includes(value.name) && ' ✓'}
+                </button>
+              ))}
+            </div>
+            <p className={`text-sm mt-3 ${top3MissionValues.length === 3 ? 'text-green-600' : 'text-gray-500'}`}>
+              {top3MissionValues.length}/3 {language === 'ko' ? '선택됨' : 'selected'}
+            </p>
+          </ModuleCard>
+        )}
+
+        {/* AI Values Insight */}
+        {selectedCount >= 3 && top3MissionValues.length === 3 && (
+          <ModuleCard padding="normal" className="bg-purple-50 border-purple-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-purple-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                {language === 'ko' ? 'AI 가치 인사이트' : 'AI Values Insight'}
+              </h3>
+              <button
+                onClick={loadAiValuesInsight}
+                disabled={aiInsightLoading}
+                className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 px-3 py-1 rounded-lg hover:bg-purple-100"
+              >
+                {aiInsightLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {language === 'ko' ? '생성' : 'Generate'}
+              </button>
+            </div>
+            {showAiInsight && aiInsight ? (
+              <div className="prose prose-sm text-purple-800 max-w-none">
+                <p className="whitespace-pre-wrap">{aiInsight}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-purple-700">
+                {language === 'ko'
+                  ? '버튼을 클릭하면 AI가 당신의 가치 프로필을 분석합니다. (선택사항)'
+                  : 'Click the button to get AI analysis of your value profile. (Optional)'}
+              </p>
+            )}
+          </ModuleCard>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-between">

@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
     "gp": "bash scripts/git-push.sh",
     "push": "bash scripts/git-push.sh",
     "watch:push": "bash scripts/auto-commit-push.sh",
@@ -46,8 +49,13 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
     "@types/d3": "^7.4.3",
+    "@vitejs/plugin-react": "^4.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.0"
+    "eslint-config-next": "15.5.0",
+    "jsdom": "^25.0.0",
+    "vitest": "^3.0.0"
   }
 }

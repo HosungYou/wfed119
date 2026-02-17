@@ -570,11 +570,48 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   async function saveToServer() {
     const userId = user?.id ?? user?.email ?? undefined;
     if (!userId) { alert('Please sign in to save.'); return; }
+
+    // BUG FIX #5: Validate minimum 3 values in "Very Important" before saving
+    if (layout.very_important.length < 3) {
+      alert('Please place at least 3 values in "Very Important" before saving.');
+      return;
+    }
+
     const payload = { user_id: userId, set: routeSet, layout, top3 };
     const res = await fetch('/api/discover/values/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!res.ok) alert('Save failed'); else {
-      alert('Saved successfully');
-      // Reflect progress for this values set
+    if (!res.ok) { alert('Save failed'); return; }
+
+    alert('Saved successfully');
+
+    // BUG FIX #3 + #4: Check completion status and update progress with percentage
+    try {
+      const sessionRes = await fetch('/api/discover/values/session');
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+
+        // Count completed sets (including current save which may not be reflected yet)
+        const completedSets = [
+          sessionData.terminal_completed,
+          sessionData.instrumental_completed,
+          sessionData.work_completed,
+        ].filter(Boolean).length;
+
+        // The current save might not be reflected in the session data yet,
+        // so we ensure at least 1 set is counted
+        const effectiveCompleted = Math.max(completedSets, 1);
+        const percent = Math.min(100, Math.round((effectiveCompleted / 3) * 100));
+
+        // Update stage with percentage
+        await updateStage(routeSet, percent);
+
+        // If all 3 sets completed, mark module as complete
+        if (sessionData.terminal_completed && sessionData.instrumental_completed && sessionData.work_completed) {
+          await completeModule();
+        }
+      }
+    } catch (err) {
+      console.error('[Values] Error checking completion status:', err);
+      // Fallback: still update stage without percentage
       updateStage(routeSet);
 
       // Check if all 3 value types are now complete → auto-complete module

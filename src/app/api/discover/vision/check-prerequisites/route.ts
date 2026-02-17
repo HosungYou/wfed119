@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     // 1. 인증 확인 (개발 모드 지원)
     const { data: { user } } = await supabase.auth.getUser();
-    const auth = checkDevAuth(user ? { user } : null);
+    const auth = checkDevAuth(user);
 
     // 개발 모드에서는 선행조건 체크를 스킵하고 모두 완료로 처리
     if (auth.isDevelopmentMode) {

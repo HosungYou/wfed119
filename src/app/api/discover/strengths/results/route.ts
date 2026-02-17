@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       console.error('[Strengths Results] Auth error:', authError);
     }
 
-    const auth = checkDevAuth(user ? { user } : null);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     // 1. Authentication check with dev mode support
     const { data: { user } } = await supabase.auth.getUser();
-    const auth = checkDevAuth(user ? { user } : null);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -86,7 +86,7 @@ export async function DELETE(req: NextRequest) {
 
     // 1. Authentication check with dev mode support
     const { data: { user } } = await supabase.auth.getUser();
-    const auth = checkDevAuth(user ? { user } : null);
+    const auth = checkDevAuth(user);
 
     if (!requireAuth(auth)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

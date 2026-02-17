@@ -37,14 +37,12 @@ export async function GET(request: NextRequest) {
 
     // Pre-fill from mission_sessions if available
     let prefillRoles: any[] = [];
-    let prefillWellbeing: any = {};
     let prefillRainbow: any = {};
     let prefillRoleCommitments: any[] = [];
-    let prefillWellbeingCommitments: any = {};
 
     const { data: missionSession } = await supabase
       .from('mission_sessions')
-      .select('life_roles, wellbeing_reflections, role_commitments, wellbeing_commitments')
+      .select('life_roles, role_commitments')
       .eq('user_id', userId)
       .single();
 
@@ -59,18 +57,6 @@ export async function GET(request: NextRequest) {
           source: 'mission',
         }));
       }
-      if (missionSession.wellbeing_reflections && Object.keys(missionSession.wellbeing_reflections).length > 0) {
-        // Convert simple string reflections to structured format
-        const wr: any = {};
-        for (const [key, val] of Object.entries(missionSession.wellbeing_reflections)) {
-          if (typeof val === 'string' && val.trim()) {
-            wr[key] = { reflection: val, currentLevel: 5, goals: '' };
-          } else if (typeof val === 'object' && val !== null) {
-            wr[key] = val;
-          }
-        }
-        prefillWellbeing = wr;
-      }
       if (missionSession.role_commitments && Array.isArray(missionSession.role_commitments)) {
         prefillRoleCommitments = missionSession.role_commitments.map((c: any) => ({
           roleId: '',
@@ -80,9 +66,6 @@ export async function GET(request: NextRequest) {
           desiredTimePct: 0,
           gapAnalysis: '',
         }));
-      }
-      if (missionSession.wellbeing_commitments && Object.keys(missionSession.wellbeing_commitments).length > 0) {
-        prefillWellbeingCommitments = missionSession.wellbeing_commitments;
       }
     }
 
@@ -94,10 +77,8 @@ export async function GET(request: NextRequest) {
         status: 'in_progress',
         current_step: 1,
         life_roles: prefillRoles,
-        wellbeing_reflections: prefillWellbeing,
         rainbow_data: prefillRainbow,
         role_commitments: prefillRoleCommitments,
-        wellbeing_commitments: prefillWellbeingCommitments,
         reflection: {},
       })
       .select()
@@ -132,7 +113,7 @@ export async function PATCH(request: NextRequest) {
     const userId = auth.userId;
     const body = await request.json();
 
-    if (body.current_step && (body.current_step < 1 || body.current_step > 5)) {
+    if (body.current_step && (body.current_step < 1 || body.current_step > 4)) {
       return NextResponse.json({ error: 'Invalid step' }, { status: 400 });
     }
 
@@ -140,10 +121,8 @@ export async function PATCH(request: NextRequest) {
 
     if (body.current_step !== undefined) updateData.current_step = body.current_step;
     if (body.life_roles !== undefined) updateData.life_roles = body.life_roles;
-    if (body.wellbeing_reflections !== undefined) updateData.wellbeing_reflections = body.wellbeing_reflections;
     if (body.rainbow_data !== undefined) updateData.rainbow_data = body.rainbow_data;
     if (body.role_commitments !== undefined) updateData.role_commitments = body.role_commitments;
-    if (body.wellbeing_commitments !== undefined) updateData.wellbeing_commitments = body.wellbeing_commitments;
     if (body.reflection !== undefined) updateData.reflection = body.reflection;
     if (body.status !== undefined) updateData.status = body.status;
 

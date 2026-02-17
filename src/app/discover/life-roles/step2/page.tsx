@@ -1,115 +1,80 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Heart, Brain, Users, Sparkles, DollarSign, HelpCircle, MessageCircle, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, GripVertical, Table2, BarChart3, StickyNote, Info } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
-interface WellbeingEntry {
-  reflection: string;
-  currentLevel: number; // 1-10
-  goals: string;
+interface LifeRole {
+  id: string;
+  entity: string;
+  role: string;
 }
 
-interface AIQuestion {
-  question: string;
-  questionKo: string;
+interface RainbowSlot {
+  roleId: string;
+  roleName: string;
+  ageStart: number;
+  ageEnd: number;
+  intensity: number; // 1-3
+}
+
+interface RainbowData {
+  currentAge: number;
+  slots: RainbowSlot[];
+  notes: string;
 }
 
 const STEPS = [
   { id: 'step1', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step2', label: 'Wellbeing Reflection', labelKo: '웰빙 성찰' },
-  { id: 'step3', label: 'Life Rainbow', labelKo: '인생 무지개' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Reflection', labelKo: '성찰' },
+  { id: 'step2', label: 'Life Rainbow', labelKo: '인생 무지개' },
+  { id: 'step3', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
-const WELLBEING_DIMENSIONS = [
-  {
-    key: 'physical',
-    icon: Heart,
-    color: 'emerald',
-    title: 'Physical Well-being',
-    titleKo: '신체적 웰빙',
-    description: 'Exercise, nutrition, rest, and stress management.',
-    descriptionKo: '운동, 영양, 휴식, 스트레스 관리.',
-    placeholder: 'e.g., I will exercise 3 times a week to maintain my energy...',
-    placeholderKo: '예: 에너지 유지를 위해 주 3회 운동을 할 것입니다...',
-    goalsPlaceholder: 'e.g., Run a 5K by next year, improve sleep quality...',
-    goalsPlaceholderKo: '예: 내년까지 5K 달리기, 수면의 질 개선...',
-  },
-  {
-    key: 'intellectual',
-    icon: Brain,
-    color: 'blue',
-    title: 'Intellectual Well-being',
-    titleKo: '지적 웰빙',
-    description: 'Learning, reading, critical thinking, and mental stimulation.',
-    descriptionKo: '학습, 독서, 비판적 사고, 정신적 자극.',
-    placeholder: 'e.g., I will dedicate time each week to read books that stimulate my intellectual curiosity...',
-    placeholderKo: '예: 매주 지적 호기심을 자극하는 책을 읽는 시간을 갖겠습니다...',
-    goalsPlaceholder: 'e.g., Complete an online course, read 12 books this year...',
-    goalsPlaceholderKo: '예: 온라인 강좌 수강 완료, 올해 책 12권 읽기...',
-  },
-  {
-    key: 'social_emotional',
-    icon: Users,
-    color: 'rose',
-    title: 'Social/Emotional Well-being',
-    titleKo: '사회적/정서적 웰빙',
-    description: 'Relationships, emotional intelligence, and empathy.',
-    descriptionKo: '관계, 감성 지능, 공감.',
-    placeholder: 'e.g., I will invest in relationships and activities that nurture my emotional well-being...',
-    placeholderKo: '예: 정서적 웰빙을 키우는 관계와 활동에 투자하겠습니다...',
-    goalsPlaceholder: 'e.g., Weekly family dinners, join a community group...',
-    goalsPlaceholderKo: '예: 주간 가족 식사, 커뮤니티 그룹 참여...',
-  },
-  {
-    key: 'spiritual',
-    icon: Sparkles,
-    color: 'amber',
-    title: 'Spiritual Well-being',
-    titleKo: '영적 웰빙',
-    description: 'Purpose, meditation, values, and connection to something greater.',
-    descriptionKo: '목적, 명상, 가치관, 더 큰 것과의 연결.',
-    placeholder: 'e.g., I will explore and practice spiritual activities that resonate with my beliefs and values...',
-    placeholderKo: '예: 내 신념과 가치에 부합하는 영적 활동을 탐구하고 실천하겠습니다...',
-    goalsPlaceholder: 'e.g., Daily 10-minute meditation, volunteer monthly...',
-    goalsPlaceholderKo: '예: 매일 10분 명상, 월간 자원봉사...',
-  },
-  {
-    key: 'financial',
-    icon: DollarSign,
-    color: 'teal',
-    title: 'Financial Well-being',
-    titleKo: '재정적 웰빙',
-    description: 'Budgeting, saving, financial education, and security.',
-    descriptionKo: '예산 관리, 저축, 재정 교육, 안정성.',
-    placeholder: 'e.g., I will develop healthy financial habits by creating a realistic budget...',
-    placeholderKo: '예: 현실적인 예산을 세워 건강한 재정 습관을 기르겠습니다...',
-    goalsPlaceholder: 'e.g., Save 3-month emergency fund, reduce debt by 20%...',
-    goalsPlaceholderKo: '예: 3개월 비상 자금 저축, 부채 20% 감소...',
-  },
+const AGE_MARKERS = [10, 20, 30, 40, 50, 60, 70, 80];
+
+const RAINBOW_COLORS = [
+  { bg: 'rgb(239, 68, 68)',   label: 'red',    tailwind: 'bg-red-500' },
+  { bg: 'rgb(249, 115, 22)',  label: 'orange', tailwind: 'bg-orange-500' },
+  { bg: 'rgb(234, 179, 8)',   label: 'yellow', tailwind: 'bg-yellow-500' },
+  { bg: 'rgb(34, 197, 94)',   label: 'green',  tailwind: 'bg-green-500' },
+  { bg: 'rgb(59, 130, 246)',  label: 'blue',   tailwind: 'bg-blue-500' },
+  { bg: 'rgb(99, 102, 241)',  label: 'indigo', tailwind: 'bg-indigo-500' },
+  { bg: 'rgb(139, 92, 246)',  label: 'violet', tailwind: 'bg-violet-500' },
+  { bg: 'rgb(20, 184, 166)',  label: 'teal',   tailwind: 'bg-teal-500' },
 ];
 
-const DEFAULT_WELLBEING: Record<string, WellbeingEntry> = {
-  physical: { reflection: '', currentLevel: 5, goals: '' },
-  intellectual: { reflection: '', currentLevel: 5, goals: '' },
-  social_emotional: { reflection: '', currentLevel: 5, goals: '' },
-  spiritual: { reflection: '', currentLevel: 5, goals: '' },
-  financial: { reflection: '', currentLevel: 5, goals: '' },
+const SHARPEN_SAW_SLOT: RainbowSlot = {
+  roleId: 'sharpen-the-saw',
+  roleName: 'Sharpen the Saw',
+  ageStart: 10,
+  ageEnd: 80,
+  intensity: 3,
 };
+
+const DEFAULT_RAINBOW_DATA: RainbowData = {
+  currentAge: 25,
+  slots: [SHARPEN_SAW_SLOT],
+  notes: '',
+};
+
+function ageToPercent(age: number): number {
+  // Map age 10-80 to 0-100%
+  return Math.max(0, Math.min(100, ((age - 10) / 70) * 100));
+}
 
 export default function LifeRolesStep2() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [wellbeing, setWellbeing] = useState<Record<string, WellbeingEntry>>(DEFAULT_WELLBEING);
-  const [activeDimension, setActiveDimension] = useState<string | null>('physical');
-  const [aiQuestions, setAiQuestions] = useState<Record<string, AIQuestion[]>>({});
-  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [lifeRoles, setLifeRoles] = useState<LifeRole[]>([]);
+  const [rainbowData, setRainbowData] = useState<RainbowData>(DEFAULT_RAINBOW_DATA);
+  const [viewMode, setViewMode] = useState<'arc' | 'table'>('arc');
+  const [draggedRole, setDraggedRole] = useState<LifeRole | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -125,23 +90,29 @@ export default function LifeRolesStep2() {
         return;
       }
 
-      // Load existing wellbeing reflections if any
-      if (data.wellbeing_reflections) {
-        const loaded: Record<string, WellbeingEntry> = { ...DEFAULT_WELLBEING };
-        for (const key of Object.keys(data.wellbeing_reflections)) {
-          const existing = data.wellbeing_reflections[key];
-          // Handle both old format (string) and new format (object)
-          if (typeof existing === 'string') {
-            loaded[key] = { reflection: existing, currentLevel: 5, goals: '' };
-          } else if (existing && typeof existing === 'object') {
-            loaded[key] = {
-              reflection: existing.reflection ?? '',
-              currentLevel: existing.currentLevel ?? 5,
-              goals: existing.goals ?? '',
-            };
-          }
-        }
-        setWellbeing(loaded);
+      // Load life roles from step1
+      if (data.life_roles && data.life_roles.length > 0) {
+        setLifeRoles(data.life_roles);
+      }
+
+      // Load existing rainbow data
+      if (data.rainbow_data) {
+        const loadedSlots = data.rainbow_data.slots ?? [];
+        // Ensure Sharpen the Saw is always in slot 0
+        const hasSharpenSaw = loadedSlots.length > 0 && loadedSlots[0]?.roleId === 'sharpen-the-saw';
+        const slots = hasSharpenSaw
+          ? [SHARPEN_SAW_SLOT, ...loadedSlots.slice(1)]
+          : [SHARPEN_SAW_SLOT, ...loadedSlots];
+
+        setRainbowData({
+          currentAge: data.rainbow_data.currentAge ?? 25,
+          slots,
+          notes: data.rainbow_data.notes ?? '',
+        });
+      } else {
+        // Pre-populate currentAge from session if available
+        const age = data.current_age ?? 25;
+        setRainbowData(prev => ({ ...prev, currentAge: age }));
       }
 
       setLoading(false);
@@ -151,36 +122,87 @@ export default function LifeRolesStep2() {
     }
   }
 
-  async function loadAIQuestions(dimensionKey: string) {
-    setAiLoading(prev => ({ ...prev, [dimensionKey]: true }));
-    try {
-      const res = await fetch('/api/discover/life-roles/ai-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dimension: dimensionKey }),
-      });
+  // Check if a slot is the read-only Sharpen the Saw slot
+  function isSharpenSawSlot(index: number): boolean {
+    return index === 0;
+  }
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.questions) {
-          setAiQuestions(prev => ({
-            ...prev,
-            [dimensionKey]: data.questions,
-          }));
-        }
+  // Drag and Drop handlers
+  function handleDragStart(e: DragEvent, role: LifeRole) {
+    setDraggedRole(role);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragEnd() {
+    setDraggedRole(null);
+    setDragOverSlot(null);
+  }
+
+  function handleDragOver(e: DragEvent, slotIndex: number) {
+    if (isSharpenSawSlot(slotIndex)) return; // Can't drop on Sharpen the Saw
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSlot(slotIndex);
+  }
+
+  function handleDragLeave() {
+    setDragOverSlot(null);
+  }
+
+  function handleDrop(e: DragEvent, slotIndex: number) {
+    e.preventDefault();
+    if (!draggedRole || isSharpenSawSlot(slotIndex)) {
+      setDragOverSlot(null);
+      return;
+    }
+
+    const newSlots = [...rainbowData.slots];
+    const currentSlotEntry = newSlots[slotIndex];
+
+    if (currentSlotEntry) {
+      newSlots[slotIndex] = {
+        ...currentSlotEntry,
+        roleId: draggedRole.id,
+        roleName: draggedRole.role,
+      };
+    } else {
+      // Fill sparse array up to slotIndex
+      while (newSlots.length <= slotIndex) {
+        newSlots.push({ roleId: '', roleName: '', ageStart: 10, ageEnd: 80, intensity: 2 });
       }
-    } catch (error) {
-      console.error('[Life Roles Step 2] AI questions error:', error);
-    } finally {
-      setAiLoading(prev => ({ ...prev, [dimensionKey]: false }));
+      newSlots[slotIndex] = {
+        roleId: draggedRole.id,
+        roleName: draggedRole.role,
+        ageStart: 20,
+        ageEnd: 50,
+        intensity: 2,
+      };
+    }
+
+    setRainbowData(prev => ({ ...prev, slots: newSlots }));
+    setDraggedRole(null);
+    setDragOverSlot(null);
+  }
+
+  function removeFromRainbow(slotIndex: number) {
+    if (isSharpenSawSlot(slotIndex)) return; // Can't remove Sharpen the Saw
+    const newSlots = [...rainbowData.slots];
+    newSlots[slotIndex] = { roleId: '', roleName: '', ageStart: 10, ageEnd: 80, intensity: 2 };
+    setRainbowData(prev => ({ ...prev, slots: newSlots }));
+  }
+
+  function updateSlotField(slotIndex: number, field: keyof RainbowSlot, value: number | string) {
+    if (isSharpenSawSlot(slotIndex)) return; // Can't modify Sharpen the Saw
+    const newSlots = [...rainbowData.slots];
+    if (newSlots[slotIndex]) {
+      newSlots[slotIndex] = { ...newSlots[slotIndex], [field]: value };
+      setRainbowData(prev => ({ ...prev, slots: newSlots }));
     }
   }
 
-  function updateWellbeing(key: string, field: keyof WellbeingEntry, value: string | number) {
-    setWellbeing(prev => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: value },
-    }));
+  function getSlot(index: number): RainbowSlot | null {
+    const slot = rainbowData.slots[index];
+    return slot && slot.roleId ? slot : null;
   }
 
   async function handleSave() {
@@ -189,7 +211,7 @@ export default function LifeRolesStep2() {
       await fetch('/api/discover/life-roles/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wellbeing_reflections: wellbeing }),
+        body: JSON.stringify({ rainbow_data: rainbowData }),
       });
       alert(language === 'ko' ? '저장되었습니다.' : 'Saved!');
     } catch (error) {
@@ -200,11 +222,12 @@ export default function LifeRolesStep2() {
   }
 
   async function handleNext() {
-    const filledCount = Object.values(wellbeing).filter(v => v.reflection?.trim().length > 0).length;
-    if (filledCount < 3) {
+    // Count placed roles (excluding the auto Sharpen the Saw in slot 0)
+    const placedCount = rainbowData.slots.filter((s, i) => i > 0 && s.roleId).length;
+    if (placedCount < 3) {
       alert(language === 'ko'
-        ? '최소 3개의 영역에 대한 성찰을 작성해주세요.'
-        : 'Please complete reflections for at least 3 dimensions.');
+        ? '최소 3개의 역할을 무지개에 배치해주세요.'
+        : 'Please place at least 3 roles on the rainbow.');
       return;
     }
 
@@ -215,7 +238,7 @@ export default function LifeRolesStep2() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_step: 3,
-          wellbeing_reflections: wellbeing,
+          rainbow_data: rainbowData,
         }),
       });
       router.push('/discover/life-roles/step3');
@@ -227,18 +250,8 @@ export default function LifeRolesStep2() {
   }
 
   const activities = createActivitiesFromSteps(STEPS, '/discover/life-roles', 2, [1]);
-  const filledCount = Object.values(wellbeing).filter(v => v.reflection?.trim().length > 0).length;
-
-  const getColorClasses = (color: string) => {
-    const colors: Record<string, { bg: string; border: string; text: string; icon: string; slider: string }> = {
-      emerald: { bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-700', icon: 'text-emerald-500', slider: 'accent-emerald-600' },
-      blue: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700', icon: 'text-blue-500', slider: 'accent-blue-600' },
-      rose: { bg: 'bg-rose-50', border: 'border-rose-300', text: 'text-rose-700', icon: 'text-rose-500', slider: 'accent-rose-600' },
-      amber: { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700', icon: 'text-amber-500', slider: 'accent-amber-600' },
-      teal: { bg: 'bg-teal-50', border: 'border-teal-300', text: 'text-teal-700', icon: 'text-teal-500', slider: 'accent-teal-600' },
-    };
-    return colors[color] || colors.blue;
-  };
+  // Count user-placed roles (excluding slot 0 = Sharpen the Saw)
+  const placedCount = rainbowData.slots.filter((s, i) => i > 0 && s.roleId).length;
 
   if (loading) {
     return (
@@ -252,199 +265,441 @@ export default function LifeRolesStep2() {
     <ModuleShell
       moduleId="life-roles"
       currentStep={2}
-      totalSteps={5}
-      title={language === 'ko' ? '웰빙 성찰 (톱날 갈기)' : 'Wellbeing Reflection (Sharpen the Saw)'}
+      totalSteps={4}
+      title={language === 'ko' ? '인생 무지개' : 'Life Rainbow'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Instruction Card */}
+        {/* Instruction Card with citation */}
         <ModuleCard padding="normal">
           <h2 className="text-xl font-bold text-gray-900 mb-3">
-            {language === 'ko' ? '웰빙 성찰 (Sharpen the Saw)' : 'Wellbeing Reflection (Sharpen the Saw)'}
+            {language === 'ko' ? '인생 무지개 시각화' : 'Life Rainbow Visualization'}
           </h2>
           <p className="text-gray-600 mb-4">
             {language === 'ko'
-              ? '다양한 삶의 역할을 탐색하는 과정에서 자신을 돌보는 것이 중요합니다. Stephen Covey의 "톱날 갈기" 개념을 바탕으로, 다섯 가지 웰빙 차원에서 현재 상태를 성찰하고 목표를 설정해보세요.'
-              : "As you explore your life roles, taking care of yourself is essential. Based on Stephen Covey's \"Sharpen the Saw\" concept, reflect on your current state across five wellbeing dimensions and set goals for each."}
+              ? 'Donald Super의 삶의 역할 이론을 바탕으로, 인생의 여러 시기에 걸쳐 어떤 역할들을 수행하게 될지 시각화해보세요. 왼쪽의 역할 카드를 드래그하여 무지개 슬롯에 배치하고, 연령 범위와 강도를 설정하세요.'
+              : "Based on Donald Super's life-role theory, visualize which roles you'll fulfill across different life stages. Drag role cards from the left onto rainbow slots and set age ranges and intensity."}
           </p>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-700">
               <span className="font-semibold">
                 {language === 'ko' ? '출처: ' : 'Source: '}
               </span>
-              Covey, S. R. (1991). <em>The seven habits of highly effective people</em>. Simon &amp; Schuster.
+              Super, D. E. (1980). A life-span, life-space approach to career development. <em>Journal of Vocational Behavior, 16</em>(3), 282-298.
             </p>
           </div>
         </ModuleCard>
 
-        {/* Wellbeing Dimensions */}
-        <div className="space-y-4">
-          {WELLBEING_DIMENSIONS.map((dim) => {
-            const Icon = dim.icon;
-            const isActive = activeDimension === dim.key;
-            const entry = wellbeing[dim.key];
-            const hasContent = entry?.reflection?.trim().length > 0;
-            const colorClasses = getColorClasses(dim.color);
-            const dimensionQuestions = aiQuestions[dim.key] || [];
-            const isLoadingQuestions = aiLoading[dim.key];
+        {/* Sharpen the Saw Info Card */}
+        <ModuleCard padding="normal" className="bg-purple-50 border-purple-200">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-purple-800 mb-1">
+                {language === 'ko' ? 'Sharpen the Saw (자기관리)' : 'Sharpen the Saw (Self-Renewal)'}
+              </h4>
+              <p className="text-sm text-purple-700">
+                {language === 'ko'
+                  ? 'Sharpen the Saw (자기관리)는 인생 전체에 걸쳐 자동으로 포함됩니다. 신체적, 지적, 사회적/정서적, 영적 차원에서의 지속적인 자기 갱신을 나타냅니다.'
+                  : 'Sharpen the Saw (Self-Renewal) is automatically included across your entire lifespan. It represents ongoing self-renewal in physical, intellectual, social/emotional, and spiritual dimensions.'}
+              </p>
+            </div>
+          </div>
+        </ModuleCard>
 
-            return (
-              <ModuleCard
-                key={dim.key}
-                padding="normal"
-                className={`transition-all cursor-pointer ${
-                  isActive
-                    ? `ring-2 ring-teal-500 ${colorClasses.bg} ${colorClasses.border}`
-                    : hasContent
-                    ? 'bg-green-50 border-green-200'
-                    : 'hover:border-gray-300'
-                }`}
-              >
-                <div
-                  onClick={() => setActiveDimension(isActive ? null : dim.key)}
-                  className="flex items-start gap-3"
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    hasContent ? 'bg-green-100' : colorClasses.bg
-                  }`}>
-                    {hasContent ? (
-                      <span className="text-green-600 font-bold">✓</span>
-                    ) : (
-                      <Icon className={`w-5 h-5 ${colorClasses.icon}`} />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">
-                      {language === 'ko' ? dim.titleKo : dim.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {language === 'ko' ? dim.descriptionKo : dim.description}
-                    </p>
-                    {!isActive && entry?.currentLevel !== undefined && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                          <div
-                            className="bg-teal-500 h-1.5 rounded-full"
-                            style={{ width: `${(entry.currentLevel / 10) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">{entry.currentLevel}/10</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {/* Current Age Input */}
+        <ModuleCard padding="normal">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              {language === 'ko' ? '현재 나이' : 'Current Age'}
+            </label>
+            <input
+              type="number"
+              min={10}
+              max={80}
+              value={rainbowData.currentAge}
+              onChange={(e) => setRainbowData(prev => ({ ...prev, currentAge: Number(e.target.value) }))}
+              className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center font-semibold"
+            />
+            <p className="text-sm text-gray-500">
+              {language === 'ko'
+                ? '현재 나이를 입력하면 무지개 시각화에 현재 위치가 표시됩니다.'
+                : 'Enter your current age to see your position marked on the rainbow visualization.'}
+            </p>
+          </div>
+        </ModuleCard>
 
-                {isActive && (
-                  <div className="mt-4 space-y-4" onClick={(e) => e.stopPropagation()}>
-                    {/* Current Level Slider */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          {language === 'ko' ? '현재 수준' : 'Current Level'}
-                        </label>
-                        <span className={`text-sm font-bold ${colorClasses.text}`}>
-                          {entry.currentLevel}/10
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={1}
-                        max={10}
-                        value={entry.currentLevel}
-                        onChange={(e) => updateWellbeing(dim.key, 'currentLevel', Number(e.target.value))}
-                        className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${colorClasses.slider}`}
-                      />
-                      <div className="flex justify-between text-xs text-gray-400 mt-1">
-                        <span>{language === 'ko' ? '낮음 (1)' : 'Low (1)'}</span>
-                        <span>{language === 'ko' ? '높음 (10)' : 'High (10)'}</span>
-                      </div>
-                    </div>
-
-                    {/* AI Questions Section */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4 text-purple-500" />
-                          {language === 'ko' ? 'AI 성찰 질문' : 'AI Reflection Questions'}
-                        </span>
-                        <button
-                          onClick={() => loadAIQuestions(dim.key)}
-                          disabled={isLoadingQuestions}
-                          className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 px-2 py-1 rounded-lg hover:bg-purple-50"
-                        >
-                          {isLoadingQuestions ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <RefreshCw className="w-3 h-3" />
-                          )}
-                          {language === 'ko' ? '질문 생성' : 'Generate'}
-                        </button>
-                      </div>
-
-                      {dimensionQuestions.length > 0 && (
-                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
-                          {dimensionQuestions.map((q, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
-                              <p className="text-sm text-purple-800">
-                                {language === 'ko' ? q.questionKo : q.question}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Reflection Textarea */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {language === 'ko' ? '성찰' : 'Reflection'}
-                      </label>
-                      <textarea
-                        value={entry.reflection}
-                        onChange={(e) => updateWellbeing(dim.key, 'reflection', e.target.value)}
-                        placeholder={language === 'ko' ? dim.placeholderKo : dim.placeholder}
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                      />
-                    </div>
-
-                    {/* Goals Textarea */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                        <HelpCircle className="w-4 h-4 text-gray-400" />
-                        {language === 'ko' ? '목표' : 'Goals'}
-                      </label>
-                      <textarea
-                        value={entry.goals}
-                        onChange={(e) => updateWellbeing(dim.key, 'goals', e.target.value)}
-                        placeholder={language === 'ko' ? dim.goalsPlaceholderKo : dim.goalsPlaceholder}
-                        rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                      />
-                    </div>
-                  </div>
-                )}
-              </ModuleCard>
-            );
-          })}
+        {/* View Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('arc')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'arc'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            {language === 'ko' ? '아크 뷰' : 'Arc View'}
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'table'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Table2 className="w-4 h-4" />
+            {language === 'ko' ? '테이블 뷰' : 'Table View'}
+          </button>
         </div>
 
+        {/* Two-panel layout */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left panel: Role cards */}
+          <div className="lg:col-span-1">
+            <ModuleCard padding="normal">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                {language === 'ko' ? '역할 카드 (드래그하여 배치)' : 'Role Cards (Drag to Place)'}
+              </h4>
+              <div className="space-y-2">
+                {/* Life role cards from step1 */}
+                {lifeRoles.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-4">
+                    {language === 'ko'
+                      ? '1단계에서 역할을 추가해주세요.'
+                      : 'Add roles in Step 1 first.'}
+                  </p>
+                )}
+                {lifeRoles.map((role) => (
+                  <div
+                    key={role.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, role)}
+                    onDragEnd={handleDragEnd}
+                    className="p-2 bg-white border border-gray-200 rounded-lg cursor-grab active:cursor-grabbing flex items-center gap-2 hover:border-teal-400 transition-colors"
+                  >
+                    <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{role.role}</p>
+                      <p className="text-xs text-gray-500 truncate">{role.entity}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ModuleCard>
+          </div>
+
+          {/* Right panel: Rainbow visualization */}
+          <div className="lg:col-span-2">
+            <ModuleCard padding="normal">
+              {viewMode === 'arc' ? (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">
+                    {language === 'ko' ? '인생 무지개 (Super, 1980)' : 'Life Rainbow (Super, 1980)'}
+                  </h4>
+
+                  {/* Age axis labels */}
+                  <div className="flex justify-between mb-2 px-1">
+                    {AGE_MARKERS.map((age) => (
+                      <span key={age} className="text-xs text-gray-500 font-medium w-8 text-center">
+                        {age}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Rainbow slots (8 rows) */}
+                  <div className="space-y-1.5 relative">
+                    {/* Current age indicator */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-gray-800 opacity-40 z-10 pointer-events-none"
+                      style={{
+                        left: `${ageToPercent(rainbowData.currentAge)}%`,
+                      }}
+                    >
+                      <div className="absolute -top-5 -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap font-medium">
+                        {language === 'ko' ? '현재' : 'Now'} ({rainbowData.currentAge})
+                      </div>
+                    </div>
+
+                    {Array.from({ length: 8 }, (_, index) => {
+                      const slot = getSlot(index);
+                      const color = RAINBOW_COLORS[index];
+                      const isDragOver = dragOverSlot === index;
+                      const isReadOnly = isSharpenSawSlot(index);
+
+                      return (
+                        <div
+                          key={index}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, index)}
+                          className={`h-9 rounded-full relative flex items-center transition-all ${
+                            isDragOver
+                              ? 'ring-2 ring-teal-400 ring-offset-1'
+                              : ''
+                          }`}
+                          style={{
+                            marginLeft: `${index * 5}px`,
+                            marginRight: `${index * 5}px`,
+                            backgroundColor: slot ? 'transparent' : (isDragOver ? 'rgb(204, 251, 241)' : 'rgb(229, 231, 235)'),
+                            border: slot ? 'none' : '2px dashed rgb(156, 163, 175)',
+                          }}
+                        >
+                          {slot ? (
+                            /* Filled slot: show arc bar spanning ageStart-ageEnd */
+                            <>
+                              <div
+                                className="absolute h-full rounded-full flex items-center px-2"
+                                style={{
+                                  left: `${ageToPercent(slot.ageStart)}%`,
+                                  width: `${ageToPercent(slot.ageEnd) - ageToPercent(slot.ageStart)}%`,
+                                  backgroundColor: color.bg,
+                                  opacity: slot.intensity === 1 ? 0.5 : slot.intensity === 2 ? 0.75 : 1,
+                                  minWidth: '60px',
+                                }}
+                              >
+                                <span className="text-white text-xs font-medium truncate">
+                                  {slot.roleName}
+                                </span>
+                              </div>
+
+                              {/* Remove button (not for Sharpen the Saw) */}
+                              {!isReadOnly && (
+                                <button
+                                  onClick={() => removeFromRainbow(index)}
+                                  className="absolute right-2 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:bg-white hover:text-red-500 text-xs z-10"
+                                >
+                                  x
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-xs w-full text-center">
+                              {language === 'ko' ? `역할 ${index + 1} — 드롭하세요` : `Role ${index + 1} — drop here`}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Slot detail editors */}
+                  <div className="mt-6 space-y-2">
+                    {Array.from({ length: 8 }, (_, index) => {
+                      const slot = getSlot(index);
+                      if (!slot) return null;
+                      const color = RAINBOW_COLORS[index];
+                      const isReadOnly = isSharpenSawSlot(index);
+                      return (
+                        <div key={index} className={`flex items-center gap-3 p-2 rounded-lg ${isReadOnly ? 'bg-purple-50' : 'bg-gray-50'}`}>
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: color.bg }}
+                          />
+                          <span className="text-xs font-medium text-gray-700 w-32 truncate">
+                            {slot.roleName}
+                            {isReadOnly && <span className="ml-1 text-purple-500 text-xs">(auto)</span>}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">{language === 'ko' ? '시작' : 'Start'}</span>
+                            <input
+                              type="number"
+                              min={10}
+                              max={80}
+                              value={slot.ageStart}
+                              onChange={(e) => updateSlotField(index, 'ageStart', Number(e.target.value))}
+                              disabled={isReadOnly}
+                              className={`w-14 px-1 py-0.5 text-xs border border-gray-300 rounded text-center ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">{language === 'ko' ? '종료' : 'End'}</span>
+                            <input
+                              type="number"
+                              min={10}
+                              max={80}
+                              value={slot.ageEnd}
+                              onChange={(e) => updateSlotField(index, 'ageEnd', Number(e.target.value))}
+                              disabled={isReadOnly}
+                              className={`w-14 px-1 py-0.5 text-xs border border-gray-300 rounded text-center ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">{language === 'ko' ? '강도' : 'Intensity'}</span>
+                            <select
+                              value={slot.intensity}
+                              onChange={(e) => updateSlotField(index, 'intensity', Number(e.target.value))}
+                              disabled={isReadOnly}
+                              className={`text-xs border border-gray-300 rounded px-1 py-0.5 ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                            >
+                              <option value={1}>{language === 'ko' ? '낮음' : 'Low'}</option>
+                              <option value={2}>{language === 'ko' ? '중간' : 'Medium'}</option>
+                              <option value={3}>{language === 'ko' ? '높음' : 'High'}</option>
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-center text-xs text-gray-400 mt-4">
+                    Life Roles Rainbow — {placedCount}/7 {language === 'ko' ? '배치됨 (최소 3개)' : 'placed (min 3)'}
+                  </p>
+                </div>
+              ) : (
+                /* Table View */
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">
+                    {language === 'ko' ? '역할 테이블 뷰' : 'Role Table View'}
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            #
+                          </th>
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            {language === 'ko' ? '역할' : 'Role'}
+                          </th>
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            {language === 'ko' ? '시작 나이' : 'Start Age'}
+                          </th>
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            {language === 'ko' ? '종료 나이' : 'End Age'}
+                          </th>
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            {language === 'ko' ? '강도' : 'Intensity'}
+                          </th>
+                          <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
+                            {language === 'ko' ? '작업' : 'Actions'}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: 8 }, (_, index) => {
+                          const slot = getSlot(index);
+                          const color = RAINBOW_COLORS[index];
+                          const isReadOnly = isSharpenSawSlot(index);
+                          return (
+                            <tr key={index} className={slot ? (isReadOnly ? 'bg-purple-50' : 'bg-white') : 'bg-gray-50'}>
+                              <td className="border border-gray-200 px-3 py-2">
+                                <div
+                                  className="w-4 h-4 rounded-full"
+                                  style={{ backgroundColor: color.bg }}
+                                />
+                              </td>
+                              <td className="border border-gray-200 px-3 py-2">
+                                {slot ? (
+                                  <span className="font-medium text-gray-900">
+                                    {slot.roleName}
+                                    {isReadOnly && <span className="ml-1 text-purple-500 text-xs">(auto)</span>}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-xs italic">
+                                    {language === 'ko' ? '(비어있음)' : '(empty)'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="border border-gray-200 px-3 py-2">
+                                {slot ? (
+                                  <input
+                                    type="number"
+                                    min={10}
+                                    max={80}
+                                    value={slot.ageStart}
+                                    onChange={(e) => updateSlotField(index, 'ageStart', Number(e.target.value))}
+                                    disabled={isReadOnly}
+                                    className={`w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                                  />
+                                ) : '-'}
+                              </td>
+                              <td className="border border-gray-200 px-3 py-2">
+                                {slot ? (
+                                  <input
+                                    type="number"
+                                    min={10}
+                                    max={80}
+                                    value={slot.ageEnd}
+                                    onChange={(e) => updateSlotField(index, 'ageEnd', Number(e.target.value))}
+                                    disabled={isReadOnly}
+                                    className={`w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                                  />
+                                ) : '-'}
+                              </td>
+                              <td className="border border-gray-200 px-3 py-2">
+                                {slot ? (
+                                  <select
+                                    value={slot.intensity}
+                                    onChange={(e) => updateSlotField(index, 'intensity', Number(e.target.value))}
+                                    disabled={isReadOnly}
+                                    className={`text-sm border border-gray-300 rounded px-2 py-1 ${isReadOnly ? 'bg-gray-100 text-gray-400' : ''}`}
+                                  >
+                                    <option value={1}>{language === 'ko' ? '낮음' : 'Low'}</option>
+                                    <option value={2}>{language === 'ko' ? '중간' : 'Medium'}</option>
+                                    <option value={3}>{language === 'ko' ? '높음' : 'High'}</option>
+                                  </select>
+                                ) : '-'}
+                              </td>
+                              <td className="border border-gray-200 px-3 py-2">
+                                {slot && !isReadOnly ? (
+                                  <button
+                                    onClick={() => removeFromRainbow(index)}
+                                    className="text-xs text-red-500 hover:text-red-700"
+                                  >
+                                    {language === 'ko' ? '제거' : 'Remove'}
+                                  </button>
+                                ) : null}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </ModuleCard>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <ModuleCard padding="normal">
+          <div className="flex items-center gap-2 mb-3">
+            <StickyNote className="w-4 h-4 text-amber-500" />
+            <h4 className="text-sm font-semibold text-gray-700">
+              {language === 'ko' ? '메모 (선택사항)' : 'Notes (Optional)'}
+            </h4>
+          </div>
+          <textarea
+            value={rainbowData.notes}
+            onChange={(e) => setRainbowData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder={language === 'ko'
+              ? '인생 무지개에 대한 생각이나 통찰을 자유롭게 적어보세요...'
+              : 'Freely write your thoughts or insights about your life rainbow...'}
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+          />
+        </ModuleCard>
+
         {/* Progress Summary */}
-        <ModuleCard padding="normal" className={filledCount >= 3 ? 'bg-green-50 border-green-200' : 'bg-gray-50'}>
+        <ModuleCard padding="normal" className={placedCount >= 3 ? 'bg-green-50 border-green-200' : 'bg-gray-50'}>
           <div className="flex items-center justify-between">
-            <p className={filledCount >= 3 ? 'text-green-700' : 'text-gray-600'}>
+            <p className={placedCount >= 3 ? 'text-green-700' : 'text-gray-600'}>
               {language === 'ko'
-                ? `${filledCount}/5 영역 완성 (최소 3개 필요)`
-                : `${filledCount}/5 dimensions completed (minimum 3 required)`}
+                ? `${placedCount}/7 역할 배치 완성 (최소 3개 필요)`
+                : `${placedCount}/7 roles placed (minimum 3 required)`}
             </p>
             <div className="flex gap-1">
-              {WELLBEING_DIMENSIONS.map((dim) => {
-                const hasContent = wellbeing[dim.key]?.reflection?.trim().length > 0;
+              {Array.from({ length: 8 }, (_, i) => {
+                const placed = !!getSlot(i);
                 return (
                   <div
-                    key={dim.key}
-                    className={`w-3 h-3 rounded-full ${hasContent ? 'bg-green-500' : 'bg-gray-300'}`}
+                    key={i}
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: placed ? RAINBOW_COLORS[i].bg : 'rgb(209, 213, 219)' }}
                   />
                 );
               })}
@@ -472,7 +727,7 @@ export default function LifeRolesStep2() {
             </ModuleButton>
             <ModuleButton
               onClick={handleNext}
-              disabled={saving || filledCount < 3}
+              disabled={saving || placedCount < 3}
             >
               {language === 'ko' ? '다음 단계' : 'Next Step'}
               <ArrowRight className="w-4 h-4 ml-2" />

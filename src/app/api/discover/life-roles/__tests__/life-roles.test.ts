@@ -11,8 +11,6 @@ import { describe, it, expect } from 'vitest';
 
 interface MissionSession {
   life_roles?: any[] | null;
-  wellbeing_reflections?: Record<string, any> | null;
-  role_commitments?: any[] | null;
 }
 
 function buildPrefillRoles(missionSession: MissionSession | null): any[] {
@@ -22,28 +20,12 @@ function buildPrefillRoles(missionSession: MissionSession | null): any[] {
     id: r.id || `prefill_${i}`,
     entity: r.entity || '',
     role: r.role || '',
-    category: 'personal',
-    importance: 3,
     source: 'mission',
   }));
 }
 
-function buildPrefillWellbeing(missionSession: MissionSession | null): Record<string, any> {
-  if (!missionSession?.wellbeing_reflections) return {};
-  if (Object.keys(missionSession.wellbeing_reflections).length === 0) return {};
-  const wr: Record<string, any> = {};
-  for (const [key, val] of Object.entries(missionSession.wellbeing_reflections)) {
-    if (typeof val === 'string' && val.trim()) {
-      wr[key] = { reflection: val, currentLevel: 5, goals: '' };
-    } else if (typeof val === 'object' && val !== null) {
-      wr[key] = val;
-    }
-  }
-  return wr;
-}
-
 function isValidStep(step: number): boolean {
-  return Number.isInteger(step) && step >= 1 && step <= 5;
+  return Number.isInteger(step) && step >= 1 && step <= 4;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,50 +50,19 @@ function computeHasEnneagram(data: { primary_type?: string | null } | null): boo
 
 function generateFallbackRoles() {
   return [
-    { id: 'f1', entity: 'Family', entityKo: '가족', role: 'Caring Family Member', roleKo: '돌보는 가족 구성원', category: 'personal', source: 'template' },
-    { id: 'f2', entity: 'Workplace', entityKo: '직장', role: 'Dedicated Professional', roleKo: '헌신적인 전문가', category: 'professional', source: 'template' },
-    { id: 'f3', entity: 'Friends', entityKo: '친구', role: 'Supportive Friend', roleKo: '지지하는 친구', category: 'personal', source: 'template' },
-    { id: 'f4', entity: 'Community', entityKo: '지역사회', role: 'Active Contributor', roleKo: '적극적인 기여자', category: 'community', source: 'template' },
-    { id: 'f5', entity: 'Self', entityKo: '자신', role: 'Lifelong Learner', roleKo: '평생 학습자', category: 'health', source: 'template' },
-    { id: 'f6', entity: 'Partner', entityKo: '파트너', role: 'Loving Partner', roleKo: '사랑하는 파트너', category: 'personal', source: 'template' },
-    { id: 'f7', entity: 'School', entityKo: '학교', role: 'Engaged Student', roleKo: '열정적인 학생', category: 'professional', source: 'template' },
+    { id: 'f1', entity: 'Family', entityKo: '가족', role: 'Caring Family Member', roleKo: '돌보는 가족 구성원', source: 'template' },
+    { id: 'f2', entity: 'Workplace', entityKo: '직장', role: 'Dedicated Professional', roleKo: '헌신적인 전문가', source: 'template' },
+    { id: 'f3', entity: 'Friends', entityKo: '친구', role: 'Supportive Friend', roleKo: '지지하는 친구', source: 'template' },
+    { id: 'f4', entity: 'Community', entityKo: '지역사회', role: 'Active Contributor', roleKo: '적극적인 기여자', source: 'template' },
+    { id: 'f5', entity: 'Self', entityKo: '자신', role: 'Lifelong Learner', roleKo: '평생 학습자', source: 'template' },
+    { id: 'f6', entity: 'Partner', entityKo: '파트너', role: 'Loving Partner', roleKo: '사랑하는 파트너', source: 'template' },
+    { id: 'f7', entity: 'School', entityKo: '학교', role: 'Engaged Student', roleKo: '열정적인 학생', source: 'template' },
   ];
 }
 
 function isValidLifeRole(role: any): boolean {
   return !!role && typeof role.entity === 'string' && role.entity.trim().length > 0
     && typeof role.role === 'string' && role.role.trim().length > 0;
-}
-
-function getFallbackQuestions(dimension: string) {
-  const fallbacks: Record<string, any[]> = {
-    physical: [
-      { question: 'How does your current physical routine support your life roles?', questionKo: '현재의 신체 활동이 삶의 역할을 어떻게 지원하고 있나요?' },
-      { question: 'What one physical habit would most improve your energy?', questionKo: '어떤 신체적 습관이 에너지를 가장 향상시킬까요?' },
-      { question: 'How do you manage stress across your different life roles?', questionKo: '다양한 삶의 역할에서 스트레스를 어떻게 관리하나요?' },
-    ],
-    intellectual: [
-      { question: 'What are you currently learning that connects to your life purpose?', questionKo: '현재 삶의 목적과 연결되는 무엇을 배우고 있나요?' },
-      { question: 'How does intellectual growth serve your most important roles?', questionKo: '지적 성장이 가장 중요한 역할을 어떻게 지원하나요?' },
-      { question: 'What mental challenge would push you toward your vision?', questionKo: '어떤 지적 도전이 비전을 향해 나아가게 할까요?' },
-    ],
-    social_emotional: [
-      { question: 'Which relationships currently need more attention?', questionKo: '현재 어떤 관계에 더 많은 관심이 필요한가요?' },
-      { question: 'How do you express empathy and care in your daily roles?', questionKo: '일상적인 역할에서 공감과 돌봄을 어떻게 표현하나요?' },
-      { question: 'What emotional skill would most improve your relationships?', questionKo: '어떤 감정적 기술이 관계를 가장 향상시킬까요?' },
-    ],
-    spiritual: [
-      { question: 'What practices help you connect with your deeper sense of purpose?', questionKo: '어떤 실천이 더 깊은 목적 의식과 연결되도록 도와주나요?' },
-      { question: 'How does your spiritual life influence how you show up in your roles?', questionKo: '영적 생활이 역할 수행에 어떤 영향을 미치나요?' },
-      { question: 'What brings you inner peace amid competing life demands?', questionKo: '경쟁하는 삶의 요구 속에서 내면의 평화를 가져다주는 것은?' },
-    ],
-    financial: [
-      { question: 'How does your financial situation support or limit your life roles?', questionKo: '재정 상황이 삶의 역할을 어떻게 지원하거나 제한하나요?' },
-      { question: 'What financial habits would best align with your values?', questionKo: '어떤 재정 습관이 가치관에 가장 부합할까요?' },
-      { question: 'How do you balance financial responsibility with meaningful investment?', questionKo: '재정적 책임과 의미 있는 투자 사이에서 어떻게 균형을 잡나요?' },
-    ],
-  };
-  return fallbacks[dimension] || fallbacks.physical;
 }
 
 function generateFallbackCommitments(lifeRoles: any[]) {
@@ -121,16 +72,7 @@ function generateFallbackCommitments(lifeRoles: any[]) {
       roleCommitments[r.role] = `Dedicate quality time each week to fulfill my role as ${r.role} with intention and care.`;
     }
   });
-  return {
-    roleCommitments,
-    wellbeingCommitments: {
-      physical: 'Exercise at least 3 times per week and prioritize 7-8 hours of sleep nightly.',
-      intellectual: 'Read or learn something new for 30 minutes daily to stimulate intellectual growth.',
-      social_emotional: 'Connect meaningfully with loved ones weekly and practice active listening.',
-      spiritual: 'Set aside 15 minutes daily for meditation, reflection, or spiritual practice.',
-      financial: 'Review budget monthly and save at least 10% of income toward future goals.',
-    },
-  };
+  return { roleCommitments };
 }
 
 function generateFallbackAssessment(context: any) {
@@ -141,12 +83,12 @@ function generateFallbackAssessment(context: any) {
     suggestedAdjustments: [
       'Review your time allocation to ensure it matches your desired percentages.',
       'Consider which roles energize you most and prioritize them.',
-      'Build small daily habits to support your wellbeing commitments.',
+      'Build small daily habits to support your role commitments.',
     ],
     summary: 'Your life roles reflect a thoughtful approach to balancing multiple responsibilities.',
     summaryKo: '당신의 삶의 역할은 여러 책임의 균형을 맞추는 사려 깊은 접근을 반영합니다.',
     strengthAreas: ['Role awareness', 'Commitment clarity'],
-    growthAreas: ['Time balance', 'Wellbeing integration'],
+    growthAreas: ['Time balance'],
   };
 }
 
@@ -167,10 +109,10 @@ describe('Life Roles Session - pre-fill roles from mission', () => {
     expect(buildPrefillRoles({ life_roles: [] })).toEqual([]);
   });
 
-  it('maps mission roles with defaults', () => {
+  it('maps mission roles with entity, role, and source fields', () => {
     const result = buildPrefillRoles({ life_roles: [{ entity: 'Family', role: 'Parent' }] });
     expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({ entity: 'Family', role: 'Parent', category: 'personal', importance: 3, source: 'mission' });
+    expect(result[0]).toMatchObject({ entity: 'Family', role: 'Parent', source: 'mission' });
   });
 
   it('preserves existing id', () => {
@@ -190,41 +132,14 @@ describe('Life Roles Session - pre-fill roles from mission', () => {
   });
 });
 
-describe('Life Roles Session - pre-fill wellbeing', () => {
-  it('returns empty object when null', () => {
-    expect(buildPrefillWellbeing(null)).toEqual({});
-  });
-
-  it('returns empty object when empty', () => {
-    expect(buildPrefillWellbeing({ wellbeing_reflections: {} })).toEqual({});
-  });
-
-  it('converts string to structured format', () => {
-    const result = buildPrefillWellbeing({ wellbeing_reflections: { physical: 'I exercise daily' } });
-    expect(result.physical).toEqual({ reflection: 'I exercise daily', currentLevel: 5, goals: '' });
-  });
-
-  it('passes through object reflections', () => {
-    const obj = { reflection: 'test', currentLevel: 7, goals: 'run' };
-    const result = buildPrefillWellbeing({ wellbeing_reflections: { physical: obj } });
-    expect(result.physical).toEqual(obj);
-  });
-
-  it('skips empty/whitespace strings', () => {
-    const result = buildPrefillWellbeing({ wellbeing_reflections: { a: '', b: '   ', c: 'valid' } });
-    expect(result.a).toBeUndefined();
-    expect(result.b).toBeUndefined();
-    expect(result.c).toBeDefined();
-  });
-});
-
 describe('Life Roles Session - step validation', () => {
-  it('accepts steps 1-5', () => {
-    for (let i = 1; i <= 5; i++) expect(isValidStep(i)).toBe(true);
+  it('accepts steps 1-4', () => {
+    for (let i = 1; i <= 4; i++) expect(isValidStep(i)).toBe(true);
   });
 
-  it('rejects 0, 6, negative, non-integer', () => {
+  it('rejects 0, 5, 6, negative, non-integer', () => {
     expect(isValidStep(0)).toBe(false);
+    expect(isValidStep(5)).toBe(false);
     expect(isValidStep(6)).toBe(false);
     expect(isValidStep(-1)).toBe(false);
     expect(isValidStep(2.5)).toBe(false);
@@ -279,14 +194,6 @@ describe('AI Fallback - generateFallbackRoles', () => {
       expect(s.source).toBe('template');
     }
   });
-
-  it('covers all 4 categories', () => {
-    const cats = generateFallbackRoles().map(s => s.category);
-    expect(cats).toContain('personal');
-    expect(cats).toContain('professional');
-    expect(cats).toContain('community');
-    expect(cats).toContain('health');
-  });
 });
 
 describe('Life Role data validation', () => {
@@ -304,25 +211,6 @@ describe('Life Role data validation', () => {
 
   it('minimum 4 roles for Step 1 (fallback has 7)', () => {
     expect(generateFallbackRoles().length >= 4).toBe(true);
-  });
-});
-
-describe('AI Fallback - getFallbackQuestions', () => {
-  const dims = ['physical', 'intellectual', 'social_emotional', 'spiritual', 'financial'];
-
-  it('returns 3 questions per dimension', () => {
-    for (const d of dims) expect(getFallbackQuestions(d)).toHaveLength(3);
-  });
-
-  it('falls back to physical for unknown dimension', () => {
-    expect(getFallbackQuestions('unknown')).toEqual(getFallbackQuestions('physical'));
-  });
-
-  it('every question has EN and KO text', () => {
-    for (const q of getFallbackQuestions('spiritual')) {
-      expect(q.question).toBeTruthy();
-      expect(q.questionKo).toBeTruthy();
-    }
   });
 });
 
@@ -346,11 +234,12 @@ describe('AI Fallback - generateFallbackCommitments', () => {
     expect(generateFallbackCommitments(null as any).roleCommitments).toEqual({});
   });
 
-  it('returns all 5 wellbeing dimensions', () => {
-    const wc = generateFallbackCommitments([]).wellbeingCommitments;
-    for (const d of ['physical', 'intellectual', 'social_emotional', 'spiritual', 'financial']) {
-      expect(wc[d]).toBeTruthy();
-    }
+  it('returns only roleCommitments with no wellbeing dimension keys', () => {
+    const result = generateFallbackCommitments([{ role: 'Parent' }]);
+    expect(result).toHaveProperty('roleCommitments');
+    expect(result).not.toHaveProperty('wellbeingCommitments');
+    const keys = Object.keys(result);
+    expect(keys).toEqual(['roleCommitments']);
   });
 });
 

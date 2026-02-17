@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const userId = auth.userId;
     const body = await request.json();
-    const { lifeRoles, wellbeingReflections } = body;
+    const { lifeRoles } = body;
 
     // Fetch cross-module context
     const [valuesResult, missionResult] = await Promise.all([
@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       values: valuesResult.data,
       missionStatement: missionResult.data?.final_statement,
       lifeRoles: lifeRoles || [],
-      wellbeingReflections: wellbeingReflections || {},
     };
 
     const apiKey = process.env.GROQ_API_KEY;
@@ -59,32 +58,20 @@ async function generateAICommitments(groq: Groq, context: any) {
   const valuesText = context.values?.map((v: any) => `${v.value_set}: ${(v.top3 || []).join(', ')}`).join('\n') || '';
   const missionText = context.missionStatement || '';
   const rolesText = context.lifeRoles?.filter((r: any) => r?.entity).map((r: any) => `${r.role} (${r.entity})`).join(', ') || '';
-  const reflText = Object.entries(context.wellbeingReflections || {})
-    .filter(([, v]: any) => v?.reflection || (typeof v === 'string' && v))
-    .map(([k, v]: any) => `${k}: ${typeof v === 'string' ? v : v.reflection}`)
-    .join('\n') || '';
 
-  const prompt = `You are a life coach. Generate specific commitment statements for each role and wellbeing dimension.
+  const prompt = `You are a life coach. Generate specific commitment statements for each life role.
 
 ## User Context:
 Mission: "${missionText}"
 Values: ${valuesText}
 Life Roles: ${rolesText}
-Wellbeing Reflections: ${reflText}
 
 ## Task:
-For each life role and wellbeing dimension, write a 1-2 sentence commitment that is specific, actionable, and aligned with the user's values.
+For each life role, write a 1-2 sentence commitment that is specific, actionable, and aligned with the user's values.
 
 Respond with ONLY valid JSON:
 {
-  "roleCommitments": {"RoleName": "commitment text...", ...},
-  "wellbeingCommitments": {
-    "physical": "commitment...",
-    "intellectual": "commitment...",
-    "social_emotional": "commitment...",
-    "spiritual": "commitment...",
-    "financial": "commitment..."
-  }
+  "roleCommitments": {"RoleName": "commitment text...", ...}
 }`;
 
   const completion = await groq.chat.completions.create({
@@ -108,14 +95,5 @@ function generateFallbackCommitments(lifeRoles: any[]) {
     }
   });
 
-  return {
-    roleCommitments,
-    wellbeingCommitments: {
-      physical: 'Exercise at least 3 times per week and prioritize 7-8 hours of sleep nightly.',
-      intellectual: 'Read or learn something new for 30 minutes daily to stimulate intellectual growth.',
-      social_emotional: 'Connect meaningfully with loved ones weekly and practice active listening.',
-      spiritual: 'Set aside 15 minutes daily for meditation, reflection, or spiritual practice.',
-      financial: 'Review budget monthly and save at least 10% of income toward future goals.',
-    },
-  };
+  return { roleCommitments };
 }

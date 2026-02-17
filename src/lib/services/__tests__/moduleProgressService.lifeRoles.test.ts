@@ -18,14 +18,6 @@ interface LifeRolesRole {
   id: string;
   entity: string;
   role: string;
-  category: 'personal' | 'professional' | 'community' | 'health';
-  importance: 1 | 2 | 3 | 4 | 5;
-}
-
-interface WellbeingReflection {
-  reflection: string;
-  currentLevel: number;
-  goals: string;
 }
 
 interface RainbowSlot {
@@ -48,7 +40,6 @@ interface Commitment {
   commitment: string;
   currentTimePercentage: number;
   desiredTimePercentage: number;
-  gapAnalysis: string;
 }
 
 interface BalanceAssessment {
@@ -59,10 +50,8 @@ interface BalanceAssessment {
 
 interface LifeRolesData {
   roles: LifeRolesRole[];
-  wellbeingReflections: Record<string, WellbeingReflection>;
   rainbowData: RainbowData;
   commitments: Commitment[];
-  wellbeingCommitments: Record<string, string>;
   balanceAssessment: BalanceAssessment;
   completedAt?: string;
 }
@@ -89,20 +78,7 @@ function transformLifeRolesData(data: any): LifeRolesData {
     id: r.id || '',
     entity: r.entity || '',
     role: r.role || '',
-    category: r.category || 'personal',
-    importance: r.importance || 3,
   }));
-
-  const wellbeingReflections: Record<string, WellbeingReflection> = {};
-  if (data.wellbeing_reflections && typeof data.wellbeing_reflections === 'object') {
-    for (const [key, val] of Object.entries(data.wellbeing_reflections as Record<string, any>)) {
-      wellbeingReflections[key] = {
-        reflection: val?.reflection || '',
-        currentLevel: val?.currentLevel || 5,
-        goals: val?.goals || '',
-      };
-    }
-  }
 
   const rainbowData: RainbowData = {
     currentAge: data.rainbow_data?.currentAge || 25,
@@ -115,10 +91,7 @@ function transformLifeRolesData(data: any): LifeRolesData {
     commitment: c.commitment || '',
     currentTimePercentage: c.currentTimePct || 0,
     desiredTimePercentage: c.desiredTimePct || 0,
-    gapAnalysis: c.gapAnalysis || '',
   }));
-
-  const wellbeingCommitments: Record<string, string> = data.wellbeing_commitments || {};
 
   const reflection = data.reflection || {};
   const balanceAssessment: BalanceAssessment = {
@@ -129,10 +102,8 @@ function transformLifeRolesData(data: any): LifeRolesData {
 
   return {
     roles,
-    wellbeingReflections,
     rainbowData,
     commitments,
-    wellbeingCommitments,
     balanceAssessment,
     completedAt: data.completed_at,
   };
@@ -149,7 +120,7 @@ function deriveLifeRolesProgress(
   if (!lifeRolesRow) return null;
 
   const isCompleted = lifeRolesRow.status === 'completed';
-  const stepPct = Math.min(100, Math.round((lifeRolesRow.current_step / 5) * 100));
+  const stepPct = Math.min(100, Math.round((lifeRolesRow.current_step / 4) * 100));
 
   return {
     moduleId: 'life-roles',
@@ -169,19 +140,19 @@ describe('getLifeRolesData - data transformation', () => {
   // 1. Roles array
   // -------------------------------------------------------------------------
 
-  it('maps life_roles JSONB array to roles with correct fields', () => {
+  it('maps life_roles JSONB array to roles with id, entity, and role fields', () => {
     const raw = {
       life_roles: [
-        { id: 'r1', entity: 'Family', role: 'Son', category: 'personal', importance: 5 },
-        { id: 'r2', entity: 'Workplace', role: 'Team Lead', category: 'professional', importance: 4 },
+        { id: 'r1', entity: 'Family', role: 'Son' },
+        { id: 'r2', entity: 'Workplace', role: 'Team Lead' },
       ],
     };
 
     const result = transformLifeRolesData(raw);
 
     expect(result.roles).toHaveLength(2);
-    expect(result.roles[0]).toEqual({ id: 'r1', entity: 'Family', role: 'Son', category: 'personal', importance: 5 });
-    expect(result.roles[1]).toEqual({ id: 'r2', entity: 'Workplace', role: 'Team Lead', category: 'professional', importance: 4 });
+    expect(result.roles[0]).toEqual({ id: 'r1', entity: 'Family', role: 'Son' });
+    expect(result.roles[1]).toEqual({ id: 'r2', entity: 'Workplace', role: 'Team Lead' });
   });
 
   it('handles empty life_roles array', () => {
@@ -196,79 +167,8 @@ describe('getLifeRolesData - data transformation', () => {
     expect(result.roles).toEqual([]);
   });
 
-  it('sets default category to personal when category is missing', () => {
-    const raw = { life_roles: [{ id: 'r1', entity: 'Church', role: 'Member' }] };
-    const result = transformLifeRolesData(raw);
-    expect(result.roles[0].category).toBe('personal');
-  });
-
-  it('sets default importance to 3 when importance is missing', () => {
-    const raw = { life_roles: [{ id: 'r1', entity: 'Friend', role: 'Best Friend' }] };
-    const result = transformLifeRolesData(raw);
-    expect(result.roles[0].importance).toBe(3);
-  });
-
   // -------------------------------------------------------------------------
-  // 2. Wellbeing Reflections
-  // -------------------------------------------------------------------------
-
-  it('maps wellbeing_reflections object with all fields correctly', () => {
-    const raw = {
-      wellbeing_reflections: {
-        physical: { reflection: 'I exercise daily', currentLevel: 8, goals: 'Run a marathon' },
-        emotional: { reflection: 'Feeling balanced', currentLevel: 7, goals: 'Meditate more' },
-      },
-    };
-
-    const result = transformLifeRolesData(raw);
-
-    expect(result.wellbeingReflections.physical).toEqual({
-      reflection: 'I exercise daily',
-      currentLevel: 8,
-      goals: 'Run a marathon',
-    });
-    expect(result.wellbeingReflections.emotional).toEqual({
-      reflection: 'Feeling balanced',
-      currentLevel: 7,
-      goals: 'Meditate more',
-    });
-  });
-
-  it('handles empty wellbeing_reflections (produces empty object)', () => {
-    const raw = { wellbeing_reflections: {} };
-    const result = transformLifeRolesData(raw);
-    expect(result.wellbeingReflections).toEqual({});
-  });
-
-  it('sets default currentLevel to 5 when currentLevel is missing from a reflection entry', () => {
-    const raw = {
-      wellbeing_reflections: {
-        spiritual: { reflection: 'Prayer time', goals: 'Read scripture' },
-      },
-    };
-    const result = transformLifeRolesData(raw);
-    expect(result.wellbeingReflections.spiritual.currentLevel).toBe(5);
-  });
-
-  it('handles missing reflection and goals fields in wellbeing entries (defaults to empty string)', () => {
-    const raw = {
-      wellbeing_reflections: {
-        social: { currentLevel: 6 },
-      },
-    };
-    const result = transformLifeRolesData(raw);
-    expect(result.wellbeingReflections.social.reflection).toBe('');
-    expect(result.wellbeingReflections.social.goals).toBe('');
-  });
-
-  it('handles missing wellbeing_reflections entirely (produces empty object)', () => {
-    const raw = {};
-    const result = transformLifeRolesData(raw);
-    expect(result.wellbeingReflections).toEqual({});
-  });
-
-  // -------------------------------------------------------------------------
-  // 3. Rainbow Data
+  // 2. Rainbow Data
   // -------------------------------------------------------------------------
 
   it('maps rainbow_data with currentAge and slots', () => {
@@ -302,10 +202,10 @@ describe('getLifeRolesData - data transformation', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 4. Commitments
+  // 3. Commitments
   // -------------------------------------------------------------------------
 
-  it('maps role_commitments correctly with all fields', () => {
+  it('maps role_commitments correctly with roleId, roleName, commitment, and time percentage fields', () => {
     const raw = {
       role_commitments: [
         {
@@ -314,7 +214,6 @@ describe('getLifeRolesData - data transformation', () => {
           commitment: 'Be present at dinner',
           currentTimePct: 20,
           desiredTimePct: 35,
-          gapAnalysis: 'Need 15% more time',
         },
       ],
     };
@@ -328,7 +227,6 @@ describe('getLifeRolesData - data transformation', () => {
       commitment: 'Be present at dinner',
       currentTimePercentage: 20,
       desiredTimePercentage: 35,
-      gapAnalysis: 'Need 15% more time',
     });
   });
 
@@ -338,24 +236,8 @@ describe('getLifeRolesData - data transformation', () => {
     expect(result.commitments).toEqual([]);
   });
 
-  it('maps wellbeing_commitments as Record<string, string>', () => {
-    const raw = {
-      wellbeing_commitments: {
-        physical: 'Exercise 3x per week',
-        emotional: 'Journal daily',
-      },
-    };
-
-    const result = transformLifeRolesData(raw);
-
-    expect(result.wellbeingCommitments).toEqual({
-      physical: 'Exercise 3x per week',
-      emotional: 'Journal daily',
-    });
-  });
-
   // -------------------------------------------------------------------------
-  // 5. Balance Assessment
+  // 4. Balance Assessment
   // -------------------------------------------------------------------------
 
   it('extracts balanceAssessment from reflection JSONB', () => {
@@ -389,7 +271,7 @@ describe('getLifeRolesData - data transformation', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 6. completedAt
+  // 5. completedAt
   // -------------------------------------------------------------------------
 
   it('sets completedAt from completed_at column when present', () => {
@@ -405,22 +287,18 @@ describe('getLifeRolesData - data transformation', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 7. Full valid data → all required fields
+  // 6. Full valid data → all required fields
   // -------------------------------------------------------------------------
 
   it('full valid data produces all required LifeRolesData fields', () => {
     const raw = {
       life_roles: [
-        { id: 'r1', entity: 'Family', role: 'Spouse', category: 'personal', importance: 5 },
+        { id: 'r1', entity: 'Family', role: 'Spouse' },
       ],
-      wellbeing_reflections: {
-        physical: { reflection: 'Active', currentLevel: 8, goals: 'Run 5k' },
-      },
       rainbow_data: { currentAge: 40, slots: [] },
       role_commitments: [
-        { roleId: 'r1', roleName: 'Spouse', commitment: 'Date night weekly', currentTimePct: 10, desiredTimePct: 20, gapAnalysis: '+10%' },
+        { roleId: 'r1', roleName: 'Spouse', commitment: 'Date night weekly', currentTimePct: 10, desiredTimePct: 20 },
       ],
-      wellbeing_commitments: { physical: 'Daily walk' },
       reflection: {
         balanceAssessment: 'balanced',
         aiSummary: { suggestedAdjustments: [] },
@@ -432,10 +310,8 @@ describe('getLifeRolesData - data transformation', () => {
     const result = transformLifeRolesData(raw);
 
     expect(result).toHaveProperty('roles');
-    expect(result).toHaveProperty('wellbeingReflections');
     expect(result).toHaveProperty('rainbowData');
     expect(result).toHaveProperty('commitments');
-    expect(result).toHaveProperty('wellbeingCommitments');
     expect(result).toHaveProperty('balanceAssessment');
     expect(result).toHaveProperty('completedAt');
     // Spot-check values
@@ -460,28 +336,42 @@ describe('deriveProgressFromExistingData - life-roles block', () => {
   });
 
   it('returns completed when status is completed', () => {
-    const row = { status: 'completed', current_step: 5, updated_at: '2026-01-20T00:00:00Z' };
+    const row = { status: 'completed', current_step: 4, updated_at: '2026-01-20T00:00:00Z' };
     const result = deriveLifeRolesProgress(row);
 
     expect(result!.status).toBe('completed');
     expect(result!.completionPercentage).toBe(100);
   });
 
-  it('calculates correct completion percentage from current_step (step 3 of 5 = 60%)', () => {
-    const row = { status: 'in_progress', current_step: 3, updated_at: '2026-01-12T00:00:00Z' };
-    const result = deriveLifeRolesProgress(row);
-
-    expect(result!.completionPercentage).toBe(60);
-  });
-
-  it('calculates correct completion percentage from current_step (step 1 of 5 = 20%)', () => {
+  it('calculates correct completion percentage from current_step (step 1 of 4 = 25%)', () => {
     const row = { status: 'in_progress', current_step: 1, updated_at: '2026-01-11T00:00:00Z' };
     const result = deriveLifeRolesProgress(row);
 
-    expect(result!.completionPercentage).toBe(20);
+    expect(result!.completionPercentage).toBe(25);
   });
 
-  it('caps completion percentage at 100 even when current_step exceeds 5', () => {
+  it('calculates correct completion percentage from current_step (step 2 of 4 = 50%)', () => {
+    const row = { status: 'in_progress', current_step: 2, updated_at: '2026-01-10T00:00:00Z' };
+    const result = deriveLifeRolesProgress(row);
+
+    expect(result!.completionPercentage).toBe(50);
+  });
+
+  it('calculates correct completion percentage from current_step (step 3 of 4 = 75%)', () => {
+    const row = { status: 'in_progress', current_step: 3, updated_at: '2026-01-12T00:00:00Z' };
+    const result = deriveLifeRolesProgress(row);
+
+    expect(result!.completionPercentage).toBe(75);
+  });
+
+  it('calculates correct completion percentage from current_step (step 4 of 4 = 100%)', () => {
+    const row = { status: 'in_progress', current_step: 4, updated_at: '2026-01-10T00:00:00Z' };
+    const result = deriveLifeRolesProgress(row);
+
+    expect(result!.completionPercentage).toBe(100);
+  });
+
+  it('caps completion percentage at 100 even when current_step exceeds 4', () => {
     const row = { status: 'in_progress', current_step: 10, updated_at: '2026-01-13T00:00:00Z' };
     const result = deriveLifeRolesProgress(row);
 
@@ -513,20 +403,6 @@ describe('deriveProgressFromExistingData - life-roles block', () => {
     const result = deriveLifeRolesProgress(row);
 
     expect(result!.completionPercentage).toBe(0);
-  });
-
-  it('step 2 of 5 produces 40%', () => {
-    const row = { status: 'in_progress', current_step: 2, updated_at: '2026-01-10T00:00:00Z' };
-    const result = deriveLifeRolesProgress(row);
-
-    expect(result!.completionPercentage).toBe(40);
-  });
-
-  it('step 4 of 5 produces 80%', () => {
-    const row = { status: 'in_progress', current_step: 4, updated_at: '2026-01-10T00:00:00Z' };
-    const result = deriveLifeRolesProgress(row);
-
-    expect(result!.completionPercentage).toBe(80);
   });
 
   it('completed row always returns 100% regardless of current_step', () => {

@@ -203,9 +203,9 @@ export const MODULE_CONFIGS: Record<ModuleId, ModuleConfig> = {
       { moduleId: 'mission', required: true, dataFields: ['missionStatement'] },
       { moduleId: 'life-themes', required: false, dataFields: ['themes'] },
     ],
-    stages: ['relationship-map', 'wellbeing-reflection', 'life-rainbow', 'rc-table', 'reflection'],
+    stages: ['relationship-map', 'life-rainbow', 'rc-table', 'reflection'],
     requiredForCompletion: ['relationship-map', 'rc-table'],
-    estimatedMinutes: 40,
+    estimatedMinutes: 30,
   },
   vision: {
     id: 'vision',
@@ -737,36 +737,25 @@ export interface LifeRolesData {
     id: string;
     entity: string;       // relationship entity (e.g., "Family", "Workplace")
     role: string;          // role name (e.g., "Son/Daughter", "Team Member")
-    category: 'personal' | 'professional' | 'community' | 'health';
-    importance: 1 | 2 | 3 | 4 | 5;
   }>;
 
-  // Step 2: Wellbeing Reflections (Sharpen the Saw)
-  wellbeingReflections: Record<string, {
-    reflection: string;
-    currentLevel: number;
-    goals: string;
-  }>;
-
-  // Step 3: Life Rainbow
+  // Step 2: Life Rainbow
   rainbowData: {
     currentAge: number;
     slots: Array<{ roleId: string; roleName: string; ageStart: number; ageEnd: number; intensity: number }>;
     notes?: string;
   };
 
-  // Step 4: R&C Table
+  // Step 3: R&C Table
   commitments: Array<{
     roleId: string;
     roleName: string;
     commitment: string;
     currentTimePercentage: number;
     desiredTimePercentage: number;
-    gapAnalysis: string;
   }>;
-  wellbeingCommitments: Record<string, string>;
 
-  // Step 5: Reflection
+  // Step 4: Reflection
   balanceAssessment: {
     currentBalance: 'balanced' | 'moderately_imbalanced' | 'severely_imbalanced';
     suggestedAdjustments: string[];

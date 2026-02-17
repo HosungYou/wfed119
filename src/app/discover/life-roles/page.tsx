@@ -9,10 +9,9 @@ import { ModuleShell, ModuleCard, ModuleButton } from '@/components/modules';
 
 const STEPS = [
   { id: 'step1', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step2', label: 'Wellbeing Reflection', labelKo: '웰빙 성찰' },
-  { id: 'step3', label: 'Life Rainbow', labelKo: '인생 무지개' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Reflection', labelKo: '성찰' },
+  { id: 'step2', label: 'Life Rainbow', labelKo: '인생 무지개' },
+  { id: 'step3', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
 interface LifeRolesStatus {
@@ -135,8 +134,8 @@ export default function LifeRolesModuleLanding() {
           </h1>
           <p className="text-gray-600 text-lg max-w-xl mx-auto">
             {language === 'ko'
-              ? '삶의 역할을 탐색하고, 웰빙을 성찰하며, 사명과 가치에 맞는 헌신을 작성합니다.'
-              : 'Explore your life roles, reflect on wellbeing, and create commitments aligned with your mission and values.'}
+              ? '삶의 역할을 탐색하고, 인생 무지개를 시각화하며, 사명과 가치에 맞는 헌신을 작성합니다.'
+              : 'Explore your life roles, visualize your life rainbow, and create commitments aligned with your mission and values.'}
           </p>
         </div>
 
@@ -218,16 +217,15 @@ export default function LifeRolesModuleLanding() {
         {/* Steps Overview */}
         <ModuleCard className="mb-6" padding="normal">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {language === 'ko' ? '5단계 과정' : '5-Step Process'}
+            {language === 'ko' ? '4단계 과정' : '4-Step Process'}
           </h2>
 
           <div className="space-y-3">
             {[
               { step: 1, title: language === 'ko' ? STEPS[0].labelKo : STEPS[0].label, desc: language === 'ko' ? '관계 대상과 역할을 매핑합니다' : 'Map your relationship entities and roles' },
-              { step: 2, title: language === 'ko' ? STEPS[1].labelKo : STEPS[1].label, desc: language === 'ko' ? '5가지 웰빙 차원 성찰 (톱날 갈기)' : 'Reflect on 5 wellbeing dimensions (Sharpen the Saw)' },
-              { step: 3, title: language === 'ko' ? STEPS[2].labelKo : STEPS[2].label, desc: language === 'ko' ? '생애 단계에 걸쳐 역할을 시각화합니다' : 'Visualize your life roles across life stages' },
-              { step: 4, title: language === 'ko' ? STEPS[3].labelKo : STEPS[3].label, desc: language === 'ko' ? '역할과 헌신(R&C) 테이블을 작성합니다' : 'Complete the Roles & Commitment table' },
-              { step: 5, title: language === 'ko' ? STEPS[4].labelKo : STEPS[4].label, desc: language === 'ko' ? 'AI 균형 평가를 받고 성찰합니다' : 'Reflect and receive AI balance assessment' },
+              { step: 2, title: language === 'ko' ? STEPS[1].labelKo : STEPS[1].label, desc: language === 'ko' ? '생애 단계에 걸쳐 역할을 시각화합니다' : 'Visualize your life roles across life stages' },
+              { step: 3, title: language === 'ko' ? STEPS[2].labelKo : STEPS[2].label, desc: language === 'ko' ? '역할과 헌신(R&C) 테이블을 작성합니다' : 'Complete the Roles & Commitment table' },
+              { step: 4, title: language === 'ko' ? STEPS[3].labelKo : STEPS[3].label, desc: language === 'ko' ? 'AI 균형 평가를 받고 성찰합니다' : 'Reflect and receive AI balance assessment' },
             ].map((item) => (
               <div
                 key={item.step}

@@ -101,7 +101,7 @@ async function fetchMissionData(supabase: any, userId: string) {
   try {
     const { data } = await supabase
       .from('mission_sessions')
-      .select('final_statement, life_roles, wellbeing_reflections')
+      .select('final_statement, life_roles')
       .eq('user_id', userId)
       .single();
 
@@ -109,7 +109,6 @@ async function fetchMissionData(supabase: any, userId: string) {
     return {
       finalStatement: data.final_statement || '',
       lifeRoles: data.life_roles || [],
-      wellbeingReflections: data.wellbeing_reflections || {},
     };
   } catch {
     return null;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Sparkles, GripVertical, Plus, X, Users, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, GripVertical, Plus, X, Users } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
@@ -10,35 +10,24 @@ interface LifeRole {
   id: string;
   entity: string;
   role: string;
-  category?: string;
-}
-
-interface SuggestedRole {
-  id: string;
-  entity: string;
-  entityKo: string;
-  role: string;
-  roleKo: string;
-  category: string;
-  source?: string;
 }
 
 const STEPS = [
   { id: 'step1', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step2', label: 'Wellbeing Reflection', labelKo: '웰빙 성찰' },
-  { id: 'step3', label: 'Life Rainbow', labelKo: '인생 무지개' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Reflection', labelKo: '성찰' },
+  { id: 'step2', label: 'Life Rainbow', labelKo: '인생 무지개' },
+  { id: 'step3', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
-const DEFAULT_SUGGESTIONS: SuggestedRole[] = [
-  { id: 's1', entity: 'Family', entityKo: '가족', role: 'Caring Family Member', roleKo: '돌보는 가족 구성원', category: 'personal', source: 'default' },
-  { id: 's2', entity: 'Workplace', entityKo: '직장', role: 'Dedicated Professional', roleKo: '헌신적인 전문가', category: 'professional', source: 'default' },
-  { id: 's3', entity: 'Friends', entityKo: '친구', role: 'Supportive Friend', roleKo: '지지하는 친구', category: 'personal', source: 'default' },
-  { id: 's4', entity: 'Community', entityKo: '지역사회', role: 'Active Contributor', roleKo: '적극적인 기여자', category: 'community', source: 'default' },
-  { id: 's5', entity: 'Self', entityKo: '자신', role: 'Lifelong Learner', roleKo: '평생 학습자', category: 'health', source: 'default' },
-  { id: 's6', entity: 'Partner', entityKo: '파트너', role: 'Loving Partner', roleKo: '사랑하는 파트너', category: 'personal', source: 'default' },
-  { id: 's7', entity: 'School', entityKo: '학교', role: 'Engaged Student', roleKo: '열정적인 학생', category: 'professional', source: 'default' },
+const DEFAULT_ROLE_CARDS = [
+  { entity: 'School', role: 'Learner', entityKo: '학교', roleKo: '학습자' },
+  { entity: 'Friends', role: 'Friend', entityKo: '친구', roleKo: '친구' },
+  { entity: 'Parents', role: 'Daughter', entityKo: '부모님', roleKo: '딸' },
+  { entity: 'Parents', role: 'Son', entityKo: '부모님', roleKo: '아들' },
+  { entity: 'Children', role: 'Parent', entityKo: '자녀', roleKo: '부모' },
+  { entity: 'Spouse', role: 'Partner', entityKo: '배우자', roleKo: '파트너' },
+  { entity: 'Partner', role: 'Partner', entityKo: '파트너', roleKo: '파트너' },
+  { entity: 'Workplace', role: 'Worker', entityKo: '직장', roleKo: '직장인' },
 ];
 
 // 7 positions around the center circle
@@ -52,22 +41,13 @@ const CIRCLE_POSITIONS = [
   { angle: -135, x: -85, y: -85 }, // top-left
 ];
 
-const CATEGORY_LABELS: Record<string, { en: string; ko: string }> = {
-  personal: { en: 'Personal', ko: '개인' },
-  professional: { en: 'Professional', ko: '직업' },
-  community: { en: 'Community', ko: '지역사회' },
-  health: { en: 'Health & Self', ko: '건강 & 자기' },
-};
-
 export default function LifeRolesStep1() {
   const router = useRouter();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lifeRoles, setLifeRoles] = useState<(LifeRole | null)[]>(Array(7).fill(null));
-  const [suggestions, setSuggestions] = useState<SuggestedRole[]>(DEFAULT_SUGGESTIONS);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [draggedItem, setDraggedItem] = useState<SuggestedRole | null>(null);
+  const [draggedItem, setDraggedItem] = useState<{ entity: string; entityKo: string; role: string; roleKo: string } | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [customEntity, setCustomEntity] = useState('');
   const [customRole, setCustomRole] = useState('');
@@ -96,48 +76,43 @@ export default function LifeRolesStep1() {
       }
 
       setLoading(false);
-
-      // Load AI suggestions
-      loadAISuggestions();
     } catch (error) {
       console.error('[Life Roles Step 1] Error:', error);
       setLoading(false);
     }
   }
 
-  async function loadAISuggestions() {
-    setAiLoading(true);
-    try {
-      const res = await fetch('/api/discover/life-roles/ai-roles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+  // Check if a default card is already added to the diagram
+  function isCardAdded(card: typeof DEFAULT_ROLE_CARDS[0]): boolean {
+    return lifeRoles.some(r => {
+      if (!r) return false;
+      const entityMatch = r.entity === card.entity || r.entity === card.entityKo;
+      const roleMatch = r.role === card.role || r.role === card.roleKo;
+      return entityMatch && roleMatch;
+    });
+  }
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.suggestions && data.suggestions.length > 0) {
-          const aiSuggestions = data.suggestions.map((s: any, i: number) => ({
-            id: `ai_${i}`,
-            entity: s.entity,
-            entityKo: s.entityKo || s.entity,
-            role: s.role,
-            roleKo: s.roleKo || s.role,
-            category: s.category || 'personal',
-            source: 'ai',
-          }));
-          // Merge with defaults, prioritize AI suggestions
-          setSuggestions([...aiSuggestions, ...DEFAULT_SUGGESTIONS.slice(aiSuggestions.length)]);
-        }
-      }
-    } catch (error) {
-      console.error('[Life Roles Step 1] AI suggestions error:', error);
-    } finally {
-      setAiLoading(false);
+  // Add a default card to the first empty slot
+  function addDefaultCard(card: typeof DEFAULT_ROLE_CARDS[0]) {
+    if (isCardAdded(card)) return;
+
+    const emptyIndex = lifeRoles.findIndex(r => r === null);
+    if (emptyIndex === -1) {
+      alert(language === 'ko' ? '모든 슬롯이 채워져 있습니다.' : 'All slots are filled.');
+      return;
     }
+
+    const newRoles = [...lifeRoles];
+    newRoles[emptyIndex] = {
+      id: `default_${Date.now()}_${emptyIndex}`,
+      entity: language === 'ko' ? card.entityKo : card.entity,
+      role: language === 'ko' ? card.roleKo : card.role,
+    };
+    setLifeRoles(newRoles);
   }
 
   // Drag and Drop handlers
-  function handleDragStart(e: DragEvent, item: SuggestedRole) {
+  function handleDragStart(e: DragEvent, item: typeof DEFAULT_ROLE_CARDS[0]) {
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = 'move';
   }
@@ -165,7 +140,6 @@ export default function LifeRolesStep1() {
         id: `${Date.now()}_${index}`,
         entity: language === 'ko' ? draggedItem.entityKo : draggedItem.entity,
         role: language === 'ko' ? draggedItem.roleKo : draggedItem.role,
-        category: draggedItem.category,
       };
       setLifeRoles(newRoles);
     }
@@ -197,7 +171,6 @@ export default function LifeRolesStep1() {
       id: `custom_${Date.now()}`,
       entity: customEntity.trim(),
       role: customRole.trim(),
-      category: 'personal',
     };
     setLifeRoles(newRoles);
     setCustomEntity('');
@@ -224,7 +197,6 @@ export default function LifeRolesStep1() {
             id: r.id,
             entity: r.entity,
             role: r.role,
-            category: r.category,
           })),
         }),
       });
@@ -253,7 +225,7 @@ export default function LifeRolesStep1() {
     <ModuleShell
       moduleId="life-roles"
       currentStep={1}
-      totalSteps={5}
+      totalSteps={4}
       title={language === 'ko' ? '삶의 역할 탐색' : 'Life Roles Mapping'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
@@ -265,98 +237,85 @@ export default function LifeRolesStep1() {
           </h2>
           <p className="text-gray-600 mb-4">
             {language === 'ko'
-              ? '왼쪽의 역할 카드를 드래그하여 오른쪽 다이어그램의 원에 배치하세요. "나"를 중심으로 4~7개의 관계를 매핑합니다.'
-              : 'Drag role cards from the left and drop them onto the circles in the diagram. Map 4-7 relationships with "Self" at the center.'}
+              ? '아래의 기본 역할 카드를 클릭하여 추가하거나, 드래그하여 다이어그램에 배치하세요. "나"를 중심으로 4~7개의 관계를 매핑합니다. 직접 입력도 가능합니다.'
+              : 'Click default role cards below to add them, or drag them onto the diagram. Map 4-7 relationships with "Self" at the center. You can also add custom roles.'}
           </p>
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800">
               {language === 'ko'
-                ? '💡 드래그 앤 드롭: 카드를 원하는 위치의 원에 놓으세요'
-                : '💡 Drag & Drop: Place cards onto the circles where you want them'}
+                ? '💡 카드를 클릭하면 자동으로 빈 슬롯에 추가됩니다. 드래그 앤 드롭도 가능합니다.'
+                : '💡 Click a card to auto-add to an empty slot. Drag & drop also works.'}
             </p>
+          </div>
+        </ModuleCard>
+
+        {/* Default Role Cards as suggestion chips */}
+        <ModuleCard padding="normal">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Users className="w-5 h-5 text-amber-600" />
+            {language === 'ko' ? '기본 역할 카드' : 'Default Role Cards'}
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_ROLE_CARDS.map((card, idx) => {
+              const added = isCardAdded(card);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => !added && addDefaultCard(card)}
+                  draggable={!added}
+                  onDragStart={(e) => !added && handleDragStart(e, card)}
+                  onDragEnd={handleDragEnd}
+                  disabled={added}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    added
+                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-default opacity-60'
+                      : 'bg-white border-amber-300 text-gray-800 hover:bg-amber-50 hover:border-amber-400 cursor-grab active:cursor-grabbing shadow-sm hover:shadow'
+                  }`}
+                >
+                  <span className="font-medium">
+                    {language === 'ko' ? card.entityKo : card.entity}
+                  </span>
+                  <span className="text-gray-400 mx-1">/</span>
+                  <span className="text-amber-700">
+                    {language === 'ko' ? card.roleKo : card.role}
+                  </span>
+                  {added && <span className="ml-1 text-xs text-gray-400">(added)</span>}
+                </button>
+              );
+            })}
           </div>
         </ModuleCard>
 
         {/* Main Interactive Area */}
         <div className="grid lg:grid-cols-5 gap-6">
-          {/* Draggable Role Cards - Left Side */}
+          {/* Custom Role Input - Left Side */}
           <div className="lg:col-span-2">
             <ModuleCard padding="normal">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-amber-600" />
-                  {language === 'ko' ? '역할 카드' : 'Role Cards'}
-                </h3>
+              <h3 className="font-semibold text-gray-900 mb-4">
+                {language === 'ko' ? '직접 추가' : 'Add Custom Role'}
+              </h3>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={customEntity}
+                  onChange={(e) => setCustomEntity(e.target.value)}
+                  placeholder={language === 'ko' ? '대상/그룹 (예: 동아리)' : 'Entity/Group (e.g., Club)'}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                />
+                <input
+                  type="text"
+                  value={customRole}
+                  onChange={(e) => setCustomRole(e.target.value)}
+                  placeholder={language === 'ko' ? '나의 역할 (예: 회장)' : 'My Role (e.g., President)'}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                />
                 <button
-                  onClick={loadAISuggestions}
-                  disabled={aiLoading}
-                  className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700"
+                  onClick={addCustomRole}
+                  className="w-full py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1"
                 >
-                  {aiLoading ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-3 h-3" />
-                  )}
-                  {language === 'ko' ? 'AI 제안' : 'AI Suggest'}
+                  <Plus className="w-4 h-4" />
+                  {language === 'ko' ? '추가' : 'Add'}
                 </button>
-              </div>
-
-              {/* AI Suggestions */}
-              <div className="space-y-2 mb-4">
-                {suggestions.map((item) => (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, item)}
-                    onDragEnd={handleDragEnd}
-                    className={`p-3 bg-white border rounded-lg cursor-grab active:cursor-grabbing flex items-center gap-3 transition-all hover:shadow-md hover:border-amber-400 ${
-                      item.source === 'ai' ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
-                    }`}
-                  >
-                    <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-gray-900 truncate">
-                        {language === 'ko' ? item.entityKo : item.entity}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {language === 'ko' ? `역할: ${item.roleKo}` : `Role: ${item.role}`}
-                      </p>
-                    </div>
-                    {item.source === 'ai' && (
-                      <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Custom Role Input */}
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  {language === 'ko' ? '직접 추가' : 'Add Custom'}
-                </p>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={customEntity}
-                    onChange={(e) => setCustomEntity(e.target.value)}
-                    placeholder={language === 'ko' ? '대상/그룹' : 'Entity/Group'}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                  <input
-                    type="text"
-                    value={customRole}
-                    onChange={(e) => setCustomRole(e.target.value)}
-                    placeholder={language === 'ko' ? '나의 역할' : 'My Role'}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                  <button
-                    onClick={addCustomRole}
-                    className="w-full py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {language === 'ko' ? '추가' : 'Add'}
-                  </button>
-                </div>
               </div>
             </ModuleCard>
           </div>
@@ -466,9 +425,6 @@ export default function LifeRolesStep1() {
                     <th className="text-left py-2 px-3 text-gray-500 font-medium">
                       {language === 'ko' ? '역할' : 'Role'}
                     </th>
-                    <th className="text-left py-2 px-3 text-gray-500 font-medium">
-                      {language === 'ko' ? '범주' : 'Category'}
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -477,15 +433,6 @@ export default function LifeRolesStep1() {
                       <td className="py-2 px-3 text-gray-400">{idx + 1}</td>
                       <td className="py-2 px-3 font-medium text-gray-900">{role.entity}</td>
                       <td className="py-2 px-3 text-gray-700">{role.role}</td>
-                      <td className="py-2 px-3">
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
-                          {role.category
-                            ? (language === 'ko'
-                                ? (CATEGORY_LABELS[role.category]?.ko ?? role.category)
-                                : (CATEGORY_LABELS[role.category]?.en ?? role.category))
-                            : (language === 'ko' ? '개인' : 'Personal')}
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>

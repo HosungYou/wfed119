@@ -827,20 +827,7 @@ export class ModuleProgressService {
       id: r.id || '',
       entity: r.entity || '',
       role: r.role || '',
-      category: r.category || 'personal',
-      importance: r.importance || 3,
     }));
-
-    const wellbeingReflections: Record<string, { reflection: string; currentLevel: number; goals: string }> = {};
-    if (data.wellbeing_reflections && typeof data.wellbeing_reflections === 'object') {
-      for (const [key, val] of Object.entries(data.wellbeing_reflections as Record<string, any>)) {
-        wellbeingReflections[key] = {
-          reflection: val?.reflection || '',
-          currentLevel: val?.currentLevel || 5,
-          goals: val?.goals || '',
-        };
-      }
-    }
 
     const rainbowData = {
       currentAge: data.rainbow_data?.currentAge || 25,
@@ -853,10 +840,7 @@ export class ModuleProgressService {
       commitment: c.commitment || '',
       currentTimePercentage: c.currentTimePct || 0,
       desiredTimePercentage: c.desiredTimePct || 0,
-      gapAnalysis: c.gapAnalysis || '',
     }));
-
-    const wellbeingCommitments: Record<string, string> = data.wellbeing_commitments || {};
 
     const reflection = data.reflection || {};
     const balanceAssessment = {
@@ -867,10 +851,8 @@ export class ModuleProgressService {
 
     return {
       roles,
-      wellbeingReflections,
       rainbowData,
       commitments,
-      wellbeingCommitments,
       balanceAssessment,
       completedAt: data.completed_at,
     };
@@ -1264,7 +1246,6 @@ export class ModuleProgressService {
           roles: lifeRolesData.roles.map(r => ({
             entity: r.entity,
             role: r.role,
-            category: r.category,
           })),
           commitments: lifeRolesData.commitments.map(c => ({
             roleName: c.roleName,
@@ -1611,7 +1592,7 @@ ${g.roles.slice(0, 4).map(r => `- ${r.roleName} (${r.percentageAllocation}%)`).j
       .single();
     if (lifeRolesRow) {
       const isCompleted = lifeRolesRow.status === 'completed';
-      const stepPct = Math.min(100, Math.round((lifeRolesRow.current_step / 5) * 100));
+      const stepPct = Math.min(100, Math.round((lifeRolesRow.current_step / 4) * 100));
       progress.push({
         moduleId: 'life-roles',
         status: isCompleted ? 'completed' : 'in_progress',

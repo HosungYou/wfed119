@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const userId = auth.userId;
     const body = await request.json();
-    const { lifeRoles, wellbeingReflections, roleCommitments, wellbeingCommitments, rainbowData } = body;
+    const { lifeRoles, roleCommitments, rainbowData } = body;
 
     // Fetch mission & values context
     const [missionResult, valuesResult] = await Promise.all([
@@ -31,9 +31,7 @@ export async function POST(request: NextRequest) {
       missionStatement: missionResult.data?.final_statement || '',
       values: valuesResult.data,
       lifeRoles: lifeRoles || [],
-      wellbeingReflections: wellbeingReflections || {},
       roleCommitments: roleCommitments || [],
-      wellbeingCommitments: wellbeingCommitments || {},
       rainbowData: rainbowData || {},
     };
 
@@ -61,10 +59,9 @@ export async function POST(request: NextRequest) {
 async function generateAIAssessment(groq: Groq, context: any) {
   const rolesText = context.lifeRoles?.map((r: any) => `${r.role} (${r.entity})`).join(', ') || 'None';
   const commitmentsText = context.roleCommitments?.map((c: any) => `${c.roleName}: ${c.commitment}`).join('\n') || 'None';
-  const wellbeingText = Object.entries(context.wellbeingCommitments || {}).map(([k, v]) => `${k}: ${v}`).join('\n') || 'None';
   const valuesText = context.values?.map((v: any) => (v.top3 || []).join(', ')).join('; ') || '';
 
-  const prompt = `You are a life balance coach. Analyze the user's life roles, commitments, and wellbeing, then generate a comprehensive assessment.
+  const prompt = `You are a life balance coach. Analyze the user's life roles and commitments, then generate a comprehensive assessment.
 
 ## User Data:
 Mission: "${context.missionStatement}"
@@ -72,8 +69,6 @@ Values: ${valuesText}
 Life Roles: ${rolesText}
 Role Commitments:
 ${commitmentsText}
-Wellbeing Commitments:
-${wellbeingText}
 
 ## Task:
 Provide a JSON response with:

@@ -2,54 +2,51 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, ClipboardList, HelpCircle, Users, Target, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, Sparkles, Share2, ClipboardList } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
-
-interface RoleCommitment {
-  roleId: string;
-  roleName: string;
-  commitment: string;
-  currentTimePct: number;
-  desiredTimePct: number;
-}
-
-interface LifeRole {
-  id: string;
-  entity: string;
-  role: string;
-}
 
 const STEPS = [
   { id: 'step1', label: 'Life Roles Mapping', labelKo: '삶의 역할 탐색' },
-  { id: 'step2', label: 'Wellbeing Reflection', labelKo: '웰빙 성찰' },
-  { id: 'step3', label: 'Life Rainbow', labelKo: '인생 무지개' },
-  { id: 'step4', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
-  { id: 'step5', label: 'Reflection', labelKo: '성찰' },
+  { id: 'step2', label: 'Life Rainbow', labelKo: '인생 무지개' },
+  { id: 'step3', label: 'Roles & Commitment', labelKo: '역할과 헌신' },
+  { id: 'step4', label: 'Reflection', labelKo: '성찰' },
 ];
 
-const SHARPEN_SAW_ROLES = [
-  { key: 'physical', label: 'Physical', labelKo: '신체적' },
-  { key: 'intellectual', label: 'Intellectual', labelKo: '지적' },
-  { key: 'social_emotional', label: 'Social/Emotional', labelKo: '사회적/정서적' },
-  { key: 'spiritual', label: 'Spiritual', labelKo: '영적' },
-  { key: 'financial', label: 'Financial', labelKo: '재정적' },
+const reflectionQuestions = [
+  {
+    key: 'identityReflection',
+    question: 'How do your various life roles reflect your identity?',
+    questionKo: '다양한 삶의 역할이 당신의 정체성을 어떻게 반영하나요?',
+  },
+  {
+    key: 'futureChanges',
+    question: 'How do you envision your roles and commitments changing in the future?',
+    questionKo: '미래에 역할과 헌신이 어떻게 변화할 것으로 예상하나요?',
+  },
+  {
+    key: 'lessonsLearned',
+    question: 'What lessons did you learn from this experience?',
+    questionKo: '이 경험에서 어떤 교훈을 배웠나요?',
+  },
 ];
 
 export default function LifeRolesStep4() {
   const router = useRouter();
   const { language } = useLanguage();
+  const { completeModule } = useModuleProgress('life-roles');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [session, setSession] = useState<any>(null);
-  const [lifeRoles, setLifeRoles] = useState<LifeRole[]>([]);
-  const [roleCommitments, setRoleCommitments] = useState<RoleCommitment[]>([]);
-  const [wellbeingCommitments, setWellbeingCommitments] = useState<Record<string, string>>({});
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<{
-    roleCommitments?: Record<string, string>;
-    wellbeingCommitments?: Record<string, string>;
-  }>({});
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [assessment, setAssessment] = useState<any>(null);
+  const [reflection, setReflection] = useState({
+    identityReflection: '',
+    futureChanges: '',
+    lessonsLearned: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -67,28 +64,19 @@ export default function LifeRolesStep4() {
 
       setSession(data);
 
-      // Load life roles from session
-      if (data.life_roles && data.life_roles.length > 0) {
-        setLifeRoles(data.life_roles);
-
-        // Initialize role commitments from existing data or from life_roles
-        const existingCommitments: RoleCommitment[] = data.role_commitments || [];
-        const commitments = data.life_roles.map((lr: LifeRole) => {
-          const existing = existingCommitments.find((c) => c.roleId === lr.id);
-          return {
-            roleId: lr.id,
-            roleName: `${lr.entity}: ${lr.role}`,
-            commitment: existing?.commitment || '',
-            currentTimePct: existing?.currentTimePct ?? 20,
-            desiredTimePct: existing?.desiredTimePct ?? 20,
-          };
+      if (data.reflection) {
+        setReflection({
+          identityReflection: data.reflection.identityReflection || '',
+          futureChanges: data.reflection.futureChanges || '',
+          lessonsLearned: data.reflection.lessonsLearned || '',
         });
-        setRoleCommitments(commitments);
+        if (data.reflection.aiSummary) {
+          setAssessment(data.reflection.aiSummary);
+        }
       }
 
-      // Initialize wellbeing commitments
-      if (data.wellbeing_commitments) {
-        setWellbeingCommitments(data.wellbeing_commitments);
+      if (data.status === 'completed') {
+        setIsCompleted(true);
       }
 
       setLoading(false);
@@ -98,82 +86,41 @@ export default function LifeRolesStep4() {
     }
   }
 
-  async function loadAISuggestions() {
-    setAiLoading(true);
+  async function generateAssessment() {
+    setAssessmentLoading(true);
     try {
-      const res = await fetch('/api/discover/life-roles/ai-commitments', {
+      const res = await fetch('/api/discover/life-roles/ai-reflection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lifeRoles,
-          wellbeingReflections: session?.wellbeing_reflections || {},
+          lifeRoles: session?.life_roles || [],
+          roleCommitments: session?.role_commitments || [],
+          rainbowData: session?.rainbow_data || {},
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.suggestions) {
-          setAiSuggestions(data.suggestions);
+        if (data.assessment) {
+          setAssessment(data.assessment);
         }
       }
     } catch (error) {
-      console.error('[LifeRoles Step 4] AI suggestions error:', error);
+      console.error('[LifeRoles Step 4] Assessment error:', error);
     } finally {
-      setAiLoading(false);
+      setAssessmentLoading(false);
     }
   }
 
-  function applyWellbeingAISuggestion(key: string) {
-    const suggestion = aiSuggestions.wellbeingCommitments?.[key];
-    if (!suggestion) return;
-    setWellbeingCommitments(prev => ({ ...prev, [key]: suggestion }));
-  }
-
-  function applyRoleAISuggestion(roleId: string) {
-    const suggestion = aiSuggestions.roleCommitments?.[roleId];
-    if (!suggestion) return;
-    setRoleCommitments(prev =>
-      prev.map(rc => rc.roleId === roleId ? { ...rc, commitment: suggestion } : rc)
+  async function handleComplete() {
+    const allFilled = reflectionQuestions.every(
+      q => reflection[q.key as keyof typeof reflection].trim().length > 0
     );
-  }
 
-  function updateRoleCommitment(roleId: string, field: keyof RoleCommitment, value: string | number) {
-    setRoleCommitments(prev =>
-      prev.map(rc => rc.roleId === roleId ? { ...rc, [field]: value } : rc)
-    );
-  }
-
-  function updateWellbeingCommitment(key: string, value: string) {
-    setWellbeingCommitments(prev => ({ ...prev, [key]: value }));
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await fetch('/api/discover/life-roles/session', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role_commitments: roleCommitments,
-          wellbeing_commitments: wellbeingCommitments,
-        }),
-      });
-      alert(language === 'ko' ? '저장되었습니다.' : 'Saved!');
-    } catch (error) {
-      console.error('[LifeRoles Step 4] Save error:', error);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleNext() {
-    const filledWellbeing = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
-    const filledRoles = roleCommitments.filter(c => c.commitment.trim()).length;
-
-    if (filledWellbeing < 5 || filledRoles < 3) {
+    if (!allFilled) {
       alert(language === 'ko'
-        ? '5개 웰빙 헌신을 모두 작성하고 역할 헌신을 최소 3개 작성해주세요.'
-        : 'Please complete all 5 wellbeing commitments and at least 3 role commitments.');
+        ? '모든 성찰 질문에 답해주세요.'
+        : 'Please answer all reflection questions.');
       return;
     }
 
@@ -183,23 +130,47 @@ export default function LifeRolesStep4() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          current_step: 5,
-          role_commitments: roleCommitments,
-          wellbeing_commitments: wellbeingCommitments,
+          reflection: {
+            identityReflection: reflection.identityReflection,
+            futureChanges: reflection.futureChanges,
+            lessonsLearned: reflection.lessonsLearned,
+            aiSummary: assessment,
+          },
+          status: 'completed',
         }),
       });
-      router.push('/discover/life-roles/step5');
+
+      await completeModule();
+      setIsCompleted(true);
     } catch (error) {
-      console.error('[LifeRoles Step 4] Save error:', error);
-      alert(language === 'ko' ? '저장 실패' : 'Save failed');
+      console.error('[LifeRoles Step 4] Complete error:', error);
+      alert(language === 'ko' ? '완료 실패' : 'Completion failed');
+    } finally {
       setSaving(false);
     }
   }
 
+  function getBalanceBadgeStyle(status: string) {
+    if (status === 'balanced') return 'bg-green-100 text-green-700 border-green-300';
+    if (status === 'moderately_imbalanced') return 'bg-amber-100 text-amber-700 border-amber-300';
+    return 'bg-red-100 text-red-700 border-red-300';
+  }
+
+  function getBalanceLabel(status: string) {
+    if (language === 'ko') {
+      if (status === 'balanced') return '균형 잡힘';
+      if (status === 'moderately_imbalanced') return '다소 불균형';
+      return '심각한 불균형';
+    }
+    if (status === 'balanced') return 'Balanced';
+    if (status === 'moderately_imbalanced') return 'Moderately Imbalanced';
+    return 'Severely Imbalanced';
+  }
+
   const activities = createActivitiesFromSteps(STEPS, '/discover/life-roles', 4, [1, 2, 3]);
-  const filledWellbeingCount = Object.values(wellbeingCommitments).filter(v => v.trim()).length;
-  const filledRoleCount = roleCommitments.filter(c => c.commitment.trim()).length;
-  const isReady = filledWellbeingCount >= 5 && filledRoleCount >= 3;
+  const lifeRoles = session?.life_roles || [];
+  const roleCommitments = session?.role_commitments || [];
+  const filledCommitmentCount = roleCommitments.filter((c: any) => c.commitment?.trim()).length;
 
   if (loading) {
     return (
@@ -209,285 +180,317 @@ export default function LifeRolesStep4() {
     );
   }
 
+  // Completion Screen
+  if (isCompleted) {
+    return (
+      <ModuleShell moduleId="life-roles" showProgress={false}>
+        <div className="max-w-2xl mx-auto text-center py-12">
+          <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-white" />
+          </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            {language === 'ko' ? '삶의 역할 탐색 완료!' : 'Life Roles Complete!'}
+          </h1>
+
+          <p className="text-gray-600 mb-8">
+            {language === 'ko'
+              ? '축하합니다! 당신의 삶의 역할과 헌신을 성찰하는 여정을 완료했습니다.'
+              : 'Congratulations! You have completed your life roles exploration and commitment journey.'}
+          </p>
+
+          {/* Roles Summary */}
+          {lifeRoles.length > 0 && (
+            <ModuleCard padding="normal" className="mb-6 text-left">
+              <h3 className="font-semibold text-gray-900 mb-3">
+                {language === 'ko' ? '나의 삶의 역할' : 'My Life Roles'}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {lifeRoles.map((lr: any, i: number) => (
+                  <span key={i} className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm">
+                    {lr.entity}: {lr.role}
+                  </span>
+                ))}
+              </div>
+            </ModuleCard>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <ModuleButton
+              onClick={() => {
+                const summary = lifeRoles.map((lr: any) => `${lr.entity}: ${lr.role}`).join('\n');
+                navigator.clipboard.writeText(summary);
+                alert(language === 'ko' ? '복사됨!' : 'Copied!');
+              }}
+              variant="secondary"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {language === 'ko' ? '역할 목록 복사' : 'Copy Roles'}
+            </ModuleButton>
+            <ModuleButton onClick={() => router.push('/dashboard')}>
+              {language === 'ko' ? '대시보드로 이동' : 'Go to Dashboard'}
+            </ModuleButton>
+            <ModuleButton
+              onClick={() => router.push('/discover/vision')}
+              variant="secondary"
+            >
+              {language === 'ko' ? '다음 모듈: 비전' : 'Next Module: Vision'}
+            </ModuleButton>
+          </div>
+        </div>
+      </ModuleShell>
+    );
+  }
+
   return (
     <ModuleShell
       moduleId="life-roles"
       currentStep={4}
-      totalSteps={5}
-      title={language === 'ko' ? '역할과 헌신(R&C) 테이블' : 'Roles & Commitment (R&C) Table'}
+      totalSteps={4}
+      title={language === 'ko' ? '성찰 & 완료' : 'Reflection & Completion'}
       sidebar={<ActivitySidebar activities={activities} title="Steps" titleKo="단계" />}
     >
       <div className="space-y-6">
-        {/* Instruction Card */}
-        <ModuleCard padding="normal">
-          <div className="flex items-start gap-3">
-            <ClipboardList className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {language === 'ko' ? 'R&C 테이블이란?' : 'What is the R&C Table?'}
-              </h2>
-              <p className="text-gray-600 text-sm leading-relaxed">
+        {/* Summary Cards */}
+        <ModuleCard padding="normal" className="bg-gray-50">
+          <h3 className="font-semibold text-gray-900 mb-4">
+            {language === 'ko' ? '여정 요약' : 'Your Journey Summary'}
+          </h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Roles summary */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200">
+              <p className="text-xs font-medium text-gray-500 mb-2">
+                {language === 'ko' ? '삶의 역할' : 'Life Roles'}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {lifeRoles.slice(0, 4).map((lr: any, i: number) => (
+                  <span key={i} className="px-2 py-0.5 bg-teal-100 text-teal-700 rounded text-xs">
+                    {lr.role}
+                  </span>
+                ))}
+                {lifeRoles.length > 4 && (
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                    +{lifeRoles.length - 4}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* R&C highlight */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200">
+              <p className="text-xs font-medium text-gray-500 mb-2">
+                {language === 'ko' ? '역할 헌신' : 'Role Commitments'}
+              </p>
+              <p className="text-2xl font-bold text-teal-600">{filledCommitmentCount}</p>
+              <p className="text-xs text-gray-500">
                 {language === 'ko'
-                  ? '"헌신(Commitment)"은 의무나 압박이 아닌 진정한 자기 선택적 참여입니다. 각 역할에 대해 어떻게 헌신할 것인지, 그리고 현재와 원하는 시간 배분을 기록하세요.'
-                  : '"Commitment" is not a rigid obligation but a genuine, self-chosen involvement. Record how you commit to each role and reflect on your current vs. desired time allocation.'}
+                  ? `총 ${roleCommitments.length}개 역할 중`
+                  : `out of ${roleCommitments.length} roles`}
               </p>
             </div>
           </div>
         </ModuleCard>
 
-        {/* AI Suggestions Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={loadAISuggestions}
-            disabled={aiLoading}
-            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-50 border border-purple-200 transition-colors"
-          >
-            {aiLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            {language === 'ko' ? 'AI 제안 받기' : 'Get AI Suggestions'}
-          </button>
-        </div>
+        {/* Commitments Display Per Role */}
+        {roleCommitments.length > 0 && (
+          <ModuleCard padding="normal">
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardList className="w-5 h-5 text-teal-600" />
+              <h3 className="font-semibold text-gray-900">
+                {language === 'ko' ? '나의 역할별 헌신' : 'My Commitments by Role'}
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {roleCommitments.map((rc: any, i: number) => (
+                <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm font-semibold text-teal-700 mb-1">
+                    {rc.roleName}
+                  </p>
+                  {rc.commitment?.trim() ? (
+                    <>
+                      <p className="text-sm text-gray-700 mb-1">
+                        <span className="font-medium text-gray-500">
+                          {language === 'ko' ? '헌신: ' : 'Commitment: '}
+                        </span>
+                        {rc.commitment}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        <span className="font-medium">
+                          {language === 'ko' ? '시간: ' : 'Time: '}
+                        </span>
+                        {rc.currentTimePct ?? 0}% → {rc.desiredTimePct ?? 0}%
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">
+                      {language === 'ko' ? '(헌신 미작성)' : '(No commitment written)'}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ModuleCard>
+        )}
 
-        {/* Section A: Sharpen the Saw (Self-care) */}
+        {/* AI Balance Assessment */}
         <ModuleCard padding="normal">
-          <div className="flex items-center gap-2 mb-4 p-3 bg-purple-50 rounded-lg">
-            <Target className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-purple-800">
-              {language === 'ko' ? 'A. 톱날 갈기 (자기 관리)' : 'A. "Sharpen the Saw" (Self-care)'}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">
+              {language === 'ko' ? 'AI 균형 평가' : 'AI Balance Assessment'}
             </h3>
+            <button
+              onClick={generateAssessment}
+              disabled={assessmentLoading}
+              className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-50 border border-purple-200 transition-colors"
+            >
+              {assessmentLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {language === 'ko' ? 'AI 평가 생성' : 'Generate AI Assessment'}
+            </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-purple-50">
-                  <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 w-1/5">
-                    {language === 'ko' ? '영역' : 'Dimension'}
-                  </th>
-                  <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
-                    {language === 'ko' ? '헌신' : 'Commitment'}
-                  </th>
-                  <th className="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 w-28">
-                    {language === 'ko' ? '현재 시간 %' : 'Current %'}
-                  </th>
-                  <th className="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 w-28">
-                    {language === 'ko' ? '희망 시간 %' : 'Desired %'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {SHARPEN_SAW_ROLES.map((dim) => (
-                  <tr key={dim.key}>
-                    <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
-                      <div className="flex items-center justify-between gap-1">
-                        <span>{language === 'ko' ? dim.labelKo : dim.label}</span>
-                        {aiSuggestions.wellbeingCommitments?.[dim.key] && (
-                          <button
-                            onClick={() => applyWellbeingAISuggestion(dim.key)}
-                            className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-0.5 flex-shrink-0"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            {language === 'ko' ? '적용' : 'Apply'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="border border-gray-200 p-1 bg-white">
-                      <textarea
-                        value={wellbeingCommitments[dim.key] || ''}
-                        onChange={(e) => updateWellbeingCommitment(dim.key, e.target.value)}
-                        placeholder={
-                          aiSuggestions.wellbeingCommitments?.[dim.key]
-                            ? `AI: ${aiSuggestions.wellbeingCommitments[dim.key].substring(0, 50)}...`
-                            : language === 'ko' ? '헌신 내용 입력...' : 'Enter commitment...'
-                        }
-                        rows={2}
-                        className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-purple-500 rounded text-sm resize-none"
-                      />
-                    </td>
-                    <td className="border border-gray-200 px-3 py-2 bg-white text-center">
-                      <div className="space-y-1">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={0}
-                          readOnly
-                          className="w-full accent-purple-500"
-                        />
-                        <span className="text-xs text-gray-500">0%</span>
-                      </div>
-                    </td>
-                    <td className="border border-gray-200 px-3 py-2 bg-white text-center">
-                      <div className="space-y-1">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={0}
-                          readOnly
-                          className="w-full accent-purple-500"
-                        />
-                        <span className="text-xs text-gray-500">0%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ModuleCard>
+          {assessmentLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">
+                {language === 'ko' ? 'AI가 균형을 분석하고 있습니다...' : 'AI is analyzing your balance...'}
+              </p>
+            </div>
+          ) : assessment ? (
+            <div className="space-y-4">
+              {/* Balance status badge */}
+              {assessment.balanceAssessment && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    {language === 'ko' ? '균형 상태:' : 'Balance Status:'}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getBalanceBadgeStyle(assessment.balanceAssessment)}`}>
+                    {getBalanceLabel(assessment.balanceAssessment)}
+                  </span>
+                </div>
+              )}
 
-        {/* Section B: Life Roles */}
-        <ModuleCard padding="normal">
-          <div className="flex items-center gap-2 mb-4 p-3 bg-teal-50 rounded-lg">
-            <Users className="w-5 h-5 text-teal-600" />
-            <h3 className="font-semibold text-teal-800">
-              {language === 'ko' ? 'B. 삶의 역할' : 'B. Life Roles'}
-            </h3>
-          </div>
+              {/* Strength areas */}
+              {assessment.strengthAreas && assessment.strengthAreas.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ko' ? '강점 영역' : 'Strength Areas'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {assessment.strengthAreas.map((area: string, i: number) => (
+                      <span key={i} className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {lifeRoles.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-6">
-              {language === 'ko'
-                ? 'Step 1에서 삶의 역할을 먼저 추가해주세요.'
-                : 'Please add life roles in Step 1 first.'}
-            </p>
+              {/* Growth areas */}
+              {assessment.growthAreas && assessment.growthAreas.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ko' ? '성장 영역' : 'Growth Areas'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {assessment.growthAreas.map((area: string, i: number) => (
+                      <span key={i} className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Suggested adjustments */}
+              {assessment.suggestedAdjustments && assessment.suggestedAdjustments.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ko' ? '개선 제안' : 'Suggested Adjustments'}
+                  </p>
+                  <ul className="space-y-1">
+                    {assessment.suggestedAdjustments.map((adj: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                        <span className="text-teal-500 flex-shrink-0">&#8226;</span>
+                        {adj}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Summary */}
+              {(assessment.summary || assessment.summaryKo) && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {language === 'ko' && assessment.summaryKo
+                      ? assessment.summaryKo
+                      : assessment.summary}
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="bg-teal-50">
-                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 w-1/4">
-                      {language === 'ko' ? '역할' : 'Role'}
-                    </th>
-                    <th className="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700">
-                      {language === 'ko' ? '헌신' : 'Commitment'}
-                    </th>
-                    <th className="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 w-28">
-                      {language === 'ko' ? '현재 시간 %' : 'Current %'}
-                    </th>
-                    <th className="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 w-28">
-                      {language === 'ko' ? '희망 시간 %' : 'Desired %'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roleCommitments.map((rc) => (
-                    <tr key={rc.roleId}>
-                      <td className="border border-gray-200 px-3 py-2 bg-white font-medium text-gray-700">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs leading-tight">{rc.roleName}</span>
-                          {aiSuggestions.roleCommitments?.[rc.roleId] && (
-                            <button
-                              onClick={() => applyRoleAISuggestion(rc.roleId)}
-                              className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-0.5 flex-shrink-0"
-                            >
-                              <Sparkles className="w-3 h-3" />
-                              {language === 'ko' ? '적용' : 'Apply'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="border border-gray-200 p-1 bg-white">
-                        <textarea
-                          value={rc.commitment}
-                          onChange={(e) => updateRoleCommitment(rc.roleId, 'commitment', e.target.value)}
-                          placeholder={
-                            aiSuggestions.roleCommitments?.[rc.roleId]
-                              ? `AI: ${aiSuggestions.roleCommitments[rc.roleId].substring(0, 50)}...`
-                              : language === 'ko' ? '이 역할에 대한 헌신...' : 'Your commitment to this role...'
-                          }
-                          rows={2}
-                          className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm resize-none"
-                        />
-                      </td>
-                      <td className="border border-gray-200 px-3 py-2 bg-white text-center">
-                        <div className="space-y-1">
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={rc.currentTimePct}
-                            onChange={(e) => updateRoleCommitment(rc.roleId, 'currentTimePct', Number(e.target.value))}
-                            className="w-full accent-teal-500"
-                          />
-                          <span className="text-xs text-gray-500">{rc.currentTimePct}%</span>
-                        </div>
-                      </td>
-                      <td className="border border-gray-200 px-3 py-2 bg-white text-center">
-                        <div className="space-y-1">
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={rc.desiredTimePct}
-                            onChange={(e) => updateRoleCommitment(rc.roleId, 'desiredTimePct', Number(e.target.value))}
-                            className="w-full accent-teal-500"
-                          />
-                          <span className="text-xs text-gray-500">{rc.desiredTimePct}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="text-center py-8 text-gray-400">
+              <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                {language === 'ko'
+                  ? 'AI 평가를 생성하면 역할 균형을 분석해 드립니다.'
+                  : 'Generate an AI assessment to analyze your role balance.'}
+              </p>
             </div>
           )}
         </ModuleCard>
 
-        {/* Example Reference Card */}
-        <ModuleCard padding="normal" className="bg-amber-50 border-amber-200">
-          <div className="flex items-start gap-2">
-            <HelpCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-amber-800 mb-2">
-                {language === 'ko' ? '예시' : 'Example'}
-              </h4>
-              <div className="text-sm text-amber-900 space-y-2">
-                <p>
-                  <span className="font-medium">{language === 'ko' ? '신체적: ' : 'Physical: '}</span>
-                  {language === 'ko'
-                    ? '신체적 웰빙을 위해 매일 30분 걷기를 실천한다. (현재 10% → 목표 20%)'
-                    : 'Walk 30 minutes daily to maintain physical well-being. (Current 10% → Desired 20%)'}
-                </p>
-                <p>
-                  <span className="font-medium">{language === 'ko' ? '부모 역할: ' : 'Parent role: '}</span>
-                  {language === 'ko'
-                    ? '자녀와 매주 질 높은 시간을 보내며 그들의 성장을 지원한다. (현재 30% → 목표 35%)'
-                    : 'Spend quality time with children weekly and support their growth. (Current 30% → Desired 35%)'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </ModuleCard>
-
-        {/* Progress Summary */}
-        <ModuleCard padding="normal" className={isReady ? 'bg-green-50 border-green-200' : 'bg-gray-50'}>
-          <div className="flex items-center justify-between text-sm">
-            <div className="space-y-1">
-              <p className={filledWellbeingCount >= 5 ? 'text-green-700' : 'text-gray-600'}>
-                {language === 'ko'
-                  ? `웰빙 헌신: ${filledWellbeingCount}/5 완성 (5개 필요)`
-                  : `Wellbeing commitments: ${filledWellbeingCount}/5 (all required)`}
-              </p>
-              <p className={filledRoleCount >= 3 ? 'text-green-700' : 'text-gray-600'}>
-                {language === 'ko'
-                  ? `역할 헌신: ${filledRoleCount}/${roleCommitments.length} 완성 (최소 3개)`
-                  : `Role commitments: ${filledRoleCount}/${roleCommitments.length} (min 3)`}
-              </p>
-            </div>
-            {isReady && (
-              <span className="text-green-600 text-lg">✓</span>
-            )}
+        {/* Reflection Textareas */}
+        <ModuleCard padding="normal">
+          <h3 className="font-semibold text-gray-900 mb-4">
+            {language === 'ko' ? '성찰 질문' : 'Reflection Questions'}
+          </h3>
+          <div className="space-y-6">
+            {reflectionQuestions.map((q) => {
+              const value = reflection[q.key as keyof typeof reflection];
+              const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
+              return (
+                <div key={q.key}>
+                  <label className="block text-sm font-medium text-gray-800 mb-2">
+                    {language === 'ko' ? q.questionKo : q.question}
+                  </label>
+                  <textarea
+                    value={value}
+                    onChange={(e) =>
+                      setReflection(prev => ({ ...prev, [q.key]: e.target.value }))
+                    }
+                    rows={4}
+                    placeholder={language === 'ko' ? '여기에 성찰을 작성하세요...' : 'Write your reflection here...'}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm"
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <span className={`text-xs ${value.trim().length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {value.trim().length > 0
+                        ? (language === 'ko' ? '답변 완성' : 'Answered')
+                        : (language === 'ko' ? '답변 필요' : 'Required')}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {wordCount} {language === 'ko' ? '단어' : 'words'}
+                      {wordCount < 10 && value.trim().length > 0 && (
+                        <span className="ml-1 text-amber-500">
+                          ({language === 'ko' ? '더 자세히 작성하면 좋아요' : 'Consider elaborating more'})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </ModuleCard>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <ModuleButton
             onClick={() => router.push('/discover/life-roles/step3')}
             variant="secondary"
@@ -495,23 +498,14 @@ export default function LifeRolesStep4() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {language === 'ko' ? '이전' : 'Back'}
           </ModuleButton>
-          <div className="flex gap-3">
-            <ModuleButton
-              onClick={handleSave}
-              variant="ghost"
-              disabled={saving}
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {language === 'ko' ? '저장' : 'Save'}
-            </ModuleButton>
-            <ModuleButton
-              onClick={handleNext}
-              disabled={saving || !isReady}
-            >
-              {language === 'ko' ? '다음: 성찰' : 'Next: Reflection'}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </ModuleButton>
-          </div>
+          <ModuleButton
+            onClick={handleComplete}
+            disabled={saving || reflectionQuestions.some(q => !reflection[q.key as keyof typeof reflection].trim())}
+            size="large"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+            {language === 'ko' ? '모듈 완료' : 'Complete Module'}
+          </ModuleButton>
         </div>
       </div>
     </ModuleShell>

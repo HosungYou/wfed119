@@ -45,20 +45,20 @@ describe('ModuleProgressService.updateProgress', () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
   });
 
-  it('should auto-set status to in_progress when currentStage provided without status', async () => {
+  it('should NOT auto-set status when only currentStage provided', async () => {
     // Simulate no existing record
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     await service.updateProgress('values', { currentStage: 'terminal' });
 
-    // The upsert call should include status: 'in_progress'
+    // The upsert call should NOT include status (no auto-promotion)
     expect(mockUpsert).toHaveBeenCalled();
     const upsertArg = mockUpsert.mock.calls[0][0];
-    expect(upsertArg.status).toBe('in_progress');
+    expect(upsertArg.status).toBeUndefined();
     expect(upsertArg.current_stage).toBe('terminal');
   });
 
-  it('should auto-set status to in_progress when existing record is not_started', async () => {
+  it('should NOT auto-set status when existing record is not_started', async () => {
     mockMaybeSingle.mockResolvedValue({
       data: { status: 'not_started' },
       error: null,
@@ -68,7 +68,7 @@ describe('ModuleProgressService.updateProgress', () => {
 
     expect(mockUpsert).toHaveBeenCalled();
     const upsertArg = mockUpsert.mock.calls[0][0];
-    expect(upsertArg.status).toBe('in_progress');
+    expect(upsertArg.status).toBeUndefined();
   });
 
   it('should NOT override completed status when updating stage', async () => {

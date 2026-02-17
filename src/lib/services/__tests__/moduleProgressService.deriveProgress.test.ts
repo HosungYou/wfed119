@@ -68,7 +68,7 @@ describe('ModuleProgressService.getAllProgress - derived progress override', () 
     expect(valuesProgress?.completionPercentage).toBe(67); // 2/3 sets
   });
 
-  it('should upgrade not_started to in_progress from derived data', async () => {
+  it('should NOT upgrade existing not_started when derived data available', async () => {
     // Stale module_progress record with not_started
     tableResults['module_progress'] = {
       data: [{
@@ -101,9 +101,9 @@ describe('ModuleProgressService.getAllProgress - derived progress override', () 
     const valuesProgress = progress.find(p => p.moduleId === 'values');
 
     expect(valuesProgress).toBeDefined();
-    // Should be upgraded from not_started to in_progress
-    expect(valuesProgress?.status).toBe('in_progress');
-    expect(valuesProgress?.completionPercentage).toBe(67);
+    // Existing record wins — not upgraded by derived data
+    expect(valuesProgress?.status).toBe('not_started');
+    expect(valuesProgress?.completionPercentage).toBe(0);
   });
 
   it('should NOT downgrade completed to in_progress', async () => {

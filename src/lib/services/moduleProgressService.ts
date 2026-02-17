@@ -25,6 +25,7 @@ import {
   LifeThemesData,
   VisionData,
   MissionData,
+  LifeRolesData,
   CareerOptionsData,
   SwotData,
   GoalSettingData,
@@ -115,8 +116,17 @@ export class ModuleProgressService {
 
     const derivedProgress = await this.deriveProgressFromExistingData(supabase);
     for (const derived of derivedProgress) {
-      if (!progressMap.has(derived.moduleId)) {
+      const existing = progressMap.get(derived.moduleId);
+      if (!existing) {
         progressMap.set(derived.moduleId, derived);
+      } else if (existing.status === 'not_started' && derived.status !== 'not_started') {
+        // BUG FIX #2: Allow derived data to upgrade stale 'not_started' records
+        // This prevents Bug #1's stale records from blocking correct derived progress
+        progressMap.set(derived.moduleId, {
+          ...existing,
+          status: derived.status,
+          completionPercentage: Math.max(existing.completionPercentage, derived.completionPercentage),
+        });
       }
     }
 
@@ -182,6 +192,21 @@ export class ModuleProgressService {
 
     if (updates.currentStage) {
       updateData.current_stage = updates.currentStage;
+
+      // BUG FIX #1: Auto-set status to 'in_progress' when stage is updated
+      // without an explicit status, preventing stale 'not_started' records
+      if (!updates.status) {
+        const existingCheck = await supabase
+          .from('module_progress')
+          .select('status')
+          .eq('user_id', this.userId)
+          .eq('module_id', moduleId)
+          .maybeSingle();
+
+        if (!existingCheck.data || existingCheck.data.status === 'not_started') {
+          updateData.status = 'in_progress';
+        }
+      }
     }
 
     if (updates.completionPercentage !== undefined) {
@@ -481,6 +506,8 @@ export class ModuleProgressService {
         return this.getVisionData();
       case 'mission':
         return this.getMissionData();
+      case 'life-roles':
+        return this.getLifeRolesData();
       case 'career-options':
         return this.getCareerOptionsData();
       case 'swot':
@@ -778,6 +805,73 @@ export class ModuleProgressService {
       purposeAnswers,
       draftVersions,
       finalStatement: data.final_statement || data.mission_statement || '',
+      completedAt: data.completed_at,
+    };
+  }
+
+  /**
+   * Get Life Roles module data
+   */
+  async getLifeRolesData(): Promise<LifeRolesData | null> {
+    const supabase = await createServerSupabaseClient();
+
+    const { data } = await supabase
+      .from('life_roles_sessions')
+      .select('*')
+      .eq('user_id', this.userId)
+      .single();
+
+    if (!data) return null;
+
+    const roles = (data.life_roles || []).map((r: any) => ({
+      id: r.id || '',
+      entity: r.entity || '',
+      role: r.role || '',
+      category: r.category || 'personal',
+      importance: r.importance || 3,
+    }));
+
+    const wellbeingReflections: Record<string, { reflection: string; currentLevel: number; goals: string }> = {};
+    if (data.wellbeing_reflections && typeof data.wellbeing_reflections === 'object') {
+      for (const [key, val] of Object.entries(data.wellbeing_reflections as Record<string, any>)) {
+        wellbeingReflections[key] = {
+          reflection: val?.reflection || '',
+          currentLevel: val?.currentLevel || 5,
+          goals: val?.goals || '',
+        };
+      }
+    }
+
+    const rainbowData = {
+      currentAge: data.rainbow_data?.currentAge || 25,
+      slots: data.rainbow_data?.slots || [],
+    };
+
+    const commitments = (data.role_commitments || []).map((c: any) => ({
+      roleId: c.roleId || '',
+      roleName: c.roleName || '',
+      commitment: c.commitment || '',
+      currentTimePercentage: c.currentTimePct || 0,
+      desiredTimePercentage: c.desiredTimePct || 0,
+      gapAnalysis: c.gapAnalysis || '',
+    }));
+
+    const wellbeingCommitments: Record<string, string> = data.wellbeing_commitments || {};
+
+    const reflection = data.reflection || {};
+    const balanceAssessment = {
+      currentBalance: reflection.balanceAssessment || 'balanced',
+      suggestedAdjustments: reflection.aiSummary?.suggestedAdjustments || [],
+      notes: reflection.lessonsLearned || '',
+    };
+
+    return {
+      roles,
+      wellbeingReflections,
+      rainbowData,
+      commitments,
+      wellbeingCommitments,
+      balanceAssessment,
       completedAt: data.completed_at,
     };
   }
@@ -1163,6 +1257,24 @@ export class ModuleProgressService {
       }
     }
 
+    if (completedModules.includes('life-roles')) {
+      const lifeRolesData = await this.getLifeRolesData();
+      if (lifeRolesData) {
+        profileData.life_roles_data = {
+          roles: lifeRolesData.roles.map(r => ({
+            entity: r.entity,
+            role: r.role,
+            category: r.category,
+          })),
+          commitments: lifeRolesData.commitments.map(c => ({
+            roleName: c.roleName,
+            commitment: c.commitment,
+          })),
+          balanceAssessment: lifeRolesData.balanceAssessment.currentBalance,
+        };
+      }
+    }
+
     if (completedModules.includes('career-options')) {
       const careerData = await this.getCareerOptionsData();
       if (careerData) {
@@ -1320,6 +1432,13 @@ Core Aspirations: ${v.coreAspirations.join(', ')}`);
       const m = context.availableData.mission;
       parts.push(`User's Mission Statement:
 ${m.finalStatement}`);
+    }
+
+    if (context.availableData['life-roles']) {
+      const lr = context.availableData['life-roles'] as LifeRolesData;
+      parts.push(`User's Life Roles & Commitments:
+${lr.roles.slice(0, 5).map(r => `- ${r.role} (${r.entity})`).join('\n')}
+Balance: ${lr.balanceAssessment.currentBalance}`);
     }
 
     if (context.availableData['career-options']) {
@@ -1481,6 +1600,24 @@ ${g.roles.slice(0, 4).map(r => `- ${r.roleName} (${r.percentageAllocation}%)`).j
         completionPercentage,
         currentStage: undefined,
         lastUpdatedAt: visionRow.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // Life Roles
+    const { data: lifeRolesRow } = await supabase
+      .from('life_roles_sessions')
+      .select('status, current_step, updated_at')
+      .eq('user_id', this.userId)
+      .single();
+    if (lifeRolesRow) {
+      const isCompleted = lifeRolesRow.status === 'completed';
+      const stepPct = Math.min(100, Math.round((lifeRolesRow.current_step / 5) * 100));
+      progress.push({
+        moduleId: 'life-roles',
+        status: isCompleted ? 'completed' : 'in_progress',
+        completionPercentage: isCompleted ? 100 : stepPct,
+        currentStage: undefined,
+        lastUpdatedAt: lifeRolesRow.updated_at || new Date().toISOString(),
       });
     }
 

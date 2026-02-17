@@ -248,7 +248,7 @@ function LifeRolesSummary({ data, language }: { data: LifeRolesData | null; lang
               key={idx}
               className="px-2 py-0.5 text-xs bg-violet-100 text-violet-700 rounded-full"
             >
-              {role.roleName}
+              {role.role || role.entity}
             </span>
           ))}
           {data.roles.length > 4 && (
@@ -259,6 +259,11 @@ function LifeRolesSummary({ data, language }: { data: LifeRolesData | null; lang
         </div>
       ) : (
         <p className="text-gray-500 text-sm">{language === 'ko' ? '역할이 정의되지 않았습니다.' : 'No roles defined.'}</p>
+      )}
+      {data.commitments && data.commitments.length > 0 && (
+        <p className="text-xs text-gray-500 mt-1">
+          {data.commitments.length} {language === 'ko' ? '개 헌신 설정됨' : 'commitments set'}
+        </p>
       )}
     </div>
   );

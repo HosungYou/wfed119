@@ -31,6 +31,7 @@ const MODULE_NAMES: Record<ModuleId, { en: string; ko: string }> = {
   'swot': { en: 'SWOT Analysis', ko: 'SWOT 분석' },
   'goals': { en: 'Goal Setting', ko: '목표 설정' },
   'errc': { en: 'ERRC Framework', ko: 'ERRC 프레임워크' },
+  'life-roles': { en: 'Life Roles & Commitment', ko: '생애 역할 & 헌신' },
 };
 
 export default function ModuleHeader({

@@ -182,7 +182,7 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
   }, [routeSet]);
 
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
-  const { startModule, updateStage } = useModuleProgress('values');
+  const { startModule, updateStage, completeModule } = useModuleProgress('values');
   const [palette, setPalette] = useState<string[]>([]);
   const [layout, setLayout] = useState<Layout>(emptyLayout);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -576,6 +576,17 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
       alert('Saved successfully');
       // Reflect progress for this values set
       updateStage(routeSet);
+
+      // Check if all 3 value types are now complete → auto-complete module
+      try {
+        const sessionRes = await fetch('/api/discover/values/session');
+        const sessionData = await sessionRes.json();
+        if (sessionData.terminal_completed && sessionData.instrumental_completed && sessionData.work_completed) {
+          await completeModule();
+        }
+      } catch (e) {
+        console.error('[Values Set] Error checking completion:', e);
+      }
     }
   }
 

@@ -119,9 +119,14 @@ export class ModuleProgressService {
       const existing = progressMap.get(derived.moduleId);
       if (!existing) {
         progressMap.set(derived.moduleId, derived);
-      } else if (existing.status === 'not_started' && derived.status !== 'not_started') {
-        // BUG FIX #2: Allow derived data to upgrade stale 'not_started' records
-        // This prevents Bug #1's stale records from blocking correct derived progress
+      } else if (
+        (existing.status === 'not_started' && derived.status !== 'not_started') ||
+        (existing.status === 'in_progress' && derived.status === 'completed')
+      ) {
+        // BUG FIX #2+#3: Allow derived data to upgrade stale records
+        // - not_started → in_progress/completed (original fix)
+        // - in_progress → completed (new fix: modules that completed in data tables
+        //   but module_progress was never explicitly updated to 'completed')
         progressMap.set(derived.moduleId, {
           ...existing,
           status: derived.status,

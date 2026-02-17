@@ -49,22 +49,21 @@ export async function GET(request: NextRequest) {
 
     const hasEnneagram = !!enneagramData?.primary_type;
 
-    // Check Vision module
-    const { data: visionData } = await supabase
-      .from('vision_statements')
-      .select('final_statement')
+    // Check Life Themes module
+    const { data: lifeThemesData } = await supabase
+      .from('life_themes_results')
+      .select('id')
       .eq('user_id', userId)
-      .limit(1)
-      .single();
+      .limit(1);
 
-    const hasVision = !!visionData?.final_statement;
+    const hasLifeThemes = lifeThemesData && lifeThemesData.length > 0;
 
     return NextResponse.json({
       values: hasValues,
       strengths: hasStrengths,
       enneagram: hasEnneagram,
-      vision: hasVision,
-      canStart: hasValues && hasVision, // Minimum requirement
+      lifeThemes: hasLifeThemes,
+      canStart: hasEnneagram && hasLifeThemes && hasValues, // Matches module order: enneagram → life-themes → values → mission
     });
   } catch (error) {
     console.error('[Mission Prerequisites] Error:', error);

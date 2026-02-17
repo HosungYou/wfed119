@@ -52,7 +52,7 @@ export default function ValuesModuleLanding() {
   const { language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<ValueStatus | null>(null);
-  const { startModule, canStartModule } = useModuleProgress('values');
+  const { startModule, completeModule, canStartModule } = useModuleProgress('values');
 
   useEffect(() => {
     checkStatus();
@@ -94,6 +94,13 @@ export default function ValuesModuleLanding() {
       router.push(type.route);
     }
   }
+
+  // Auto-complete module when all 3 value types are done
+  useEffect(() => {
+    if (status?.terminal.completed && status?.instrumental.completed && status?.work.completed) {
+      completeModule();
+    }
+  }, [status, completeModule]);
 
   function isAllCompleted(): boolean {
     return status?.terminal.completed && status?.instrumental.completed && status?.work.completed || false;

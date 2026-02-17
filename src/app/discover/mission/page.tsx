@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, Home, CheckCircle, Circle, Heart, Target, Sparkles } from 'lucide-react';
+import { Loader2, ArrowRight, Home, CheckCircle, Circle, Heart, Target, Compass, Brain } from 'lucide-react';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton } from '@/components/modules';
 
 interface ModuleStatus {
+  enneagram: boolean;
+  lifeThemes: boolean;
   values: boolean;
-  strengths: boolean;
-  vision: boolean;
   mission: {
     started: boolean;
     currentStep: number;
@@ -40,9 +40,9 @@ export default function MissionModuleLanding() {
       const sessionData = await sessionRes.json();
 
       setStatus({
+        enneagram: prereqData.enneagram || false,
+        lifeThemes: prereqData.lifeThemes || false,
         values: prereqData.values || false,
-        strengths: prereqData.strengths || false,
-        vision: prereqData.vision || false,
         mission: {
           started: sessionData.current_step > 0,
           currentStep: sessionData.current_step || 0,
@@ -103,7 +103,7 @@ export default function MissionModuleLanding() {
     );
   }
 
-  const canProceed = status?.values && status?.vision;
+  const canProceed = status?.enneagram && status?.lifeThemes && status?.values;
   const hasStarted = status?.mission.started;
 
   return (
@@ -131,6 +131,34 @@ export default function MissionModuleLanding() {
           </h2>
 
           <div className="grid grid-cols-3 gap-4">
+            <div className={`p-4 rounded-lg border-2 ${status?.enneagram ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Brain className={`w-5 h-5 ${status?.enneagram ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className="font-medium text-sm">
+                  {language === 'ko' ? '에니어그램' : 'Enneagram'}
+                </span>
+              </div>
+              {status?.enneagram ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <Circle className="w-5 h-5 text-gray-300" />
+              )}
+            </div>
+
+            <div className={`p-4 rounded-lg border-2 ${status?.lifeThemes ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Compass className={`w-5 h-5 ${status?.lifeThemes ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className="font-medium text-sm">
+                  {language === 'ko' ? '삶의 테마' : 'Life Themes'}
+                </span>
+              </div>
+              {status?.lifeThemes ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <Circle className="w-5 h-5 text-gray-300" />
+              )}
+            </div>
+
             <div className={`p-4 rounded-lg border-2 ${status?.values ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
               <div className="flex items-center gap-2 mb-2">
                 <Heart className={`w-5 h-5 ${status?.values ? 'text-green-600' : 'text-gray-400'}`} />
@@ -144,42 +172,14 @@ export default function MissionModuleLanding() {
                 <Circle className="w-5 h-5 text-gray-300" />
               )}
             </div>
-
-            <div className={`p-4 rounded-lg border-2 ${status?.strengths ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className={`w-5 h-5 ${status?.strengths ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="font-medium text-sm">
-                  {language === 'ko' ? '강점' : 'Strengths'}
-                </span>
-              </div>
-              {status?.strengths ? (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              ) : (
-                <Circle className="w-5 h-5 text-gray-300" />
-              )}
-            </div>
-
-            <div className={`p-4 rounded-lg border-2 ${status?.vision ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className={`w-5 h-5 ${status?.vision ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="font-medium text-sm">
-                  {language === 'ko' ? '비전' : 'Vision'}
-                </span>
-              </div>
-              {status?.vision ? (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              ) : (
-                <Circle className="w-5 h-5 text-gray-300" />
-              )}
-            </div>
           </div>
 
           {!canProceed && (
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-800">
                 {language === 'ko'
-                  ? '💡 가치관과 비전 모듈을 먼저 완료하면 더 맞춤화된 사명 선언문을 작성할 수 있습니다.'
-                  : '💡 Complete Values and Vision modules first for a more personalized mission statement.'}
+                  ? '💡 에니어그램, 삶의 테마, 가치관 모듈을 먼저 완료하면 사명 선언문을 작성할 수 있습니다.'
+                  : '💡 Complete Enneagram, Life Themes, and Values modules first to start your mission statement.'}
               </p>
             </div>
           )}

@@ -3,8 +3,8 @@ const path = require('path');
 
 const nextConfig = {
   serverExternalPackages: ["@prisma/client"],
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Enable standalone output for Docker/Render (skip on Vercel)
+  ...(process.env.VERCEL ? {} : { output: 'standalone' }),
   // Fix workspace root inference when multiple lockfiles exist
   outputFileTracingRoot: path.join(__dirname),
   // Skip TypeScript type checking during build for deployment

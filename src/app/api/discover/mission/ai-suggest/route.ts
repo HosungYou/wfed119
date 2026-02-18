@@ -101,6 +101,7 @@ Option 2 (integrated):
 "My mission is to [verb1], [verb2], and [verb3] to/for [target/value combo1], [target/value combo2], and [target/value combo3] so that [impact expression]."
 
 Arrange the components intelligently with appropriate prepositions and connectors.
+IMPORTANT: Each option must be 15-25 words long (30 words maximum). Combine or shorten where needed to stay within this limit.
 
 Respond in JSON format:
 {
@@ -125,7 +126,7 @@ Respond in JSON format:
 2. Combine similar targets into broader concepts
 3. Use stronger, more specific verbs where possible
 4. Keep the student's original intent and chosen words
-5. Make it memorable and concise
+5. Make it memorable and concise — TARGET 15-25 words, MAXIMUM 30 words
 
 Provide the refined version AND 2-3 brief tips in English.
 
@@ -172,6 +173,7 @@ ${analysis ? `Current scores - Clarity: ${analysis.clarity?.score}/10, Inspirati
 ## Task:
 Create an improved version that optimizes all 4 criteria (clarity, inspiration, altruism, conciseness).
 Keep the student's core intent and key words.
+IMPORTANT: The polished version must be 15-25 words (30 words maximum).
 
 Respond with ONLY the polished mission statement text, nothing else.`;
       break;
@@ -197,7 +199,7 @@ Generate exactly 3 different mission statement variants that honour the student'
 Each variant should:
 1. Directly reflect what the student asked (combine, focus, emphasise, etc.)
 2. Keep the student's original components where possible
-3. Be a single, complete, memorable sentence
+3. Be a single, complete, memorable sentence — 15-25 words (30 words maximum)
 4. Differ meaningfully from each other (try different structures or emphases)
 
 Respond in JSON:

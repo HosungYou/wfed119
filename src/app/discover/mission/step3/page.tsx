@@ -556,7 +556,18 @@ export default function MissionStep3() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base"
               placeholder={language === 'ko' ? '최종 사명 선언문...' : 'Final mission statement...'}
             />
-            <p className="text-xs text-gray-400 mt-1">{r3Text.length} {language === 'ko' ? '자' : 'chars'}</p>
+            {(() => {
+              const wc = r3Text.trim() ? r3Text.trim().split(/\s+/).length : 0;
+              const color = wc === 0 ? 'text-gray-400' : wc <= 30 && wc >= 15 ? 'text-green-600 font-medium' : wc < 15 ? 'text-amber-500' : 'text-red-600 font-medium';
+              const hint = wc > 30 ? (language === 'ko' ? ' — 30단어 초과' : ' — over 30-word limit') : '';
+              return (
+                <p className={`text-xs mt-1 ${color}`}>
+                  {wc} {language === 'ko' ? '단어' : 'words'}
+                  {hint}
+                  <span className="text-gray-400 ml-2">({language === 'ko' ? '15-25단어 권장, 최대 30단어' : '15-25 words ideal · 30 max'})</span>
+                </p>
+              );
+            })()}
 
             {/* Self-Assessment Checklist */}
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">

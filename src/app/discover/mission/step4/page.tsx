@@ -95,16 +95,16 @@ export default function MissionStep4() {
 
   async function handleComplete() {
     // Validate reflections
-    if (getWordCount(reflections.inspiration) < 10) {
-      alert(language === 'ko' ? '질문 1에 더 자세히 답변해주세요 (최소 50단어 권장).' : 'Please provide a more detailed answer to Question 1 (min 50 words recommended).');
+    if (getWordCount(reflections.inspiration) < 20) {
+      alert(language === 'ko' ? '질문 1에 더 자세히 답변해주세요 (최소 20단어 권장).' : 'Please provide a more detailed answer to Question 1 (min 20 words recommended).');
       return;
     }
-    if (getWordCount(reflections.alignment) < 10) {
-      alert(language === 'ko' ? '질문 2에 더 자세히 답변해주세요.' : 'Please provide a more detailed answer to Question 2.');
+    if (getWordCount(reflections.alignment) < 20) {
+      alert(language === 'ko' ? '질문 2에 더 자세히 답변해주세요 (최소 20단어 권장).' : 'Please provide a more detailed answer to Question 2 (min 20 words recommended).');
       return;
     }
-    if (getWordCount(reflections.feedback) < 5) {
-      alert(language === 'ko' ? '질문 3에 답변해주세요.' : 'Please answer Question 3.');
+    if (getWordCount(reflections.feedback) < 10) {
+      alert(language === 'ko' ? '질문 3에 답변해주세요 (최소 10단어 권장).' : 'Please answer Question 3 (min 10 words recommended).');
       return;
     }
 
@@ -301,11 +301,11 @@ export default function MissionStep4() {
             value={reflections.inspiration}
             onChange={(e) => updateReflection('inspiration', e.target.value)}
             rows={6}
-            placeholder={language === 'ko' ? '200-300단어로 작성해주세요...' : 'Write 200-300 words...'}
+            placeholder={language === 'ko' ? '20단어 이상...' : 'Write at least 20 words...'}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           />
-          <p className={`text-xs mt-1 ${getWordCount(reflections.inspiration) >= 50 ? 'text-green-600' : 'text-gray-400'}`}>
-            {getWordCount(reflections.inspiration)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '200단어 이상 권장' : '200+ recommended'})
+          <p className={`text-xs mt-1 ${getWordCount(reflections.inspiration) >= 20 ? 'text-green-600' : 'text-gray-400'}`}>
+            {getWordCount(reflections.inspiration)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '20단어 이상 권장' : '20+ recommended'})
           </p>
         </ModuleCard>
 
@@ -323,11 +323,11 @@ export default function MissionStep4() {
             value={reflections.alignment}
             onChange={(e) => updateReflection('alignment', e.target.value)}
             rows={6}
-            placeholder={language === 'ko' ? '200-300단어로 작성해주세요...' : 'Write 200-300 words...'}
+            placeholder={language === 'ko' ? '20단어 이상...' : 'Write at least 20 words...'}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           />
-          <p className={`text-xs mt-1 ${getWordCount(reflections.alignment) >= 50 ? 'text-green-600' : 'text-gray-400'}`}>
-            {getWordCount(reflections.alignment)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '200단어 이상 권장' : '200+ recommended'})
+          <p className={`text-xs mt-1 ${getWordCount(reflections.alignment) >= 20 ? 'text-green-600' : 'text-gray-400'}`}>
+            {getWordCount(reflections.alignment)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '20단어 이상 권장' : '20+ recommended'})
           </p>
         </ModuleCard>
 
@@ -345,11 +345,11 @@ export default function MissionStep4() {
             value={reflections.feedback}
             onChange={(e) => updateReflection('feedback', e.target.value)}
             rows={4}
-            placeholder={language === 'ko' ? '100-300단어로 작성해주세요...' : 'Write 100-300 words...'}
+            placeholder={language === 'ko' ? '10단어 이상...' : 'Write at least 10 words...'}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           />
-          <p className={`text-xs mt-1 ${getWordCount(reflections.feedback) >= 20 ? 'text-green-600' : 'text-gray-400'}`}>
-            {getWordCount(reflections.feedback)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '100단어 이상 권장' : '100+ recommended'})
+          <p className={`text-xs mt-1 ${getWordCount(reflections.feedback) >= 10 ? 'text-green-600' : 'text-gray-400'}`}>
+            {getWordCount(reflections.feedback)} {language === 'ko' ? '단어' : 'words'} ({language === 'ko' ? '10단어 이상 권장' : '10+ recommended'})
           </p>
         </ModuleCard>
 

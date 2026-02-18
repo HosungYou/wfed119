@@ -72,13 +72,13 @@ ${enneagram ? `## Enneagram Type: ${enneagram.type}w${enneagram.wing}` : ''}
 ${lifeThemes ? `## Life Themes: ${lifeThemes.join(', ')}` : ''}
 
 ## Task:
-Create a "Value Profile" summary in Korean (한국어) that:
+Create a "Value Profile" summary in English that:
 1. Shows connections between terminal, instrumental, and work values
 2. Suggests how these values connect to life/career direction
 3. Uses enneagram type and life themes as additional context
 4. Keep it warm, encouraging, and personal (2-3 paragraphs)
 
-Respond in Korean ONLY. No English.`;
+Respond in English ONLY.`;
       break;
     }
 
@@ -127,12 +127,12 @@ Respond in JSON format:
 4. Keep the student's original intent and chosen words
 5. Make it memorable and concise
 
-Provide the refined version AND 2-3 brief tips in Korean.
+Provide the refined version AND 2-3 brief tips in English.
 
 Respond in JSON:
 {
   "refined": "the refined mission statement",
-  "tips": ["tip1 in Korean", "tip2 in Korean"]
+  "tips": ["tip1 in English", "tip2 in English"]
 }`;
       break;
     }
@@ -151,12 +151,12 @@ Criteria:
 
 Respond in JSON:
 {
-  "clarity": { "score": 0, "feedback": "feedback in Korean" },
-  "inspiration": { "score": 0, "feedback": "feedback in Korean" },
-  "altruism": { "score": 0, "feedback": "feedback in Korean" },
-  "conciseness": { "score": 0, "feedback": "feedback in Korean" },
+  "clarity": { "score": 0, "feedback": "feedback in English" },
+  "inspiration": { "score": 0, "feedback": "feedback in English" },
+  "altruism": { "score": 0, "feedback": "feedback in English" },
+  "conciseness": { "score": 0, "feedback": "feedback in English" },
   "overall": 0,
-  "suggestions": ["suggestion1 in Korean", "suggestion2 in Korean"]
+  "suggestions": ["suggestion1 in English", "suggestion2 in English"]
 }`;
       break;
     }
@@ -193,14 +193,14 @@ ${lifeThemes ? `## Life Themes: ${lifeThemes.join(', ')}` : ''}
 - On alignment: "${reflections?.alignment || ''}"
 
 ## Task:
-Generate 2-3 personalized follow-up insights in Korean:
+Generate 2-3 personalized follow-up insights in English:
 1. Connect the mission to their values, enneagram type, and life themes
 2. Highlight a pattern or strength they may not have noticed
 3. Suggest ONE specific action they can take THIS WEEK to live their mission
 
 Respond in JSON:
 {
-  "insights": ["insight1 in Korean", "insight2 in Korean", "insight3 in Korean"]
+  "insights": ["insight1 in English", "insight2 in English", "insight3 in English"]
 }`;
       break;
     }
@@ -289,7 +289,7 @@ function formatValuesSimple(values: any): string {
 function getFallback(type: string, body: any): any {
   switch (type) {
     case 'values_connector':
-      return '선택하신 가치들은 당신의 삶의 방향에 대한 중요한 단서를 담고 있습니다. 궁극적 가치, 수단적 가치, 직업 가치가 서로 연결되어 당신만의 고유한 가치 프로필을 형성합니다. 이 가치들을 기반으로 사명 선언문을 작성해 보세요.';
+      return 'Your selected values contain important clues about your life direction. Terminal, instrumental, and work values connect together to form your unique value profile. Use these values as the foundation for crafting your mission statement.';
 
     case 'mission_composer': {
       const v = (body?.verbs || ['contribute', 'develop', 'inspire']).slice(0, 3);
@@ -304,17 +304,17 @@ function getFallback(type: string, body: any): any {
     case 'sentence_refiner':
       return {
         refined: body?.currentDraft || 'My mission is to make a meaningful impact.',
-        tips: ['유사한 대상을 합쳐보세요', '더 강한 동사로 시작해보세요', '간결하게 유지하세요'],
+        tips: ['Try combining similar targets', 'Start with a stronger verb', 'Keep it concise'],
       };
 
     case 'mission_analyst':
       return {
-        clarity: { score: 7, feedback: 'AI 분석을 사용할 수 없습니다. 직접 평가해주세요.' },
-        inspiration: { score: 7, feedback: 'AI 분석을 사용할 수 없습니다.' },
-        altruism: { score: 7, feedback: 'AI 분석을 사용할 수 없습니다.' },
-        conciseness: { score: 7, feedback: 'AI 분석을 사용할 수 없습니다.' },
+        clarity: { score: 7, feedback: 'AI analysis is not available. Please evaluate on your own.' },
+        inspiration: { score: 7, feedback: 'AI analysis is not available. Please evaluate on your own.' },
+        altruism: { score: 7, feedback: 'AI analysis is not available. Please evaluate on your own.' },
+        conciseness: { score: 7, feedback: 'AI analysis is not available. Please evaluate on your own.' },
         overall: 7,
-        suggestions: ['사명 선언문을 더 구체적으로 만들어 보세요.'],
+        suggestions: ['Try making your mission statement more specific.'],
       };
 
     case 'polish_suggest':
@@ -323,8 +323,8 @@ function getFallback(type: string, body: any): any {
     case 'reflection_guide':
       return {
         insights: [
-          '당신의 사명 선언문은 가치관과 잘 연결되어 있습니다.',
-          '이번 주에 사명을 실천할 수 있는 작은 행동을 시작해 보세요.',
+          'Your mission statement connects well with your values.',
+          'Try starting a small action this week to live your mission.',
         ],
       };
 

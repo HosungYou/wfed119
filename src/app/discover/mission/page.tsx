@@ -10,6 +10,7 @@ import { ModuleShell, ModuleCard, ModuleButton } from '@/components/modules';
 interface ModuleStatus {
   values: boolean;
   enneagram: boolean;
+  lifeThemes: boolean;
   mission: {
     started: boolean;
     currentStep: number;
@@ -41,6 +42,7 @@ export default function MissionModuleLanding() {
       setStatus({
         values: prereqData.values || false,
         enneagram: prereqData.enneagram || false,
+        lifeThemes: prereqData.lifeThemes || false,
         mission: {
           started: sessionData.current_step > 0,
           currentStep: sessionData.current_step || 0,
@@ -101,7 +103,7 @@ export default function MissionModuleLanding() {
     );
   }
 
-  const canProceed = status?.values;
+  const canProceed = status?.values && status?.enneagram && status?.lifeThemes;
   const hasStarted = status?.mission.started;
 
   return (
@@ -128,7 +130,7 @@ export default function MissionModuleLanding() {
             {language === 'ko' ? '선수 모듈 상태' : 'Prerequisites Status'}
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className={`p-4 rounded-lg border-2 ${status?.values ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
               <div className="flex items-center gap-2 mb-2">
                 <Heart className={`w-5 h-5 ${status?.values ? 'text-green-600' : 'text-gray-400'}`} />
@@ -156,14 +158,28 @@ export default function MissionModuleLanding() {
                 <Circle className="w-5 h-5 text-gray-300" />
               )}
             </div>
+
+            <div className={`p-4 rounded-lg border-2 ${status?.lifeThemes ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Target className={`w-5 h-5 ${status?.lifeThemes ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className="font-medium text-sm">
+                  {language === 'ko' ? '생애 주제' : 'Life Themes'}
+                </span>
+              </div>
+              {status?.lifeThemes ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <Circle className="w-5 h-5 text-gray-300" />
+              )}
+            </div>
           </div>
 
           {!canProceed && (
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-800">
                 {language === 'ko'
-                  ? '💡 가치관 모듈을 먼저 완료해주세요.'
-                  : '💡 Please complete the Values module first.'}
+                  ? '가치관, 에니어그램, 생애 주제 모듈을 먼저 완료해주세요.'
+                  : 'Please complete the Values, Enneagram, and Life Themes modules first.'}
               </p>
             </div>
           )}

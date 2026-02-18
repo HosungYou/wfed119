@@ -177,6 +177,40 @@ Respond with ONLY the polished mission statement text, nothing else.`;
       break;
     }
 
+    case 'guided_variants': {
+      const { missionText, userThought, verbs, targets, values } = body;
+      prompt = `You are helping a student refine their mission statement based on their own creative direction.
+
+## Current mission statement:
+"${missionText || ''}"
+
+## Student's direction / thought:
+"${userThought || ''}"
+
+## Original components (for reference):
+- Action Verbs: ${(verbs || []).join(', ')}
+- Contribution Targets: ${(targets || []).join(', ')}
+- Core Values: ${(values || []).join(', ')}
+
+## Task:
+Generate exactly 3 different mission statement variants that honour the student's direction.
+Each variant should:
+1. Directly reflect what the student asked (combine, focus, emphasise, etc.)
+2. Keep the student's original components where possible
+3. Be a single, complete, memorable sentence
+4. Differ meaningfully from each other (try different structures or emphases)
+
+Respond in JSON:
+{
+  "variants": [
+    "variant 1 text",
+    "variant 2 text",
+    "variant 3 text"
+  ]
+}`;
+      break;
+    }
+
     case 'reflection_guide': {
       const { finalStatement, values, enneagram, lifeThemes, reflections } = body;
       prompt = `You are a reflection guide providing personalized follow-up insights.
@@ -240,7 +274,7 @@ Respond in JSON:
     if (!content) throw new Error('Empty AI response');
 
     // Parse JSON responses
-    if (['mission_composer', 'sentence_refiner', 'mission_analyst', 'reflection_guide', 'feedback'].includes(type)) {
+    if (['mission_composer', 'sentence_refiner', 'mission_analyst', 'reflection_guide', 'feedback', 'guided_variants'].includes(type)) {
       let cleaned = content.trim();
       if (cleaned.startsWith('```json')) {
         cleaned = cleaned.replace(/```json\n?/g, '').replace(/```\n?/g, '');
@@ -319,6 +353,17 @@ function getFallback(type: string, body: any): any {
 
     case 'polish_suggest':
       return body?.missionText || 'My mission is to make a positive impact.';
+
+    case 'guided_variants': {
+      const base = body?.missionText || 'My mission is to make a positive impact.';
+      return {
+        variants: [
+          base,
+          base.replace('and', 'while focusing on'),
+          base.replace('guided by', 'driven by a deep commitment to'),
+        ],
+      };
+    }
 
     case 'reflection_guide':
       return {

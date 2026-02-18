@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight, ArrowLeft, Sparkles, CheckCircle, Edit2, Target, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Sparkles, CheckCircle, Edit2, Target, RefreshCw, MessageSquare } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
 
@@ -58,6 +58,10 @@ export default function MissionStep3() {
   const [r3Analysis, setR3Analysis] = useState<Round3Analysis | null>(null);
   const [r3AnalysisLoading, setR3AnalysisLoading] = useState(false);
   const [r3PolishLoading, setR3PolishLoading] = useState(false);
+  // Round 3 guided variants state
+  const [r3UserThought, setR3UserThought] = useState('');
+  const [r3Variants, setR3Variants] = useState<string[]>([]);
+  const [r3VariantsLoading, setR3VariantsLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -219,6 +223,33 @@ export default function MissionStep3() {
       console.error('[Mission Step 3] Save R2 error:', error);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function generateGuidedVariants() {
+    if (!r3UserThought.trim() || !r3Text.trim()) return;
+    setR3VariantsLoading(true);
+    try {
+      const res = await fetch('/api/discover/mission/ai-suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'guided_variants',
+          missionText: r3Text,
+          userThought: r3UserThought,
+          verbs: selectedVerbs,
+          targets: selectedTargets,
+          values: missionValues,
+        }),
+      });
+      const data = await res.json();
+      if (data.suggestion?.variants) {
+        setR3Variants(data.suggestion.variants);
+      }
+    } catch (error) {
+      console.error('[Mission Step 3] Guided variants error:', error);
+    } finally {
+      setR3VariantsLoading(false);
     }
   }
 
@@ -550,6 +581,52 @@ export default function MissionStep3() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Guided Variants — Tell AI your direction */}
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-1 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                {language === 'ko' ? 'AI에게 방향 제시하기' : 'Tell AI your direction'}
+              </h4>
+              <p className="text-xs text-blue-600 mb-3">
+                {language === 'ko'
+                  ? '예: "교육과 동물권을 합치고 싶어" 또는 "기후 변화에 더 집중하고 싶어"'
+                  : 'e.g., "I want to combine education with animal rights" or "focus more on climate change"'}
+              </p>
+              <textarea
+                value={r3UserThought}
+                onChange={(e) => setR3UserThought(e.target.value)}
+                rows={2}
+                placeholder={language === 'ko' ? '어떻게 수정하고 싶은지 자유롭게 입력하세요...' : 'Describe how you\'d like to adjust your mission...'}
+                className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm bg-white"
+              />
+              <button
+                onClick={generateGuidedVariants}
+                disabled={r3VariantsLoading || !r3UserThought.trim() || !r3Text.trim()}
+                className="mt-2 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50 transition-colors"
+              >
+                {r3VariantsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {language === 'ko' ? '옵션 생성하기' : 'Generate Options'}
+              </button>
+
+              {r3Variants.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-medium text-blue-700">
+                    {language === 'ko' ? '옵션을 클릭하면 본문에 즉시 적용됩니다:' : 'Click an option to apply it immediately:'}
+                  </p>
+                  {r3Variants.map((variant, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setR3Text(variant); setR3Variants([]); setR3UserThought(''); }}
+                      className="w-full text-left p-3 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-sm text-gray-800 leading-relaxed"
+                    >
+                      <span className="inline-flex items-center justify-center w-5 h-5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mr-2 flex-shrink-0">{i + 1}</span>
+                      {variant}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* AI Analysis & Polish buttons */}

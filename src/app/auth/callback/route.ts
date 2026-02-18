@@ -5,9 +5,14 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') || '/dashboard'
 
   if (code) {
     const cookieStore = cookies()
+    // Build redirect response early so we can set cookies directly on it
+    const redirectUrl = new URL(next, requestUrl.origin)
+    const response = NextResponse.redirect(redirectUrl)
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,9 +22,11 @@ export async function GET(request: Request) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Set on both cookieStore and the response so middleware sees them
               cookieStore.set(name, value, options)
-            )
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -31,15 +38,12 @@ export async function GET(request: Request) {
     const { data: { session }, error } = await supabase.auth.getSession()
 
     if (session && !error) {
-      // Redirect to home page after successful login
-      // HomePage will check sessionStorage for the intended redirect URL
-      // This ensures auth cookies are properly set before client-side navigation
-      return NextResponse.redirect(new URL('/', requestUrl.origin))
+      return response
     }
 
     console.error('[Auth Callback] Session verification failed:', error)
   }
 
   // Fallback: redirect to home if no code or session failed
-  return NextResponse.redirect(requestUrl.origin)
+  return NextResponse.redirect(new URL('/', requestUrl.origin))
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Sparkles, Heart, Target, User, Lightbulb,
   Eye, Grid3X3, CheckCircle2, Zap, LogIn, LogOut,
@@ -66,6 +67,18 @@ export const HomePage: React.FC = () => {
   const { user, isAuthenticated, loading, signInWithGoogle, signOut } = useAuth();
   const { completedModules, loading: modulesLoading } = useAllModulesProgress();
   const { t, language } = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // If user is already authenticated and there's a pending redirect, navigate there
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      const redirect = searchParams.get('redirect');
+      if (redirect && redirect.startsWith('/')) {
+        router.replace(redirect);
+      }
+    }
+  }, [loading, isAuthenticated, searchParams, router]);
 
   const completedSet = new Set(completedModules);
   const nextModule = isAuthenticated ? getNextModule(completedSet) : null;

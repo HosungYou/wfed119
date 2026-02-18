@@ -87,9 +87,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       setLoading(true);
+      // Read any pending redirect from the current URL
+      const searchParams = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams();
+      const next = searchParams.get('redirect') || '/dashboard';
+      const callbackUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+        : '/auth/callback';
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          redirectTo: callbackUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

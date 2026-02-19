@@ -377,19 +377,48 @@ export default function ValueSetPage({ params }: { params: Promise<{ set?: strin
     let workEnvironment = '';
     let leadershipStyle = '';
 
-    if (coreTheme === 'Responsible Guardian') {
+    if (coreTheme === 'Protective Community Leader') {
       careers = ['Government Administrator', 'Healthcare Manager', 'Non-profit Director', 'Education Coordinator'];
       workEnvironment = 'Stable organization with clear mission and social impact';
       leadershipStyle = 'Supportive and protective, ensuring team safety and growth';
-    } else if (coreTheme === 'Inspiring Mentor') {
+    } else if (coreTheme === 'Developmental Catalyst') {
       careers = ['Executive Coach', 'University Professor', 'Organizational Development', 'Training Director'];
       workEnvironment = 'Learning-focused environment with opportunities for innovation';
       leadershipStyle = 'Transformational leader who empowers others to reach their potential';
-    } else if (coreTheme === 'Influential Leader') {
+    } else if (coreTheme === 'Impactful Achiever') {
       careers = ['Corporate Executive', 'Management Consultant', 'Policy Advisor', 'Entrepreneur'];
-      workEnvironment = 'Fast-paced, results-oriented organization with public recognition';
-      leadershipStyle = 'Visionary leader focused on achieving ambitious goals';
+      workEnvironment = 'Fast-paced, results-oriented organization with measurable outcomes';
+      leadershipStyle = 'Goal-driven leader who inspires teams through tangible achievements';
+    } else if (coreTheme === 'Excellence-Driven Professional') {
+      careers = ['Senior Analyst', 'Quality Director', 'Strategy Consultant', 'Program Manager'];
+      workEnvironment = 'High-standards organization that rewards expertise and precision';
+      leadershipStyle = 'Detail-oriented leader who sets high expectations and leads by example';
+    } else if (coreTheme === 'Independent Innovator') {
+      careers = ['Startup Founder', 'R&D Director', 'UX Researcher', 'Product Manager'];
+      workEnvironment = 'Autonomous, creative workspace that values experimentation';
+      leadershipStyle = 'Visionary leader who champions new ideas and creative freedom';
+    } else if (coreTheme === 'Stable Progress Builder') {
+      careers = ['Operations Manager', 'Quality Assurance Lead', 'Program Director', 'Civil Engineer'];
+      workEnvironment = 'Structured organization with clear growth pathways and steady improvement';
+      leadershipStyle = 'Methodical leader who builds sustainable systems and processes';
+    } else if (coreTheme === 'Connection-Centered Leader') {
+      careers = ['HR Director', 'Community Manager', 'Social Worker', 'Mediator'];
+      workEnvironment = 'People-first culture with emphasis on collaboration and relationships';
+      leadershipStyle = 'Empathetic leader who builds strong teams through trust and connection';
+    } else if (coreTheme === 'Continuous Learning Champion') {
+      careers = ['University Professor', 'Training Director', 'Curriculum Designer', 'Research Scientist'];
+      workEnvironment = 'Knowledge-driven organization that invests in continuous development';
+      leadershipStyle = 'Growth-minded leader who fosters curiosity and lifelong learning';
+    } else if (coreTheme === 'Stability-Focused Guardian') {
+      careers = ['Financial Analyst', 'Compliance Officer', 'Risk Manager', 'Healthcare Administrator'];
+      workEnvironment = 'Well-established organization with strong protocols and reliability';
+      leadershipStyle = 'Dependable leader who prioritizes consistency and risk management';
+    } else if (coreTheme === 'Community Impact Maker') {
+      careers = ['Non-profit Director', 'Public Policy Analyst', 'Social Enterprise Manager', 'Community Organizer'];
+      workEnvironment = 'Mission-driven organization focused on social change and community benefit';
+      leadershipStyle = 'Purpose-driven leader who mobilizes people around shared social goals';
     } else {
+      // Fallback for dynamically generated '[Theme] Advocate' themes
       careers = ['Project Manager', 'Business Analyst', 'Consultant', 'Team Lead'];
       workEnvironment = 'Collaborative environment with room for professional growth';
       leadershipStyle = 'Collaborative and adaptive leadership approach';

@@ -7,10 +7,20 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') || '/dashboard'
 
+  // Reconstruct the true public origin from reverse-proxy headers.
+  // On Render.com (and similar platforms), request.url contains the internal
+  // address (e.g. http://localhost:10000) — not the public URL.
+  // x-forwarded-host / x-forwarded-proto carry the real external host/scheme.
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https'
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : requestUrl.origin
+
   if (code) {
     const cookieStore = cookies()
     // Build redirect response early so we can set cookies directly on it
-    const redirectUrl = new URL(next, requestUrl.origin)
+    const redirectUrl = new URL(next, origin)
     const response = NextResponse.redirect(redirectUrl)
 
     const supabase = createServerClient(
@@ -45,5 +55,5 @@ export async function GET(request: Request) {
   }
 
   // Fallback: redirect to home if no code or session failed
-  return NextResponse.redirect(new URL('/', requestUrl.origin))
+  return NextResponse.redirect(new URL('/', origin))
 }

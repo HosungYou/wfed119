@@ -278,7 +278,7 @@ export default function LifeRolesStep3() {
                               : language === 'ko' ? '이 역할에 대한 헌신...' : 'Your commitment to this role...'
                           }
                           rows={2}
-                          className="w-full px-2 py-1.5 border-0 focus:ring-2 focus:ring-teal-500 rounded text-sm resize-none"
+                          className="w-full px-2 py-1.5 border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent rounded text-sm resize-none bg-gray-50 placeholder:text-gray-400"
                         />
                       </td>
                       <td className="border border-gray-200 px-3 py-2 bg-white text-center">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, CheckCircle, Sparkles, Share2, ClipboardList } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, Sparkles, Share2, ClipboardList, Rainbow, BarChart3, MessageSquare, TrendingUp, Users } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { ModuleShell, ModuleCard, ModuleButton, ActivitySidebar, createActivitiesFromSteps } from '@/components/modules';
@@ -182,40 +182,342 @@ export default function LifeRolesStep4() {
 
   // Completion Screen
   if (isCompleted) {
+    const rainbowData = session?.rainbow_data;
+    const rainbowSlots = rainbowData?.slots || [];
+    const placedSlots = rainbowSlots.filter((s: any) => s.roleId);
+    const reflectionData = session?.reflection;
+    const aiSummary = reflectionData?.aiSummary;
+
+    const RAINBOW_COLORS = [
+      'rgb(239,68,68)',
+      'rgb(249,115,22)',
+      'rgb(234,179,8)',
+      'rgb(34,197,94)',
+      'rgb(59,130,246)',
+      'rgb(99,102,241)',
+      'rgb(139,92,246)',
+      'rgb(20,184,166)',
+    ];
+
     return (
       <ModuleShell moduleId="life-roles" showProgress={false}>
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-white" />
+        <div className="max-w-2xl mx-auto py-8 space-y-6">
+
+          {/* 1. Header */}
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
+              {language === 'ko' ? '삶의 역할 탐색 완료!' : 'Life Roles Complete!'}
+            </h1>
+            <p className="text-gray-600">
+              {language === 'ko'
+                ? '축하합니다! 당신의 삶의 역할과 헌신을 성찰하는 여정을 완료했습니다.'
+                : 'Congratulations! You have completed your life roles exploration and commitment journey.'}
+            </p>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {language === 'ko' ? '삶의 역할 탐색 완료!' : 'Life Roles Complete!'}
-          </h1>
+          {/* 2. Journey Summary Stats */}
+          <ModuleCard padding="normal">
+            <h2 className="font-semibold text-gray-900 mb-4">
+              {language === 'ko' ? '여정 요약' : 'Journey Summary'}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-teal-50 rounded-lg p-3 text-center border border-teal-100">
+                <Users className="w-5 h-5 text-teal-600 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-teal-700">{lifeRoles.length}</p>
+                <p className="text-xs text-teal-600 mt-0.5">
+                  {language === 'ko' ? '삶의 역할' : 'Life Roles'}
+                </p>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
+                <ClipboardList className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-amber-700">{filledCommitmentCount}</p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  {language === 'ko'
+                    ? `헌신 (총 ${roleCommitments.length}개 중)`
+                    : `Commitments (of ${roleCommitments.length})`}
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-3 text-center border border-purple-100">
+                <Rainbow className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-purple-700">{placedSlots.length}</p>
+                <p className="text-xs text-purple-600 mt-0.5">
+                  {language === 'ko' ? '무지개 배치' : 'Rainbow Placed'}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-100">
+                <CheckCircle className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-green-700">100%</p>
+                <p className="text-xs text-green-600 mt-0.5">
+                  {language === 'ko' ? '완료' : 'Complete'}
+                </p>
+              </div>
+            </div>
+          </ModuleCard>
 
-          <p className="text-gray-600 mb-8">
-            {language === 'ko'
-              ? '축하합니다! 당신의 삶의 역할과 헌신을 성찰하는 여정을 완료했습니다.'
-              : 'Congratulations! You have completed your life roles exploration and commitment journey.'}
-          </p>
-
-          {/* Roles Summary */}
+          {/* 3. Life Roles List */}
           {lifeRoles.length > 0 && (
-            <ModuleCard padding="normal" className="mb-6 text-left">
-              <h3 className="font-semibold text-gray-900 mb-3">
-                {language === 'ko' ? '나의 삶의 역할' : 'My Life Roles'}
-              </h3>
+            <ModuleCard padding="normal">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-teal-600" />
+                <h2 className="font-semibold text-gray-900">
+                  {language === 'ko' ? '나의 삶의 역할' : 'My Life Roles'}
+                </h2>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {lifeRoles.map((lr: any, i: number) => (
-                  <span key={i} className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm">
-                    {lr.entity}: {lr.role}
+                  <span
+                    key={i}
+                    className="px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-sm font-medium"
+                  >
+                    <span className="text-teal-500 font-normal">{lr.entity}: </span>
+                    {lr.role}
                   </span>
                 ))}
               </div>
             </ModuleCard>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* 4. Role Commitments Table */}
+          {roleCommitments.length > 0 && (
+            <ModuleCard padding="normal">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-teal-600" />
+                <h2 className="font-semibold text-gray-900">
+                  {language === 'ko' ? '역할과 헌신' : 'Roles & Commitments'}
+                </h2>
+              </div>
+              <div className="space-y-4">
+                {roleCommitments.map((rc: any, i: number) => {
+                  const current = rc.currentTimePct ?? 0;
+                  const desired = rc.desiredTimePct ?? 0;
+                  const diff = desired - current;
+                  return (
+                    <div key={i} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm font-semibold text-teal-700 mb-2">{rc.roleName}</p>
+                      {rc.commitment?.trim() ? (
+                        <p className="text-sm text-gray-700 mb-3 italic">"{rc.commitment}"</p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic mb-3">
+                          {language === 'ko' ? '(헌신 미작성)' : '(No commitment written)'}
+                        </p>
+                      )}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 w-16 flex-shrink-0">
+                            {language === 'ko' ? '현재' : 'Current'}
+                          </span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-gray-400 h-2 rounded-full"
+                              style={{ width: `${Math.min(current, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-gray-600 w-8 text-right">{current}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 w-16 flex-shrink-0">
+                            {language === 'ko' ? '목표' : 'Desired'}
+                          </span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-teal-500 h-2 rounded-full"
+                              style={{ width: `${Math.min(desired, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-teal-600 w-8 text-right">{desired}%</span>
+                        </div>
+                      </div>
+                      {diff !== 0 && (
+                        <p className={`text-xs mt-1.5 ${diff > 0 ? 'text-teal-600' : 'text-amber-600'}`}>
+                          {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}%{' '}
+                          {diff > 0
+                            ? (language === 'ko' ? '늘리기 목표' : 'increase goal')
+                            : (language === 'ko' ? '줄이기 목표' : 'decrease goal')}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </ModuleCard>
+          )}
+
+          {/* 5. Life Rainbow Visualization */}
+          {placedSlots.length > 0 && (
+            <ModuleCard padding="normal">
+              <div className="flex items-center gap-2 mb-4">
+                <Rainbow className="w-5 h-5 text-purple-600" />
+                <h2 className="font-semibold text-gray-900">
+                  {language === 'ko' ? '인생 무지개' : 'Life Rainbow'}
+                </h2>
+                {rainbowData?.currentAge && (
+                  <span className="ml-auto text-xs text-gray-500">
+                    {language === 'ko' ? '현재 나이' : 'Current Age'}: {rainbowData.currentAge}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {rainbowSlots.map((slot: any, i: number) => {
+                  const color = RAINBOW_COLORS[i % RAINBOW_COLORS.length];
+                  const isEmpty = !slot.roleId;
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: isEmpty ? '#e5e7eb' : color }}
+                      />
+                      {isEmpty ? (
+                        <div className="flex-1 h-7 bg-gray-100 rounded border border-dashed border-gray-300 flex items-center px-2">
+                          <span className="text-xs text-gray-400">
+                            {language === 'ko' ? '(비어있음)' : '(empty)'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-sm font-medium text-gray-800">{slot.roleName}</span>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{slot.ageStart ?? '?'} – {slot.ageEnd ?? '?'}</span>
+                              {slot.intensity != null && (
+                                <span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: color + '33', color }}>
+                                  {slot.intensity === 1
+                                    ? (language === 'ko' ? '낮음' : 'Low')
+                                    : slot.intensity === 2
+                                      ? (language === 'ko' ? '중간' : 'Med')
+                                      : (language === 'ko' ? '높음' : 'High')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div
+                              className="h-2 rounded-full"
+                              style={{
+                                width: `${slot.intensity === 1 ? 33 : slot.intensity === 2 ? 66 : 100}%`,
+                                backgroundColor: color,
+                                opacity: slot.intensity === 1 ? 0.5 : slot.intensity === 2 ? 0.75 : 1,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {rainbowData?.notes && (
+                <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                  <p className="text-xs font-medium text-purple-700 mb-1">
+                    {language === 'ko' ? '노트' : 'Notes'}
+                  </p>
+                  <p className="text-sm text-gray-700">{rainbowData.notes}</p>
+                </div>
+              )}
+            </ModuleCard>
+          )}
+
+          {/* 6. Reflection Answers */}
+          {reflectionData && reflectionQuestions.some(q => reflectionData[q.key]?.trim()) && (
+            <ModuleCard padding="normal">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="w-5 h-5 text-teal-600" />
+                <h2 className="font-semibold text-gray-900">
+                  {language === 'ko' ? '나의 성찰' : 'My Reflections'}
+                </h2>
+              </div>
+              <div className="space-y-4">
+                {reflectionQuestions.map((q) => {
+                  const answer = reflectionData[q.key];
+                  if (!answer?.trim()) return null;
+                  return (
+                    <div key={q.key} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-2">
+                        {language === 'ko' ? q.questionKo : q.question}
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{answer}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </ModuleCard>
+          )}
+
+          {/* 7. AI Balance Assessment */}
+          {aiSummary && (
+            <ModuleCard padding="normal">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+                <h2 className="font-semibold text-gray-900">
+                  {language === 'ko' ? 'AI 균형 평가' : 'AI Balance Assessment'}
+                </h2>
+                {aiSummary.balanceAssessment && (
+                  <span className={`ml-auto px-3 py-1 rounded-full text-xs font-medium border ${getBalanceBadgeStyle(aiSummary.balanceAssessment)}`}>
+                    {getBalanceLabel(aiSummary.balanceAssessment)}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-4">
+                {aiSummary.strengthAreas && aiSummary.strengthAreas.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">
+                      {language === 'ko' ? '강점 영역' : 'Strength Areas'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {aiSummary.strengthAreas.map((area: string, i: number) => (
+                        <span key={i} className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {aiSummary.growthAreas && aiSummary.growthAreas.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
+                      {language === 'ko' ? '성장 영역' : 'Growth Areas'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {aiSummary.growthAreas.map((area: string, i: number) => (
+                        <span key={i} className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {aiSummary.suggestedAdjustments && aiSummary.suggestedAdjustments.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      {language === 'ko' ? '개선 제안' : 'Suggested Adjustments'}
+                    </p>
+                    <ul className="space-y-1.5">
+                      {aiSummary.suggestedAdjustments.map((adj: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <span className="text-teal-500 flex-shrink-0 mt-0.5">&#8226;</span>
+                          {adj}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(aiSummary.summary || aiSummary.summaryKo) && (
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {language === 'ko' && aiSummary.summaryKo
+                        ? aiSummary.summaryKo
+                        : aiSummary.summary}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </ModuleCard>
+          )}
+
+          {/* 8. Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <ModuleButton
               onClick={() => {
                 const summary = lifeRoles.map((lr: any) => `${lr.entity}: ${lr.role}`).join('\n');
@@ -224,7 +526,7 @@ export default function LifeRolesStep4() {
               }}
               variant="secondary"
             >
-              <Share2 className="w-4 h-4 mr-2" />
+              <ClipboardList className="w-4 h-4 mr-2" />
               {language === 'ko' ? '역할 목록 복사' : 'Copy Roles'}
             </ModuleButton>
             <ModuleButton onClick={() => router.push('/dashboard')}>
@@ -234,9 +536,11 @@ export default function LifeRolesStep4() {
               onClick={() => router.push('/discover/vision')}
               variant="secondary"
             >
+              <Sparkles className="w-4 h-4 mr-2" />
               {language === 'ko' ? '다음 모듈: 비전' : 'Next Module: Vision'}
             </ModuleButton>
           </div>
+
         </div>
       </ModuleShell>
     );
